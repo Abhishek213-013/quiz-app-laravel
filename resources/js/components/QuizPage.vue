@@ -2,15 +2,8 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <!-- Header -->
         <div class="flex items-center justify-between mb-8">
-            <button 
-                @click="$emit('back')"
-                class="flex items-center text-blue-600 hover:text-blue-800"
-            >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Sets
-            </button>
+            <!-- Empty div for spacing (replaces back button) -->
+            <div class="w-32"></div>
             
             <!-- Timer -->
             <div class="text-center">
@@ -91,13 +84,21 @@
                 />
             </div>
 
-            <button 
-                @click="submitResults"
-                :disabled="!participantName.trim()"
-                class="px-8 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                Submit Results
-            </button>
+            <div class="flex justify-center space-x-4">
+                <button 
+                    @click="goToDashboard"
+                    class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                >
+                    Back to Dashboard
+                </button>
+                <button 
+                    @click="submitResults"
+                    :disabled="!participantName.trim()"
+                    class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Submit Results
+                </button>
+            </div>
         </div>
 
         <!-- Loading State -->
@@ -151,7 +152,6 @@ export default {
         this.clearTimer();
     },
     methods: {
-        // In the fetchQuizzes method, update the timer calculation
         async fetchQuizzes() {
             this.loading = true;
             try {
@@ -162,7 +162,7 @@ export default {
                 this.quizzes = await response.json();
                 
                 // Calculate time: 60 seconds per question
-                this.timeLeft = this.quizzes.length * 6;
+                this.timeLeft = this.quizzes.length * 5;
             } catch (error) {
                 console.error('Error fetching quizzes:', error);
                 alert('Failed to load quiz. Please try again.');
@@ -227,6 +227,10 @@ export default {
                 }
                 return total;
             }, 0);
+        },
+
+        goToDashboard() {
+            this.$emit('completed');
         },
 
         async submitResults() {

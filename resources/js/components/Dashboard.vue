@@ -89,6 +89,7 @@ export default {
         openManageQuizzes() {
             this.showSecretModal = true;
         },
+
         async verifySecretKey() {
             try {
                 const response = await fetch('/api/admin/verify', {

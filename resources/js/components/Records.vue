@@ -1,21 +1,26 @@
 <template>
     <div class="container mx-auto px-4 py-8">
-        <div class="flex items-center justify-between mb-8">
-            <button 
-                @click="$emit('back')"
-                class="flex items-center text-blue-600 hover:text-blue-800"
-            >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Dashboard
-            </button>
+        <!-- Simplified Header -->
+        <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Previous Records</h1>
-            <div class="w-20"></div> <!-- Spacer for alignment -->
+            <p class="text-gray-600 mt-2">View and filter previous quiz results</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-red-800">{{ error }}</span>
+                <button @click="retryLoading" class="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                    Retry
+                </button>
+            </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div v-if="!error" class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter Results</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
@@ -25,6 +30,7 @@
                         type="text" 
                         placeholder="Search by name"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        @input="applyFilters"
                     >
                 </div>
                 <div>
@@ -32,6 +38,7 @@
                     <select 
                         v-model="filters.quiz_set_id"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        @change="applyFilters"
                     >
                         <option value="">All Sets</option>
                         <option 
@@ -39,7 +46,7 @@
                             :key="quizSet.id" 
                             :value="quizSet.id"
                         >
-                            {{ quizSet.name }}
+                            {{ getQuizSetName(quizSet) }}
                         </option>
                     </select>
                 </div>
@@ -49,21 +56,56 @@
                         v-model="filters.date"
                         type="date" 
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        @change="applyFilters"
                     >
                 </div>
-                <div class="flex items-end">
+                <div class="flex items-end space-x-2">
+                    <button 
+                        @click="clearFilters"
+                        class="w-1/2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                    >
+                        Clear
+                    </button>
                     <button 
                         @click="applyFilters"
-                        class="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                        class="w-1/2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                     >
-                        Apply Filters
+                        Apply
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Results Summary -->
+        <div v-if="!error && results.length > 0" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">{{ results.length }}</div>
+                    <div class="text-sm text-gray-600">Total Results</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">
+                        {{ calculateAverageScore() }}%
+                    </div>
+                    <div class="text-sm text-gray-600">Average Score</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">
+                        {{ getTopScorer() }}
+                    </div>
+                    <div class="text-sm text-gray-600">Top Scorer</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-600">
+                        {{ getMostPopularQuizSet() }}
+                    </div>
+                    <div class="text-sm text-gray-600">Most Popular Set</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Results Table -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div v-if="!error" class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -94,25 +136,25 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="result in results" :key="result.id">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ result.participant_name }}</div>
+                                <div class="text-sm font-medium text-gray-900">{{ result.participant_name || 'Unknown' }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ result.quiz_set.name }}</div>
+                                <div class="text-sm text-gray-900">{{ getResultQuizSetName(result) }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    {{ result.score }}/{{ result.total_questions }}
+                                    {{ (result.score || 0) }}/{{ (result.total_questions || 0) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium" 
-                                     :class="getPercentageColor(result.percentage)">
-                                    {{ result.percentage }}%
+                                     :class="getPercentageColor(getSafePercentage(result))">
+                                    {{ formatPercentage(getSafePercentage(result)) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    {{ formatTime(result.time_taken) }}
+                                    {{ formatTime(result.time_taken || 0) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -124,6 +166,7 @@
                                 <button 
                                     @click="viewDetails(result)"
                                     class="text-blue-600 hover:text-blue-900 mr-3"
+                                    :disabled="!result.quiz_set_id"
                                 >
                                     View Details
                                 </button>
@@ -134,7 +177,7 @@
             </div>
 
             <!-- Empty State -->
-            <div v-if="results.length === 0 && !loading" class="text-center py-12">
+            <div v-if="results.length === 0 && !loading && !error" class="text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
@@ -143,7 +186,7 @@
             </div>
 
             <!-- Loading State -->
-            <div v-if="loading" class="text-center py-8">
+            <div v-if="loading && !error" class="text-center py-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p class="mt-2 text-sm text-gray-600">Loading results...</p>
             </div>
@@ -167,15 +210,15 @@
                 <!-- Summary -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-blue-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-blue-600">{{ selectedResult.score }}/{{ selectedResult.total_questions }}</div>
+                        <div class="text-2xl font-bold text-blue-600">{{ selectedResult.score || 0 }}/{{ selectedResult.total_questions || 0 }}</div>
                         <div class="text-sm text-blue-600">Score</div>
                     </div>
                     <div class="bg-green-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-green-600">{{ selectedResult.percentage }}%</div>
+                        <div class="text-2xl font-bold text-green-600">{{ formatPercentage(getSafePercentage(selectedResult)) }}</div>
                         <div class="text-sm text-green-600">Percentage</div>
                     </div>
                     <div class="bg-purple-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-purple-600">{{ formatTime(selectedResult.time_taken) }}</div>
+                        <div class="text-2xl font-bold text-purple-600">{{ formatTime(selectedResult.time_taken || 0) }}</div>
                         <div class="text-sm text-purple-600">Time Taken</div>
                     </div>
                     <div class="bg-yellow-50 p-4 rounded-lg text-center">
@@ -184,8 +227,25 @@
                     </div>
                 </div>
 
+                <!-- Performance Rating -->
+                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-2">Performance Rating</h4>
+                    <div class="flex items-center">
+                        <div class="flex-1 bg-gray-200 rounded-full h-2">
+                            <div 
+                                class="h-2 rounded-full" 
+                                :class="getPerformanceBarColor(getSafePercentage(selectedResult))"
+                                :style="{ width: Math.min(getSafePercentage(selectedResult), 100) + '%' }"
+                            ></div>
+                        </div>
+                        <span class="ml-4 text-sm font-medium" :class="getPerformanceTextColor(getSafePercentage(selectedResult))">
+                            {{ getPerformanceRating(getSafePercentage(selectedResult)) }}
+                        </span>
+                    </div>
+                </div>
+
                 <!-- Answers -->
-                <div class="space-y-4">
+                <div v-if="selectedResult.answers && Object.keys(selectedResult.answers).length > 0" class="space-y-4">
                     <div 
                         v-for="(answer, questionIndex) in selectedResult.answers" 
                         :key="questionIndex"
@@ -212,6 +272,9 @@
                         </div>
                     </div>
                 </div>
+                <div v-else class="text-center py-8 text-gray-500">
+                    No answer details available for this result.
+                </div>
             </div>
         </div>
     </div>
@@ -230,17 +293,55 @@ export default {
                 date: ''
             },
             loading: false,
+            error: null,
             selectedResult: null,
-            quizDetails: {} // Store quiz questions for details view
+            quizDetails: {}
         }
     },
     async mounted() {
-        await this.fetchQuizSets();
-        await this.fetchResults();
+        try {
+            await this.fetchQuizSets();
+            await this.fetchResults();
+        } catch (error) {
+            console.error('Error in mounted:', error);
+            this.error = 'Failed to initialize component: ' + error.message;
+        }
     },
     methods: {
+        // Safe percentage getter
+        getSafePercentage(result) {
+            if (!result) return 0;
+            
+            let percentage = result.percentage;
+            
+            // If percentage is null/undefined, calculate it from score and total_questions
+            if (percentage == null) {
+                const score = Number(result.score) || 0;
+                const total = Number(result.total_questions) || 1; // Avoid division by zero
+                percentage = (score / total) * 100;
+            }
+            
+            // Ensure it's a number
+            percentage = Number(percentage);
+            
+            // Handle NaN cases
+            if (isNaN(percentage)) {
+                return 0;
+            }
+            
+            return Math.min(Math.max(percentage, 0), 100); // Clamp between 0-100
+        },
+
+        // Safe percentage formatter
+        formatPercentage(percentage) {
+            const perc = Number(percentage) || 0;
+            return perc.toFixed(1) + '%';
+        },
+
         async fetchResults() {
             this.loading = true;
+            this.error = null;
+            
             try {
                 const queryParams = new URLSearchParams();
                 if (this.filters.participant_name) queryParams.append('participant_name', this.filters.participant_name);
@@ -251,11 +352,27 @@ export default {
                     ? `/api/quiz-results/filter?${queryParams}`
                     : '/api/quiz-results';
 
+                console.log('Fetching results from:', url);
+
                 const response = await fetch(url);
-                this.results = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Fetched results:', data);
+                
+                // Ensure results is always an array and has safe percentage values
+                this.results = Array.isArray(data) ? data.map(result => ({
+                    ...result,
+                    // Ensure percentage is always a number
+                    percentage: this.getSafePercentage(result)
+                })) : [];
             } catch (error) {
                 console.error('Error fetching results:', error);
-                alert('Failed to load results');
+                this.error = `Failed to load results: ${error.message}`;
+                this.results = [];
             } finally {
                 this.loading = false;
             }
@@ -264,49 +381,148 @@ export default {
         async fetchQuizSets() {
             try {
                 const response = await fetch('/api/quiz-sets');
-                this.quizSets = await response.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                this.quizSets = Array.isArray(data) ? data : [];
+                console.log('Fetched quiz sets:', this.quizSets);
             } catch (error) {
                 console.error('Error fetching quiz sets:', error);
+                this.error = `Failed to load quiz sets: ${error.message}`;
+                this.quizSets = [];
             }
+        },
+
+        retryLoading() {
+            this.error = null;
+            this.fetchQuizSets();
+            this.fetchResults();
         },
 
         applyFilters() {
             this.fetchResults();
         },
 
+        clearFilters() {
+            this.filters = {
+                participant_name: '',
+                quiz_set_id: '',
+                date: ''
+            };
+            this.fetchResults();
+        },
+
+        getQuizSetName(quizSet) {
+            return quizSet?.name || 'Unknown Set';
+        },
+
+        getResultQuizSetName(result) {
+            return result?.quiz_set?.name || 'Unknown Set';
+        },
+
         getPercentageColor(percentage) {
-            if (percentage >= 80) return 'text-green-600';
-            if (percentage >= 60) return 'text-yellow-600';
+            const perc = Number(percentage) || 0;
+            if (perc >= 80) return 'text-green-600';
+            if (perc >= 60) return 'text-yellow-600';
             return 'text-red-600';
         },
 
+        getPerformanceBarColor(percentage) {
+            const perc = Number(percentage) || 0;
+            if (perc >= 80) return 'bg-green-500';
+            if (perc >= 60) return 'bg-yellow-500';
+            return 'bg-red-500';
+        },
+
+        getPerformanceTextColor(percentage) {
+            const perc = Number(percentage) || 0;
+            if (perc >= 80) return 'text-green-600';
+            if (perc >= 60) return 'text-yellow-600';
+            return 'text-red-600';
+        },
+
+        getPerformanceRating(percentage) {
+            const perc = Number(percentage) || 0;
+            if (perc >= 90) return 'Excellent';
+            if (perc >= 80) return 'Very Good';
+            if (perc >= 70) return 'Good';
+            if (perc >= 60) return 'Average';
+            return 'Needs Improvement';
+        },
+
+        calculateAverageScore() {
+            if (this.results.length === 0) return '0.0';
+            const total = this.results.reduce((sum, result) => sum + this.getSafePercentage(result), 0);
+            return (total / this.results.length).toFixed(1);
+        },
+
+        getTopScorer() {
+            if (this.results.length === 0) return 'N/A';
+            const topScore = Math.max(...this.results.map(result => this.getSafePercentage(result)));
+            const topScorer = this.results.find(result => this.getSafePercentage(result) === topScore);
+            return topScorer?.participant_name || 'Unknown';
+        },
+
+        getMostPopularQuizSet() {
+            if (this.results.length === 0) return 'N/A';
+            const quizSetCounts = {};
+            this.results.forEach(result => {
+                const setName = this.getResultQuizSetName(result);
+                quizSetCounts[setName] = (quizSetCounts[setName] || 0) + 1;
+            });
+            
+            const mostPopular = Object.keys(quizSetCounts).reduce((a, b) => 
+                quizSetCounts[a] > quizSetCounts[b] ? a : b
+            );
+            return mostPopular;
+        },
+
         formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+            const secs = Number(seconds) || 0;
+            const mins = Math.floor(secs / 60);
+            const remainingSecs = secs % 60;
+            return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
         },
 
         formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString();
+            if (!dateString) return 'Unknown date';
+            try {
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch (error) {
+                return 'Invalid date';
+            }
         },
 
         async viewDetails(result) {
             this.selectedResult = result;
             
-            // Fetch quiz details for this result if not already cached
+            if (!result.quiz_set_id) {
+                this.error = 'Cannot load details: Quiz set ID is missing';
+                return;
+            }
+
             if (!this.quizDetails[result.quiz_set_id]) {
                 try {
                     const response = await fetch(`/api/quiz-sets/${result.quiz_set_id}/quizzes`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     this.quizDetails[result.quiz_set_id] = await response.json();
                 } catch (error) {
                     console.error('Error fetching quiz details:', error);
+                    this.error = `Failed to load quiz details: ${error.message}`;
                 }
             }
         },
 
         isAnswerCorrect(questionIndex) {
             const quizSetQuizzes = this.quizDetails[this.selectedResult.quiz_set_id];
-            if (!quizSetQuizzes) return false;
+            if (!quizSetQuizzes || !Array.isArray(quizSetQuizzes)) return false;
             
             const quiz = quizSetQuizzes[questionIndex];
             const userAnswer = this.selectedResult.answers[questionIndex];
@@ -316,23 +532,26 @@ export default {
 
         getQuestionText(questionIndex) {
             const quizSetQuizzes = this.quizDetails[this.selectedResult.quiz_set_id];
-            return quizSetQuizzes && quizSetQuizzes[questionIndex] 
-                ? quizSetQuizzes[questionIndex].question 
-                : 'Question not available';
+            if (!quizSetQuizzes || !Array.isArray(quizSetQuizzes)) return 'Question not available';
+            
+            const quiz = quizSetQuizzes[questionIndex];
+            return quiz?.question || 'Question not available';
         },
 
         getQuestionOptions(questionIndex) {
             const quizSetQuizzes = this.quizDetails[this.selectedResult.quiz_set_id];
-            return quizSetQuizzes && quizSetQuizzes[questionIndex] 
-                ? quizSetQuizzes[questionIndex].options 
-                : [];
+            if (!quizSetQuizzes || !Array.isArray(quizSetQuizzes)) return [];
+            
+            const quiz = quizSetQuizzes[questionIndex];
+            return quiz?.options || [];
         },
 
         getCorrectAnswer(questionIndex) {
             const quizSetQuizzes = this.quizDetails[this.selectedResult.quiz_set_id];
-            return quizSetQuizzes && quizSetQuizzes[questionIndex] 
-                ? quizSetQuizzes[questionIndex].correct_answer 
-                : '';
+            if (!quizSetQuizzes || !Array.isArray(quizSetQuizzes)) return '';
+            
+            const quiz = quizSetQuizzes[questionIndex];
+            return quiz?.correct_answer || '';
         }
     }
 }

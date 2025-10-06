@@ -1,16 +1,11 @@
 <template>
     <div class="container mx-auto px-4 py-8">
+        <!-- Simplified Header -->
         <div class="flex items-center justify-between mb-8">
-            <button 
-                @click="$emit('back')"
-                class="flex items-center text-blue-600 hover:text-blue-800"
-            >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Dashboard
-            </button>
-            <h1 class="text-3xl font-bold text-gray-800">Manage Quizzes</h1>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Manage Quizzes</h1>
+                <p class="text-gray-600 mt-2">Add, edit, or delete quiz sets and questions</p>
+            </div>
             <button 
                 @click="showAddSetModal = true"
                 class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
@@ -66,13 +61,24 @@
         <!-- Questions Management -->
         <div v-if="selectedSet" class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Questions for {{ selectedSet.name }}</h2>
-                <button 
-                    @click="showAddQuestionModal = true"
-                    class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                >
-                    Add Question
-                </button>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Questions for {{ selectedSet.name }}</h2>
+                    <p class="text-gray-600 mt-1">Total: {{ quizzes.length }} questions</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button 
+                        @click="selectedSet = null; quizzes = []"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                    >
+                        Back to Sets
+                    </button>
+                    <button 
+                        @click="showAddQuestionModal = true"
+                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    >
+                        Add Question
+                    </button>
+                </div>
             </div>
 
             <div class="space-y-4">
@@ -114,6 +120,15 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Empty state for questions -->
+            <div v-if="quizzes.length === 0" class="text-center py-8">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No questions yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by adding your first question.</p>
             </div>
         </div>
 

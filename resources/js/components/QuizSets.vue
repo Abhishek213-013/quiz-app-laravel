@@ -1,25 +1,18 @@
 <template>
     <div class="container mx-auto px-4 py-8">
-        <div class="flex items-center justify-between mb-8">
-            <button 
-                @click="$emit('back')"
-                class="flex items-center text-blue-600 hover:text-blue-800"
-            >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Dashboard
-            </button>
+        <!-- Simplified Header -->
+        <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Choose Quiz Set</h1>
-            <div class="w-20"></div> <!-- Spacer for alignment -->
+            <p class="text-gray-600 mt-2">Select a category to start your quiz</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Quiz Set Cards -->
             <div 
                 v-for="quizSet in quizSets" 
                 :key="quizSet.id"
                 class="bg-white rounded-lg shadow-md p-6 cursor-pointer transform transition-transform hover:scale-105 hover:shadow-lg"
-                @click="$emit('select-set', quizSet.id)"
+                @click="selectQuizSet(quizSet.id)"
             >
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
@@ -41,6 +34,7 @@
             </div>
         </div>
 
+        <!-- Loading and Error states -->
         <div v-if="loading" class="text-center py-8">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p class="mt-2 text-gray-600">Loading quiz sets...</p>
@@ -82,6 +76,11 @@ export default {
             } finally {
                 this.loading = false;
             }
+        },
+
+        selectQuizSet(quizSetId) {
+            // Emit event to parent component to handle navigation
+            this.$emit('select-set', quizSetId);
         }
     }
 }

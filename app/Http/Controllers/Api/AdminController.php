@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    private $secretKey = 'admin123'; // Change this to a more secure key
+    private $secretKey = 'admin123'; 
 
     public function verify(Request $request)
     {

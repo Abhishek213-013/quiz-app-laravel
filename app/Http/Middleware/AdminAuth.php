@@ -11,7 +11,12 @@ class AdminAuth
     {
         $secretKey = $request->header('X-Admin-Key');
         
-        if ($secretKey !== 'admin123') { // Match this with your secret key
+        // You can also get the secret key from the request if needed
+        if (!$secretKey) {
+            $secretKey = $request->input('secret_key');
+        }
+        
+        if ($secretKey !== 'admin123') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

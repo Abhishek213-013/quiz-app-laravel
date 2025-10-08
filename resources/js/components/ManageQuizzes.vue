@@ -1,5 +1,6 @@
 <template>
-    <div class="container mx-auto px-4 py-8">
+    <div class="flex-1">
+        <div class="container mx-auto px-4 py-8">
         <!-- Simplified Header -->
         <div class="flex items-center justify-between mb-8">
             <div>
@@ -279,6 +280,7 @@
                 </form>
             </div>
         </div>
+    </div>
     </div>
 </template>
 

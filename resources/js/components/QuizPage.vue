@@ -1,110 +1,119 @@
 <template>
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-8">
-            <!-- Empty div for spacing (replaces back button) -->
-            <div class="w-32"></div>
-            
-            <!-- Timer -->
-            <div class="text-center">
-                <div class="text-lg font-semibold text-gray-700">Time Remaining</div>
-                <div class="text-2xl font-bold" :class="timerClass">{{ formatTime(timeLeft) }}</div>
-            </div>
-
-            <!-- Progress -->
-            <div class="text-right">
-                <div class="text-lg font-semibold text-gray-700">Progress</div>
-                <div class="text-xl font-bold">{{ currentQuestionIndex + 1 }} / {{ quizzes.length }}</div>
-            </div>
-        </div>
-
-        <!-- Quiz Content -->
-        <div v-if="!quizCompleted && quizzes.length > 0" class="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <!-- Question -->
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6">
-                {{ currentQuestion.question }}
-            </h2>
-
-            <!-- Options -->
-            <div class="space-y-3">
-                <div 
-                    v-for="(option, index) in currentQuestion.options" 
-                    :key="index"
-                    class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition-all duration-200"
-                    :class="{
-                        'bg-blue-50 border-blue-500': selectedAnswer === option,
-                        'hover:border-blue-300': !selectedAnswer
-                    }"
-                    @click="selectAnswer(option)"
-                >
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full border-2 border-gray-300 mr-3"
-                             :class="{'bg-blue-500 border-blue-500 text-white': selectedAnswer === option}">
-                            {{ String.fromCharCode(65 + index) }}
+    <div class="flex-1">
+        <div class="min-h-screen bg-gray-100">
+            <!-- Sticky Header -->
+            <div class="sticky top-0 z-50 bg-white shadow-lg border-b border-gray-200">
+                <div class="container mx-auto px-4 py-4 max-w-4xl">
+                    <div class="flex items-center justify-between">
+                        <!-- Empty div for spacing -->
+                        <div class="w-24"></div>
+                        
+                        <!-- Timer -->
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-gray-700">Time Remaining</div>
+                            <div class="text-2xl font-bold" :class="timerClass">{{ formatTime(timeLeft) }}</div>
                         </div>
-                        <span class="text-lg">{{ option }}</span>
+
+                        <!-- Progress -->
+                        <div class="text-right">
+                            <div class="text-lg font-semibold text-gray-700">Progress</div>
+                            <div class="text-xl font-bold">{{ currentQuestionIndex + 1 }} / {{ quizzes.length }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Navigation -->
-            <div class="flex justify-between mt-8">
-                <button 
-                    @click="previousQuestion"
-                    :disabled="currentQuestionIndex === 0"
-                    class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Previous
-                </button>
-                
-                <button 
-                    @click="nextQuestion"
-                    class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                    {{ currentQuestionIndex === quizzes.length - 1 ? 'Finish' : 'Next' }}
-                </button>
-            </div>
-        </div>
+            <!-- Main Content -->
+            <div class="container mx-auto px-4 py-8 max-w-4xl">
+                <!-- Quiz Content -->
+                <div v-if="!quizCompleted && quizzes.length > 0" class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <!-- Question -->
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+                        {{ currentQuestion.question }}
+                    </h2>
 
-        <!-- Results -->
-        <div v-if="quizCompleted" class="bg-white rounded-lg shadow-lg p-8 text-center">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">Quiz Completed!</h2>
-            <div class="text-6xl font-bold text-green-600 mb-4">{{ score }}/{{ quizzes.length }}</div>
-            <p class="text-xl text-gray-600 mb-6">
-                You scored {{ ((score / quizzes.length) * 100).toFixed(1) }}%
-            </p>
-            
-            <!-- Participant Name Form -->
-            <div class="max-w-md mx-auto mb-6">
-                <input 
-                    v-model="participantName"
-                    type="text" 
-                    placeholder="Enter your name"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
+                    <!-- Options -->
+                    <div class="space-y-3">
+                        <div 
+                            v-for="(option, index) in currentQuestion.options" 
+                            :key="index"
+                            class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition-all duration-200"
+                            :class="{
+                                'bg-blue-50 border-blue-500': selectedAnswer === option,
+                                'hover:border-blue-300': !selectedAnswer
+                            }"
+                            @click="selectAnswer(option)"
+                        >
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 flex items-center justify-center rounded-full border-2 border-gray-300 mr-3"
+                                    :class="{'bg-blue-500 border-blue-500 text-white': selectedAnswer === option}">
+                                    {{ String.fromCharCode(65 + index) }}
+                                </div>
+                                <span class="text-lg">{{ option }}</span>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="flex justify-center space-x-4">
-                <button 
-                    @click="goToDashboard"
-                    class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                >
-                    Back to Dashboard
-                </button>
-                <button 
-                    @click="submitResults"
-                    :disabled="!participantName.trim()"
-                    class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Submit Results
-                </button>
-            </div>
-        </div>
+                    <!-- Navigation -->
+                    <div class="flex justify-between mt-8">
+                        <button 
+                            @click="previousQuestion"
+                            :disabled="currentQuestionIndex === 0"
+                            class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Previous
+                        </button>
+                        
+                        <button 
+                            @click="nextQuestion"
+                            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            {{ currentQuestionIndex === quizzes.length - 1 ? 'Finish' : 'Next' }}
+                        </button>
+                    </div>
+                </div>
 
-        <!-- Loading State -->
-        <div v-if="loading" class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p class="mt-4 text-gray-600">Loading quiz...</p>
+                <!-- Results -->
+                <div v-if="quizCompleted" class="bg-white rounded-lg shadow-lg p-8 text-center">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Quiz Completed!</h2>
+                    <div class="text-6xl font-bold text-green-600 mb-4">{{ score }}/{{ quizzes.length }}</div>
+                    <p class="text-xl text-gray-600 mb-6">
+                        You scored {{ ((score / quizzes.length) * 100).toFixed(1) }}%
+                    </p>
+                    
+                    <!-- Participant Name Form -->
+                    <div class="max-w-md mx-auto mb-6">
+                        <input 
+                            v-model="participantName"
+                            type="text" 
+                            placeholder="Enter your name"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div class="flex justify-center space-x-4">
+                        <button 
+                            @click="goToDashboard"
+                            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                        >
+                            Back to Dashboard
+                        </button>
+                        <button 
+                            @click="submitResults"
+                            :disabled="!participantName.trim()"
+                            class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Submit Results
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div v-if="loading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p class="mt-4 text-gray-600">Loading quiz...</p>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -187,7 +196,6 @@ export default {
             }
         },
 
-        
         formatTime(seconds) {
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;

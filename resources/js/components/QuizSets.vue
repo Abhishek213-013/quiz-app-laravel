@@ -1,5 +1,6 @@
 <template>
-    <div class="container mx-auto px-4 py-8">
+    <div class="flex-1">
+        <div class="container mx-auto px-4 py-8">
         <!-- Simplified Header -->
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Choose Quiz Set</h1>
@@ -43,6 +44,7 @@
         <div v-if="error" class="text-center py-8 text-red-600">
             {{ error }}
         </div>
+    </div>
     </div>
 </template>
 

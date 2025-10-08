@@ -1,75 +1,86 @@
 <template>
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center text-gray-800 mb-12">Quiz App Dashboard</h1>
+    <div class="flex-1">
+        <div class="container mx-auto px-4 py-8">
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-12">Quiz App Dashboard</h1>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <!-- Take Quiz Tile -->
-            <div 
-                class="bg-white rounded-lg shadow-lg p-6 text-center cursor-pointer transform transition-transform hover:scale-105 hover:shadow-xl"
-                @click="$emit('navigate', 'quiz-sets')"
-            >
-                <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <!-- Take Quiz Tile -->
+                <div 
+                    class="bg-white rounded-lg shadow-lg p-6 text-center cursor-pointer transform transition-transform hover:scale-105 hover:shadow-xl"
+                    @click="$emit('navigate', 'quiz-sets')"
+                >
+                    <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Take Quiz</h3>
+                    <p class="text-gray-600">Start a new quiz and test your knowledge</p>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-800 mb-2">Take Quiz</h3>
-                <p class="text-gray-600">Start a new quiz and test your knowledge</p>
+
+                <!-- GK Blog Tile -->
+                <div 
+                    class="bg-white rounded-lg shadow-lg p-6 text-center cursor-pointer transform transition-transform hover:scale-105 hover:shadow-xl"
+                    @click="$emit('navigate', 'gk-blog')"
+                >
+                    <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">GK Blog</h3>
+                    <p class="text-gray-600">Enhance your knowledge with educational articles</p>
+                </div>
+
+                <!-- Previous Records Tile -->
+                <div 
+                    class="bg-white rounded-lg shadow-lg p-6 text-center cursor-pointer transform transition-transform hover:scale-105 hover:shadow-xl"
+                    @click="$emit('navigate', 'records')"
+                >
+                    <div class="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Previous Records</h3>
+                    <p class="text-gray-600">View and filter previous quiz results</p>
+                </div>
             </div>
 
-            <!-- Manage Quizzes Tile -->
-            <div 
-                class="bg-white rounded-lg shadow-lg p-6 text-center cursor-pointer transform transition-transform hover:scale-105 hover:shadow-xl"
-                @click="openManageQuizzes"
-            >
-                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
+            <!-- Quick Stats Section -->
+            <div class="mt-16 max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Quick Overview</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-blue-50 rounded-lg p-6 text-center">
+                        <div class="text-3xl font-bold text-blue-600 mb-2">{{ totalQuizzes }}</div>
+                        <div class="text-gray-600">Available Quizzes</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-6 text-center">
+                        <div class="text-3xl font-bold text-green-600 mb-2">{{ totalArticles }}</div>
+                        <div class="text-gray-600">GK Articles</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-6 text-center">
+                        <div class="text-3xl font-bold text-purple-600 mb-2">{{ totalAttempts }}</div>
+                        <div class="text-gray-600">Quiz Attempts</div>
+                    </div>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-800 mb-2">Manage Quizzes</h3>
-                <p class="text-gray-600">Add, edit or delete quiz questions</p>
             </div>
 
-            <!-- Previous Records Tile -->
-            <div 
-                class="bg-white rounded-lg shadow-lg p-6 text-center cursor-pointer transform transition-transform hover:scale-105 hover:shadow-xl"
-                @click="$emit('navigate', 'records')"
-            >
-                <div class="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-800 mb-2">Previous Records</h3>
-                <p class="text-gray-600">View and filter previous quiz results</p>
-            </div>
-        </div>
-
-        <!-- Secret Key Modal -->
-        <div v-if="showSecretModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 class="text-xl font-semibold mb-4">Enter Secret Key</h3>
-                <input 
-                    v-model="secretKey" 
-                    type="password" 
-                    placeholder="Enter secret key"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    @keyup.enter="verifySecretKey"
-                />
-                <div class="flex justify-end space-x-3 mt-4">
-                    <button 
-                        @click="showSecretModal = false; secretKey = ''"
-                        class="px-4 py-2 text-gray-600 hover:text-gray-800"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        @click="verifySecretKey"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    >
-                        Verify
-                    </button>
+            <!-- Recent Activity -->
+            <div class="mt-16 max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Recent Activity</h2>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="space-y-4">
+                        <div v-for="activity in recentActivities" :key="activity.id" class="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg">
+                            <div :class="['w-10 h-10 rounded-full flex items-center justify-center', activity.bgColor]">
+                                <i :class="[activity.icon, 'text-white text-sm']"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800 font-medium">{{ activity.message }}</p>
+                                <p class="text-gray-500 text-sm">{{ activity.time }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,41 +92,71 @@ export default {
     name: 'Dashboard',
     data() {
         return {
-            showSecretModal: false,
-            secretKey: ''
+            totalQuizzes: 0,
+            totalArticles: 0,
+            totalAttempts: 0,
+            recentActivities: [
+                {
+                    id: 1,
+                    message: "New Geography quiz set added",
+                    time: "2 hours ago",
+                    icon: "fas fa-globe-americas",
+                    bgColor: "bg-blue-500"
+                },
+                {
+                    id: 2,
+                    message: "Science & Technology article published",
+                    time: "5 hours ago",
+                    icon: "fas fa-flask",
+                    bgColor: "bg-green-500"
+                },
+                {
+                    id: 3,
+                    message: "History quiz completed by 15 participants",
+                    time: "1 day ago",
+                    icon: "fas fa-history",
+                    bgColor: "bg-purple-500"
+                },
+                {
+                    id: 4,
+                    message: "New World Facts article available",
+                    time: "2 days ago",
+                    icon: "fas fa-book-open",
+                    bgColor: "bg-orange-500"
+                }
+            ]
         }
     },
+    async mounted() {
+        await this.fetchDashboardStats();
+    },
     methods: {
-        openManageQuizzes() {
-            this.showSecretModal = true;
-        },
-
-        async verifySecretKey() {
+        async fetchDashboardStats() {
             try {
-                const response = await fetch('/api/admin/verify', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        secret_key: this.secretKey
-                    })
-                });
+                // Fetch quiz sets count
+                const quizSetsResponse = await axios.get('/api/quiz-sets');
+                this.totalQuizzes = quizSetsResponse.data.length;
 
-                const data = await response.json();
+                // Fetch quiz attempts count
+                const recordsResponse = await axios.get('/api/quiz-results');
+                this.totalAttempts = recordsResponse.data.length;
 
-                if (data.success) {
-                    this.showSecretModal = false;
-                    this.secretKey = '';
-                    this.$emit('navigate', 'manage-quizzes');
-                } else {
-                    alert('Invalid secret key!');
-                }
+                // For articles, we can set a static number or fetch from API if available
+                this.totalArticles = 24; // Static count for now
+
             } catch (error) {
-                console.error('Error verifying secret key:', error);
-                alert('Error verifying secret key');
+                console.error('Error fetching dashboard stats:', error);
+                
+                // Fallback to demo data
+                this.totalQuizzes = 8;
+                this.totalArticles = 24;
+                this.totalAttempts = 156;
             }
         }
     }
 }
 </script>
+
+<style scoped>
+/* Custom styles if needed */
+</style>

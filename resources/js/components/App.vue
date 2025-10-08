@@ -1,5 +1,5 @@
 <template>
-    <div id="app" class="min-h-screen bg-gray-100">
+    <div id="app" class="min-h-screen bg-gray-100 flex flex-col">
         <!-- Navbar -->
         <Navbar :current-view="currentView" @navigate="handleNavigation" />
 
@@ -18,13 +18,16 @@
                 :quiz-set-id="selectedQuizSetId"
                 @completed="changeView('dashboard')"
             />
-            <ManageQuizzes 
-                v-else-if="currentView === 'manage-quizzes'" 
+            <GkBlog 
+                v-else-if="currentView === 'gk-blog'" 
             />
             <Records 
                 v-else-if="currentView === 'records'" 
             />
         </main>
+
+        <!-- Footer -->
+        <Footer></Footer>
     </div>
 </template>
 
@@ -33,8 +36,9 @@ import Navbar from './Navbar.vue';
 import Dashboard from './Dashboard.vue';
 import QuizSets from './QuizSets.vue';
 import QuizPage from './QuizPage.vue';
-import ManageQuizzes from './ManageQuizzes.vue';
+import GkBlog from './GkBlog.vue';
 import Records from './Records.vue';
+import Footer from './Footer.vue';
 
 export default {
     name: 'App',
@@ -43,8 +47,9 @@ export default {
         Dashboard,
         QuizSets,
         QuizPage,
-        ManageQuizzes,
-        Records
+        GkBlog,
+        Records,
+        Footer
     },
     data() {
         return {
@@ -58,45 +63,12 @@ export default {
         },
         
         handleNavigation(route) {
-            if (route === 'manage-quizzes') {
-                // For manage quizzes, we need to check secret key first
-                this.promptForSecretKey();
-            } else {
-                this.currentView = route;
-            }
+            this.currentView = route;
         },
         
         selectQuizSet(quizSetId) {
             this.selectedQuizSetId = quizSetId;
             this.currentView = 'quiz-page';
-        },
-        
-        async promptForSecretKey() {
-            const secretKey = prompt('Please enter the secret key to access Manage Quizzes:');
-            if (secretKey) {
-                try {
-                    const response = await fetch('/api/admin/verify', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            secret_key: secretKey
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        this.currentView = 'manage-quizzes';
-                    } else {
-                        alert('Invalid secret key!');
-                    }
-                } catch (error) {
-                    console.error('Error verifying secret key:', error);
-                    alert('Error verifying secret key');
-                }
-            }
         }
     }
 }

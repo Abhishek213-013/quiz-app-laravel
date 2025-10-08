@@ -1,279 +1,308 @@
 <template>
-    <div class="container mx-auto px-4 py-8">
-        <!-- Simplified Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Previous Records</h1>
-            <p class="text-gray-600 mt-2">View and filter previous quiz results</p>
-        </div>
-
-        <!-- Error State -->
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div class="flex items-center">
-                <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="text-red-800">{{ error }}</span>
-                <button @click="retryLoading" class="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
-                    Retry
-                </button>
+    <div class="flex-1">
+        <div class="container mx-auto px-4 py-8">
+            <!-- Simplified Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Previous Records</h1>
+                <p class="text-gray-600 mt-2">View and filter previous quiz results</p>
             </div>
-        </div>
 
-        <!-- Filters -->
-        <div v-if="!error" class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter Results</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Participant Name</label>
-                    <input 
-                        v-model="filters.participant_name"
-                        type="text" 
-                        placeholder="Search by name"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        @input="applyFilters"
-                    >
+            <!-- Error State -->
+            <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-red-800">{{ error }}</span>
+                    <button @click="retryLoading" class="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                        Retry
+                    </button>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Set</label>
-                    <select 
-                        v-model="filters.quiz_set_id"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        @change="applyFilters"
-                    >
-                        <option value="">All Sets</option>
-                        <option 
-                            v-for="quizSet in quizSets" 
-                            :key="quizSet.id" 
-                            :value="quizSet.id"
+            </div>
+
+            <!-- Filters -->
+            <div v-if="!error" class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter Results</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Participant Name</label>
+                        <input 
+                            v-model="filters.participant_name"
+                            type="text" 
+                            placeholder="Search by name"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            @input="applyFilters"
                         >
-                            {{ getQuizSetName(quizSet) }}
-                        </option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input 
-                        v-model="filters.date"
-                        type="date" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        @change="applyFilters"
-                    >
-                </div>
-                <div class="flex items-end space-x-2">
-                    <button 
-                        @click="clearFilters"
-                        class="w-1/2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                    >
-                        Clear
-                    </button>
-                    <button 
-                        @click="applyFilters"
-                        class="w-1/2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    >
-                        Apply
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Results Summary -->
-        <div v-if="!error && results.length > 0" class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-blue-600">{{ results.length }}</div>
-                    <div class="text-sm text-gray-600">Total Results</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-green-600">
-                        {{ calculateAverageScore() }}%
                     </div>
-                    <div class="text-sm text-gray-600">Average Score</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-purple-600">
-                        {{ getTopScorer() }}
-                    </div>
-                    <div class="text-sm text-gray-600">Top Scorer</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-yellow-600">
-                        {{ getMostPopularQuizSet() }}
-                    </div>
-                    <div class="text-sm text-gray-600">Most Popular Set</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Results Table -->
-        <div v-if="!error" class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Participant
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Quiz Set
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Score
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Percentage
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Time Taken
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="result in results" :key="result.id">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ result.participant_name || 'Unknown' }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ getResultQuizSetName(result) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    {{ (result.score || 0) }}/{{ (result.total_questions || 0) }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium" 
-                                     :class="getPercentageColor(getSafePercentage(result))">
-                                    {{ formatPercentage(getSafePercentage(result)) }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    {{ formatTime(result.time_taken || 0) }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    {{ formatDate(result.created_at) }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button 
-                                    @click="viewDetails(result)"
-                                    class="text-blue-600 hover:text-blue-900 mr-3"
-                                    :disabled="!result.quiz_set_id"
-                                >
-                                    View Details
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Empty State -->
-            <div v-if="results.length === 0 && !loading && !error" class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No results found</h3>
-                <p class="mt-1 text-sm text-gray-500">Try changing your filters or take a quiz first.</p>
-            </div>
-
-            <!-- Loading State -->
-            <div v-if="loading && !error" class="text-center py-8">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p class="mt-2 text-sm text-gray-600">Loading results...</p>
-            </div>
-        </div>
-
-        <!-- Result Details Modal -->
-        <div v-if="selectedResult" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-2xl font-bold text-gray-800">Quiz Result Details</h3>
-                    <button 
-                        @click="selectedResult = null"
-                        class="text-gray-400 hover:text-gray-600"
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Summary -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-blue-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-blue-600">{{ selectedResult.score || 0 }}/{{ selectedResult.total_questions || 0 }}</div>
-                        <div class="text-sm text-blue-600">Score</div>
-                    </div>
-                    <div class="bg-green-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-green-600">{{ formatPercentage(getSafePercentage(selectedResult)) }}</div>
-                        <div class="text-sm text-green-600">Percentage</div>
-                    </div>
-                    <div class="bg-purple-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-purple-600">{{ formatTime(selectedResult.time_taken || 0) }}</div>
-                        <div class="text-sm text-purple-600">Time Taken</div>
-                    </div>
-                    <div class="bg-yellow-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-yellow-600">{{ formatDate(selectedResult.created_at) }}</div>
-                        <div class="text-sm text-yellow-600">Date</div>
-                    </div>
-                </div>
-
-                <!-- Performance Rating -->
-                <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-2">Performance Rating</h4>
-                    <div class="flex items-center">
-                        <div class="flex-1 bg-gray-200 rounded-full h-2">
-                            <div 
-                                class="h-2 rounded-full" 
-                                :class="getPerformanceBarColor(getSafePercentage(selectedResult))"
-                                :style="{ width: Math.min(getSafePercentage(selectedResult), 100) + '%' }"
-                            ></div>
-                        </div>
-                        <span class="ml-4 text-sm font-medium" :class="getPerformanceTextColor(getSafePercentage(selectedResult))">
-                            {{ getPerformanceRating(getSafePercentage(selectedResult)) }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Answers -->
-                <div v-if="selectedResult.answers && Object.keys(selectedResult.answers).length > 0" class="space-y-4">
-                    <div 
-                        v-for="(answer, questionIndex) in selectedResult.answers" 
-                        :key="questionIndex"
-                        class="border border-gray-200 rounded-lg p-4"
-                        :class="{'bg-green-50 border-green-200': isAnswerCorrect(questionIndex), 'bg-red-50 border-red-200': !isAnswerCorrect(questionIndex)}"
-                    >
-                        <h4 class="font-semibold text-gray-800 mb-2">Question {{ parseInt(questionIndex) + 1 }}</h4>
-                        <p class="text-gray-600 mb-2">{{ getQuestionText(questionIndex) }}</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div 
-                                v-for="(option, optIndex) in getQuestionOptions(questionIndex)" 
-                                :key="optIndex"
-                                class="p-2 border border-gray-200 rounded text-sm"
-                                :class="{
-                                    'bg-green-100 border-green-500': option === getCorrectAnswer(questionIndex),
-                                    'bg-red-100 border-red-500': option === answer && option !== getCorrectAnswer(questionIndex),
-                                    'bg-blue-100 border-blue-500': option === answer && option === getCorrectAnswer(questionIndex)
-                                }"
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Set</label>
+                        <select 
+                            v-model="filters.quiz_set_id"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            @change="applyFilters"
+                        >
+                            <option value="">All Sets</option>
+                            <option 
+                                v-for="quizSet in quizSets" 
+                                :key="quizSet.id" 
+                                :value="quizSet.id"
                             >
-                                <span class="font-medium">{{ String.fromCharCode(65 + optIndex) }}.</span> {{ option }}
-                                <span v-if="option === getCorrectAnswer(questionIndex)" class="ml-2 text-green-600 text-xs">✓ Correct</span>
-                                <span v-if="option === answer && option !== getCorrectAnswer(questionIndex)" class="ml-2 text-red-600 text-xs">✗ Your Answer</span>
+                                {{ getQuizSetName(quizSet) }}
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input 
+                            v-model="filters.date"
+                            type="date" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            @change="applyFilters"
+                        >
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button 
+                            @click="clearFilters"
+                            class="w-1/2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                        >
+                            Clear
+                        </button>
+                        <button 
+                            @click="applyFilters"
+                            class="w-1/2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                        >
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Summary -->
+            <div v-if="!error && results.length > 0" class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">{{ results.length }}</div>
+                        <div class="text-sm text-gray-600">Total Results</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">
+                            {{ calculateAverageScore() }}%
+                        </div>
+                        <div class="text-sm text-gray-600">Average Score</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600">
+                            {{ getTopScorer() }}
+                        </div>
+                        <div class="text-sm text-gray-600">Top Scorer</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-yellow-600">
+                            {{ getMostPopularQuizSet() }}
+                        </div>
+                        <div class="text-sm text-gray-600">Most Popular Set</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div v-if="!error" class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Participant
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Quiz Set
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Score
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Percentage
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Time Taken
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="result in results" :key="result.id">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ result.participant_name || 'Unknown' }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ getResultQuizSetName(result) }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ (result.score || 0) }}/{{ (result.total_questions || 0) }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium" 
+                                         :class="getPercentageColor(getSafePercentage(result))">
+                                        {{ formatPercentage(getSafePercentage(result)) }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ formatTime(result.time_taken || 0) }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ formatDate(result.created_at) }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button 
+                                        @click="viewDetails(result)"
+                                        class="text-blue-600 hover:text-blue-900 mr-3"
+                                        :disabled="!result.quiz_set_id"
+                                    >
+                                        View Details
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div v-if="results.length === 0 && !loading && !error" class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No results found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Try changing your filters or take a quiz first.</p>
+                </div>
+
+                <!-- Loading State -->
+                <div v-if="loading && !error" class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="mt-2 text-sm text-gray-600">Loading results...</p>
+                </div>
+            </div>
+
+            <!-- Result Details Modal -->
+            <div v-if="selectedResult" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeModal">
+                <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">Quiz Result Details</h3>
+                        <button 
+                            @click="closeModal"
+                            class="text-gray-400 hover:text-gray-600"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600">{{ selectedResult.score || 0 }}/{{ selectedResult.total_questions || 0 }}</div>
+                            <div class="text-sm text-blue-600">Score</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600">{{ formatPercentage(getSafePercentage(selectedResult)) }}</div>
+                            <div class="text-sm text-green-600">Percentage</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600">{{ formatTime(selectedResult.time_taken || 0) }}</div>
+                            <div class="text-sm text-purple-600">Time Taken</div>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-yellow-600">{{ formatDate(selectedResult.created_at) }}</div>
+                            <div class="text-sm text-yellow-600">Date</div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Rating -->
+                    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-2">Performance Rating</h4>
+                        <div class="flex items-center">
+                            <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                <div 
+                                    class="h-2 rounded-full" 
+                                    :class="getPerformanceBarColor(getSafePercentage(selectedResult))"
+                                    :style="{ width: Math.min(getSafePercentage(selectedResult), 100) + '%' }"
+                                ></div>
+                            </div>
+                            <span class="ml-4 text-sm font-medium" :class="getPerformanceTextColor(getSafePercentage(selectedResult))">
+                                {{ getPerformanceRating(getSafePercentage(selectedResult)) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Question Statistics -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">Question Breakdown</h4>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-green-50 p-3 rounded-lg">
+                                <div class="text-2xl font-bold text-green-600">{{ getCorrectCount() }}</div>
+                                <div class="text-sm text-green-600">Correct</div>
+                            </div>
+                            <div class="bg-red-50 p-3 rounded-lg">
+                                <div class="text-2xl font-bold text-red-600">{{ getWrongCount() }}</div>
+                                <div class="text-sm text-red-600">Wrong</div>
+                            </div>
+                            <div class="bg-blue-50 p-3 rounded-lg">
+                                <div class="text-2xl font-bold text-blue-600">{{ getSkippedCount() }}</div>
+                                <div class="text-sm text-blue-600">Skipped</div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div v-else class="text-center py-8 text-gray-500">
-                    No answer details available for this result.
+
+                    <!-- Answers -->
+                    <div v-if="selectedResult.answers && getTotalQuestions() > 0" class="space-y-4">
+                        <div 
+                            v-for="(answer, questionIndex) in getAllQuestions()" 
+                            :key="questionIndex"
+                            class="border border-gray-200 rounded-lg p-4"
+                            :class="getQuestionStatusClass(questionIndex)"
+                        >
+                            <div class="flex items-start justify-between mb-3">
+                                <h4 class="font-semibold text-gray-800">Question {{ parseInt(questionIndex) + 1 }}</h4>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full" :class="getQuestionStatusBadgeClass(questionIndex)">
+                                    {{ getQuestionStatus(questionIndex) }}
+                                </span>
+                            </div>
+                            <p class="text-gray-600 mb-2">{{ getQuestionText(questionIndex) }}</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div 
+                                    v-for="(option, optIndex) in getQuestionOptions(questionIndex)" 
+                                    :key="optIndex"
+                                    class="p-2 border border-gray-200 rounded text-sm"
+                                    :class="getOptionClass(questionIndex, option, answer)"
+                                >
+                                    <span class="font-medium">{{ String.fromCharCode(65 + optIndex) }}.</span> {{ option }}
+                                    <span v-if="option === getCorrectAnswer(questionIndex)" class="ml-2 text-green-600 text-xs">✓ Correct</span>
+                                    <span v-if="option === answer && option !== getCorrectAnswer(questionIndex)" class="ml-2 text-red-600 text-xs">✗ Your Answer</span>
+                                    <span v-if="!answer && option === getCorrectAnswer(questionIndex)" class="ml-2 text-blue-600 text-xs">⏭️ Skipped</span>
+                                </div>
+                            </div>
+                            <div v-if="!answer" class="mt-2 text-sm text-blue-600">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Question was skipped
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-center py-8 text-gray-500">
+                        No answer details available for this result.
+                    </div>
                 </div>
             </div>
         </div>
@@ -308,6 +337,144 @@ export default {
         }
     },
     methods: {
+        // Close modal when clicking outside
+        closeModal() {
+            this.selectedResult = null;
+        },
+
+        // Get all questions (including skipped ones)
+        getAllQuestions() {
+            if (!this.selectedResult || !this.quizDetails[this.selectedResult.quiz_set_id]) {
+                return {};
+            }
+            
+            const quizSetQuizzes = this.quizDetails[this.selectedResult.quiz_set_id];
+            const allQuestions = {};
+            
+            // Create an object with all questions, including those that were skipped
+            for (let i = 0; i < quizSetQuizzes.length; i++) {
+                allQuestions[i] = this.selectedResult.answers[i] || null; // null means skipped
+            }
+            
+            return allQuestions;
+        },
+
+        // Get total number of questions
+        getTotalQuestions() {
+            if (!this.selectedResult || !this.quizDetails[this.selectedResult.quiz_set_id]) {
+                return 0;
+            }
+            return this.quizDetails[this.selectedResult.quiz_set_id].length;
+        },
+
+        // Get correct answers count
+        getCorrectCount() {
+            const allQuestions = this.getAllQuestions();
+            let correct = 0;
+            
+            Object.keys(allQuestions).forEach(index => {
+                if (this.isAnswerCorrect(parseInt(index))) {
+                    correct++;
+                }
+            });
+            
+            return correct;
+        },
+
+        // Get wrong answers count
+        getWrongCount() {
+            const allQuestions = this.getAllQuestions();
+            let wrong = 0;
+            
+            Object.keys(allQuestions).forEach(index => {
+                const answer = allQuestions[index];
+                if (answer !== null && !this.isAnswerCorrect(parseInt(index))) {
+                    wrong++;
+                }
+            });
+            
+            return wrong;
+        },
+
+        // Get skipped questions count
+        getSkippedCount() {
+            const allQuestions = this.getAllQuestions();
+            let skipped = 0;
+            
+            Object.keys(allQuestions).forEach(index => {
+                if (allQuestions[index] === null) {
+                    skipped++;
+                }
+            });
+            
+            return skipped;
+        },
+
+        // Get question status (Correct, Wrong, Skipped)
+        getQuestionStatus(questionIndex) {
+            const answer = this.getAllQuestions()[questionIndex];
+            
+            if (answer === null) {
+                return 'Skipped';
+            } else if (this.isAnswerCorrect(questionIndex)) {
+                return 'Correct';
+            } else {
+                return 'Wrong';
+            }
+        },
+
+        // Get question status class for styling
+        getQuestionStatusClass(questionIndex) {
+            const status = this.getQuestionStatus(questionIndex);
+            
+            switch (status) {
+                case 'Correct':
+                    return 'bg-green-50 border-green-200';
+                case 'Wrong':
+                    return 'bg-red-50 border-red-200';
+                case 'Skipped':
+                    return 'bg-blue-50 border-blue-200';
+                default:
+                    return 'bg-gray-50 border-gray-200';
+            }
+        },
+
+        // Get question status badge class
+        getQuestionStatusBadgeClass(questionIndex) {
+            const status = this.getQuestionStatus(questionIndex);
+            
+            switch (status) {
+                case 'Correct':
+                    return 'bg-green-100 text-green-800';
+                case 'Wrong':
+                    return 'bg-red-100 text-red-800';
+                case 'Skipped':
+                    return 'bg-blue-100 text-blue-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        },
+
+        // Get option class for styling
+        getOptionClass(questionIndex, option, userAnswer) {
+            const correctAnswer = this.getCorrectAnswer(questionIndex);
+            const isCorrect = option === correctAnswer;
+            const isUserAnswer = option === userAnswer;
+            const isSkipped = userAnswer === null;
+            
+            if (isCorrect && isUserAnswer) {
+                return 'bg-green-100 border-green-500'; // Correct answer selected
+            } else if (isCorrect && !isUserAnswer) {
+                return 'bg-green-100 border-green-300'; // Correct answer not selected
+            } else if (!isCorrect && isUserAnswer) {
+                return 'bg-red-100 border-red-500'; // Wrong answer selected
+            } else if (isSkipped && isCorrect) {
+                return 'bg-blue-100 border-blue-300'; // Correct answer for skipped question
+            } else {
+                return 'bg-gray-50 border-gray-200'; // Other options
+            }
+        },
+
         // Safe percentage getter
         getSafePercentage(result) {
             if (!result) return 0;
@@ -525,7 +692,7 @@ export default {
             if (!quizSetQuizzes || !Array.isArray(quizSetQuizzes)) return false;
             
             const quiz = quizSetQuizzes[questionIndex];
-            const userAnswer = this.selectedResult.answers[questionIndex];
+            const userAnswer = this.getAllQuestions()[questionIndex];
             
             return quiz && userAnswer === quiz.correct_answer;
         },

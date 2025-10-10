@@ -1,3 +1,4 @@
+Now in this page in sidebar.
 <template>
   <div class="min-h-screen bg-gray-50 flex">
     <!-- Sidebar -->
@@ -11,7 +12,7 @@
         <ul class="space-y-1">
           <li>
             <Link href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/dashboard')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/dashboard'}">
               <i class="fas fa-home w-5"></i>
               <span>Dashboard</span>
             </Link>
@@ -19,7 +20,7 @@
 
           <li>
             <Link href="/admin/participants" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/participants')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/participants'}">
               <i class="fas fa-users w-5"></i>
               <span>Participants</span>
             </Link>
@@ -27,7 +28,7 @@
 
           <li>
             <Link href="/admin/quizzes" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/quizzes')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/quizzes'}">
               <i class="fas fa-clipboard-list w-5"></i>
               <span>Manage Quizzes</span>
             </Link>
@@ -35,7 +36,7 @@
 
           <li>
             <Link href="/admin/records" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/records')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/records'}">
               <i class="fas fa-chart-bar w-5"></i>
               <span>Records</span>
             </Link>
@@ -115,15 +116,15 @@
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Quick Overview</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div class="bg-blue-50 rounded-lg p-6 text-center">
-                <div class="text-3xl font-bold text-blue-600 mb-2">{{ stats.total_participants || 0 }}</div>
+                <div class="text-3xl font-bold text-blue-600 mb-2">{{ displayStats.total_participants || initialStats.totalParticipants || 0 }}</div>
                 <div class="text-gray-600">Total Participants</div>
               </div>
               <div class="bg-green-50 rounded-lg p-6 text-center">
-                <div class="text-3xl font-bold text-green-600 mb-2">{{ stats.total_quiz_sets || 0 }}</div>
+                <div class="text-3xl font-bold text-green-600 mb-2">{{ displayStats.total_quiz_sets || initialStats.totalQuizSets || 0 }}</div>
                 <div class="text-gray-600">Active Quiz Sets</div>
               </div>
               <div class="bg-purple-50 rounded-lg p-6 text-center">
-                <div class="text-3xl font-bold text-purple-600 mb-2">{{ stats.total_attempts || 0 }}</div>
+                <div class="text-3xl font-bold text-purple-600 mb-2">{{ displayStats.total_attempts || initialStats.totalAttempts || 0 }}</div>
                 <div class="text-gray-600">Total Attempts</div>
               </div>
             </div>
@@ -238,12 +239,11 @@
             <div class="bg-white rounded-lg shadow-lg p-6">
               <h2 class="text-2xl font-bold text-gray-800 mb-6">Performance Overview</h2>
               <div class="space-y-6">
-                <!-- In the Performance Overview section -->
                 <div class="text-center">
-                <div class="text-4xl font-bold text-blue-600 mb-2">
+                  <div class="text-4xl font-bold text-blue-600 mb-2">
                     {{ isNaN(averageScore) ? 0 : averageScore }}%
-                </div>
-                <div class="text-gray-600">Average Score</div>
+                  </div>
+                  <div class="text-gray-600">Average Score</div>
                 </div>
                 
                 <div>
@@ -279,19 +279,33 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Link, router, usePage } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
+import { usePage } from '@inertiajs/vue3'
 import Chart from 'chart.js/auto'
 
+// Get initial data from server-side props
+const page = usePage()
+const initialStats = computed(() => page.props.initialStats || {})
+
 // Data refs
-const loading = ref(true)
-const stats = ref({})
+const loading = ref(false) // Start with false since we have initial data
+const displayStats = ref({})
 const quizSetDistribution = ref([])
 const weeklyParticipants = ref({ labels: [], data: [] })
 const topScorers = ref([])
 const recentAttempts = ref([])
 
+// Initialize with server-side data
+if (page.props.initialStats) {
+  displayStats.value = {
+    total_participants: page.props.initialStats.totalParticipants,
+    total_quiz_sets: page.props.initialStats.totalQuizSets,
+    total_attempts: page.props.initialStats.totalAttempts
+  }
+}
+
 // Recent activities data
-const recentActivities = [
+const recentActivities = ref([
   {
     id: 1,
     message: "New Geography quiz set added",
@@ -320,7 +334,7 @@ const recentActivities = [
     icon: "fas fa-book-open",
     bgColor: "bg-orange-500"
   }
-]
+])
 
 // Fetch data from API
 const fetchDashboardData = async () => {
@@ -330,25 +344,33 @@ const fetchDashboardData = async () => {
     const response = await axios.get('/admin/dashboard-data')
     const data = response.data
 
-    stats.value = data.stats || {}
+    // Check if we got a redirect response (unauthorized)
+    if (data.redirect) {
+      window.location.href = data.redirect
+      return
+    }
+
+    displayStats.value = data.stats || {}
     quizSetDistribution.value = data.quizSetDistribution || []
     weeklyParticipants.value = data.weeklyParticipants || { labels: [], data: [] }
     topScorers.value = data.topScorers || []
     recentAttempts.value = data.recentAttempts || []
 
-    console.log('Recent attempts data:', recentAttempts.value) // Debug log
-    
     // Render charts after a small delay to ensure DOM is ready
     setTimeout(renderCharts, 100)
     
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
+    if (error.response?.status === 401) {
+      // Redirect to login if unauthorized
+      window.location.href = '/admin/login'
+    }
   } finally {
     loading.value = false
   }
 }
 
-// Fixed Computed properties with better error handling
+// Computed properties
 const averageScore = computed(() => {
   const arr = recentAttempts.value
   if (!arr || arr.length === 0) return 0
@@ -357,8 +379,7 @@ const averageScore = computed(() => {
   let count = 0
   
   for (const a of arr) {
-    // Handle different possible property names for percentage
-    const percentage = a.percentage || a.score_percentage || 0
+    const percentage = a.percentage || 0
     if (percentage && !isNaN(percentage)) {
       sum += parseFloat(percentage)
       count++
@@ -370,8 +391,8 @@ const averageScore = computed(() => {
 })
 
 const completionRate = computed(() => {
-  const participants = stats.value.total_participants || 0
-  const attempts = stats.value.total_attempts || 0
+  const participants = displayStats.value.total_participants || initialStats.value.totalParticipants || 0
+  const attempts = displayStats.value.total_attempts || initialStats.value.totalAttempts || 0
   if (participants === 0 || attempts === 0) return 0
   return Math.min(100, Math.round((attempts / participants) * 100))
 })
@@ -383,8 +404,7 @@ const topBucketCounts = computed(() => {
   const buckets = { high: 0, medium: 0, low: 0 }
   
   for (const a of arr) {
-    // Handle different possible property names for percentage
-    const percentage = a.percentage || a.score_percentage || 0
+    const percentage = a.percentage || 0
     const p = parseFloat(percentage) || 0
     
     if (p >= 80) buckets.high++
@@ -417,7 +437,12 @@ const renderPieChart = () => {
     ? quizSetDistribution.value.map(set => set.participant_count)
     : [40, 35, 25, 30, 20]
 
-  new Chart(ctx, {
+  // Destroy existing chart if it exists
+  if (ctx.chart) {
+    ctx.chart.destroy()
+  }
+
+  ctx.chart = new Chart(ctx, {
     type: 'pie',
     data: {
       labels: labels,
@@ -429,8 +454,15 @@ const renderPieChart = () => {
       ],
     },
     options: {
+      responsive: true,
       plugins: {
-        legend: { position: 'bottom' },
+        legend: { 
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            usePointStyle: true,
+          }
+        },
       },
     },
   })
@@ -452,7 +484,12 @@ const renderBarChart = () => {
     ? weeklyParticipants.value.data
     : [12, 18, 9, 15, 22, 11, 19]
 
-  new Chart(ctx, {
+  // Destroy existing chart if it exists
+  if (ctx.chart) {
+    ctx.chart.destroy()
+  }
+
+  ctx.chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
@@ -466,8 +503,14 @@ const renderBarChart = () => {
       ],
     },
     options: {
+      responsive: true,
       scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 5 } },
+        y: { 
+          beginAtZero: true, 
+          ticks: { 
+            stepSize: 5 
+          } 
+        },
       },
       plugins: {
         legend: { display: false },
@@ -479,21 +522,23 @@ const renderBarChart = () => {
 // Helper functions
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  const date = new Date(dateString)
-  const now = new Date()
-  const diff = now - date
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now - date
+    const minutes = Math.floor(diff / 60000)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return `${days}d ago`
+  } catch (error) {
+    return 'Invalid date'
+  }
 }
 
 const progressBadgeClass = (percentage) => {
-  // Handle different possible property names
-  const percValue = percentage || 0
-  const perc = Math.round(parseFloat(percValue)) || 0
+  const perc = Math.round(parseFloat(percentage)) || 0
   
   if (perc >= 80) return 'bg-green-100 text-green-800'
   if (perc >= 60) return 'bg-yellow-100 text-yellow-800'
@@ -501,9 +546,6 @@ const progressBadgeClass = (percentage) => {
 }
 
 // Navigation
-const page = usePage()
-const activeIs = (path) => page.url === path
-
 const logout = () => {
   router.post('/admin/logout')
 }
@@ -516,7 +558,22 @@ const toggleMobileSidebar = () => {
 
 // Lifecycle
 onMounted(() => {
+  // We already have initial data, but fetch fresh data
   fetchDashboardData()
+})
+
+// Clean up charts when component is destroyed
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  const pieCanvas = document.getElementById('pieChart')
+  const barCanvas = document.getElementById('barChart')
+  
+  if (pieCanvas && pieCanvas.chart) {
+    pieCanvas.chart.destroy()
+  }
+  if (barCanvas && barCanvas.chart) {
+    barCanvas.chart.destroy()
+  }
 })
 </script>
 
@@ -526,5 +583,11 @@ onMounted(() => {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* Ensure charts are responsive */
+canvas {
+  max-width: 100%;
+  height: auto;
 }
 </style>

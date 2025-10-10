@@ -5,9 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\QuizSetController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizResultController;
-use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Admin\AdminController;
 
-// Public API Routes (no authentication required)
+// Public API Routes
 Route::get('/quiz-sets', [QuizSetController::class, 'index']);
 Route::get('/quiz-sets/{id}', [QuizSetController::class, 'show']);
 Route::get('/quiz-sets/{id}/quizzes', [QuizController::class, 'getByQuizSet']);
@@ -18,26 +18,25 @@ Route::post('/quiz-results', [QuizResultController::class, 'store']);
 // Admin Authentication
 Route::post('/admin/verify', [AdminController::class, 'verify']);
 
-// Admin Routes (Protected with secret key)
-Route::middleware('admin.auth')->prefix('admin')->group(function () {
+// Admin API Routes
+Route::prefix('admin-api')->group(function () {
+    // Quiz Sets Management
+    Route::get('/quiz-sets', [QuizSetController::class, 'adminIndex']);
+    Route::post('/quiz-sets', [QuizSetController::class, 'store']);
+    Route::put('/quiz-sets/{id}', [QuizSetController::class, 'update']);
+    Route::delete('/quiz-sets/{id}', [QuizSetController::class, 'destroy']);
+    
+    // Quizzes Management
+    Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::post('/quizzes', [QuizController::class, 'store']);
+    Route::put('/quizzes/{id}', [QuizController::class, 'update']);
+    Route::delete('/quizzes/{id}', [QuizController::class, 'destroy']);
+    
     // Dashboard & Analytics
     Route::get('/dashboard/stats', [AdminController::class, 'getDashboardStats']);
-    
-    // Participants Management
     Route::get('/participants', [AdminController::class, 'getParticipants']);
     Route::get('/participants/{name}', [AdminController::class, 'getParticipantDetail']);
-    
-    // Records & Analytics
     Route::get('/records', [AdminController::class, 'getAllRecords']);
     Route::get('/records/daily', [AdminController::class, 'getDailyParticipation']);
-    
-    // Quiz Sets Management
-    Route::post('/quiz-sets', [AdminController::class, 'storeQuizSet']);
-    Route::put('/quiz-sets/{id}', [AdminController::class, 'updateQuizSet']);
-    Route::delete('/quiz-sets/{id}', [AdminController::class, 'deleteQuizSet']);
-    
-    // Quizzes/Questions Management
-    Route::post('/quizzes', [AdminController::class, 'storeQuiz']);
-    Route::put('/quizzes/{id}', [AdminController::class, 'updateQuiz']);
-    Route::delete('/quizzes/{id}', [AdminController::class, 'deleteQuiz']);
+    Route::get('/records/data', [AdminController::class, 'recordsData']);
 });

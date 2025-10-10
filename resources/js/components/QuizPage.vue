@@ -5,8 +5,11 @@
             <div class="sticky top-0 z-50 bg-white shadow-lg border-b border-gray-200">
                 <div class="container mx-auto px-4 py-4 max-w-4xl">
                     <div class="flex items-center justify-between">
-                        <!-- Empty div for spacing -->
-                        <div class="w-24"></div>
+                        <!-- Question Type Indicator -->
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-500">Question Type</div>
+                            <div class="text-lg font-bold text-blue-600">{{ getCurrentQuestionTypeLabel() }}</div>
+                        </div>
                         
                         <!-- Timer -->
                         <div class="text-center">
@@ -27,13 +30,28 @@
             <div class="container mx-auto px-4 py-8 max-w-4xl">
                 <!-- Quiz Content -->
                 <div v-if="!quizCompleted && quizzes.length > 0" class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <!-- Question Header -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                                Q{{ currentQuestionIndex + 1 }}
+                            </span>
+                            <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
+                                {{ getCurrentQuestionTypeLabel() }}
+                            </span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                                {{ currentQuestion.points }} point{{ currentQuestion.points !== 1 ? 's' : '' }}
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- Question -->
                     <h2 class="text-2xl font-semibold text-gray-800 mb-6">
                         {{ currentQuestion.question }}
                     </h2>
 
-                    <!-- Options -->
-                    <div class="space-y-3">
+                    <!-- Multiple Choice Options -->
+                    <div v-if="currentQuestion.question_type === 'multiple_choice'" class="space-y-3">
                         <div 
                             v-for="(option, index) in currentQuestion.options" 
                             :key="index"
@@ -54,55 +72,143 @@
                         </div>
                     </div>
 
+                    <!-- Brief Answer Input -->
+                    <div v-else-if="currentQuestion.question_type === 'brief_answer'" class="space-y-4">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-blue-800 mb-2">
+                                Type your answer below:
+                            </label>
+                            <textarea
+                                v-model="briefAnswer"
+                                rows="4"
+                                placeholder="Enter your answer here..."
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                @input="selectAnswer(briefAnswer)"
+                            ></textarea>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Your answer will be automatically saved as you type.
+                        </div>
+                    </div>
+
+                    <!-- True/False Options -->
+                    <div v-else-if="currentQuestion.question_type === 'true_false'" class="grid grid-cols-2 gap-4">
+                        <div 
+                            class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer text-center transition-all duration-200"
+                            :class="{
+                                'bg-green-50 border-green-500': selectedAnswer === 'True',
+                                'hover:border-green-300': !selectedAnswer
+                            }"
+                            @click="selectAnswer('True')"
+                        >
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-300 mb-2"
+                                    :class="{'bg-green-500 border-green-500 text-white': selectedAnswer === 'True'}">
+                                    <i class="fas fa-check text-lg"></i>
+                                </div>
+                                <span class="text-xl font-semibold text-gray-800">True</span>
+                            </div>
+                        </div>
+                        <div 
+                            class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer text-center transition-all duration-200"
+                            :class="{
+                                'bg-red-50 border-red-500': selectedAnswer === 'False',
+                                'hover:border-red-300': !selectedAnswer
+                            }"
+                            @click="selectAnswer('False')"
+                        >
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-300 mb-2"
+                                    :class="{'bg-red-500 border-red-500 text-white': selectedAnswer === 'False'}">
+                                    <i class="fas fa-times text-lg"></i>
+                                </div>
+                                <span class="text-xl font-semibold text-gray-800">False</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Navigation -->
                     <div class="flex justify-between mt-8">
                         <button 
                             @click="previousQuestion"
                             :disabled="currentQuestionIndex === 0"
-                            class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                         >
+                            <i class="fas fa-arrow-left mr-2"></i>
                             Previous
                         </button>
                         
                         <button 
                             @click="nextQuestion"
-                            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            :disabled="!isAnswerSelected"
+                            class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                         >
-                            {{ currentQuestionIndex === quizzes.length - 1 ? 'Finish' : 'Next' }}
+                            {{ currentQuestionIndex === quizzes.length - 1 ? 'Finish Quiz' : 'Next Question' }}
+                            <i class="fas fa-arrow-right ml-2"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Results -->
                 <div v-if="quizCompleted" class="bg-white rounded-lg shadow-lg p-8 text-center">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Quiz Completed!</h2>
-                    <div class="text-6xl font-bold text-green-600 mb-4">{{ score }}/{{ quizzes.length }}</div>
-                    <p class="text-xl text-gray-600 mb-6">
-                        You scored {{ ((score / quizzes.length) * 100).toFixed(1) }}%
-                    </p>
+                    <div class="mb-6">
+                        <i class="fas fa-trophy text-6xl text-yellow-500 mb-4"></i>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Quiz Completed!</h2>
+                        <p class="text-lg text-gray-600">Great job completing the quiz!</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6 mb-6 border border-blue-200">
+                        <div class="text-6xl font-bold text-green-600 mb-2">{{ score }}/{{ totalPossiblePoints }}</div>
+                        <p class="text-xl text-gray-600 mb-1">
+                            {{ ((score / totalPossiblePoints) * 100).toFixed(1) }}% Score
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            Total Points: {{ score }} out of {{ totalPossiblePoints }}
+                        </p>
+                    </div>
+
+                    <!-- Time Taken -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div class="flex justify-center items-center gap-4 text-sm text-gray-600">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-clock text-blue-500"></i>
+                                <span>Time Taken: {{ formatTime(timeTaken) }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-list-ol text-green-500"></i>
+                                <span>Questions: {{ quizzes.length }}</span>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Participant Name Form -->
                     <div class="max-w-md mx-auto mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2 text-left">
+                            Enter your name to save your results:
+                        </label>
                         <input 
                             v-model="participantName"
                             type="text" 
-                            placeholder="Enter your name"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Your Name"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
                     <div class="flex justify-center space-x-4">
                         <button 
                             @click="goToDashboard"
-                            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium transition-colors"
                         >
+                            <i class="fas fa-home mr-2"></i>
                             Back to Dashboard
                         </button>
                         <button 
                             @click="submitResults"
                             :disabled="!participantName.trim()"
-                            class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                         >
+                            <i class="fas fa-paper-plane mr-2"></i>
                             Submit Results
                         </button>
                     </div>
@@ -112,6 +218,13 @@
                 <div v-if="loading" class="text-center py-12">
                     <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     <p class="mt-4 text-gray-600">Loading quiz...</p>
+                </div>
+
+                <!-- Error State -->
+                <div v-if="!loading && quizzes.length === 0 && !quizCompleted" class="text-center py-12">
+                    <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No Questions Available</h3>
+                    <p class="text-gray-600">This quiz set doesn't have any questions yet.</p>
                 </div>
             </div>
         </div>
@@ -132,14 +245,17 @@ export default {
             quizzes: [],
             currentQuestionIndex: 0,
             selectedAnswer: null,
+            briefAnswer: '',
             answers: {},
             timeLeft: 60,
             timer: null,
             quizCompleted: false,
             score: 0,
+            totalPossiblePoints: 0,
             participantName: '',
             loading: false,
-            startTime: null
+            startTime: null,
+            timeTaken: 0
         }
     },
     computed: {
@@ -150,6 +266,12 @@ export default {
             if (this.timeLeft > 20) return 'text-green-600';
             if (this.timeLeft > 10) return 'text-yellow-600';
             return 'text-red-600';
+        },
+        isAnswerSelected() {
+            if (this.currentQuestion.question_type === 'brief_answer') {
+                return this.briefAnswer.trim().length > 0;
+            }
+            return this.selectedAnswer !== null;
         }
     },
     async mounted() {
@@ -161,6 +283,15 @@ export default {
         this.clearTimer();
     },
     methods: {
+        getCurrentQuestionTypeLabel() {
+            const labels = {
+                'multiple_choice': 'Multiple Choice',
+                'brief_answer': 'Brief Answer',
+                'true_false': 'True/False'
+            };
+            return labels[this.currentQuestion.question_type] || 'Question';
+        },
+
         async fetchQuizzes() {
             this.loading = true;
             try {
@@ -170,8 +301,11 @@ export default {
                 }
                 this.quizzes = await response.json();
                 
+                // Calculate total possible points
+                this.totalPossiblePoints = this.quizzes.reduce((total, quiz) => total + (quiz.points || 1), 0);
+                
                 // Calculate time: 60 seconds per question
-                this.timeLeft = this.quizzes.length * 5;
+                this.timeLeft = this.quizzes.length * 40;
             } catch (error) {
                 console.error('Error fetching quizzes:', error);
                 alert('Failed to load quiz. Please try again.');
@@ -203,6 +337,9 @@ export default {
         },
 
         selectAnswer(answer) {
+            if (this.currentQuestion.question_type === 'brief_answer') {
+                this.briefAnswer = answer;
+            }
             this.selectedAnswer = answer;
             this.answers[this.currentQuestionIndex] = answer;
         },
@@ -210,29 +347,42 @@ export default {
         previousQuestion() {
             if (this.currentQuestionIndex > 0) {
                 this.currentQuestionIndex--;
-                this.selectedAnswer = this.answers[this.currentQuestionIndex] || null;
+                this.loadAnswerForCurrentQuestion();
             }
         },
 
         nextQuestion() {
             if (this.currentQuestionIndex < this.quizzes.length - 1) {
                 this.currentQuestionIndex++;
-                this.selectedAnswer = this.answers[this.currentQuestionIndex] || null;
+                this.loadAnswerForCurrentQuestion();
             } else {
                 this.finishQuiz();
             }
         },
 
+        loadAnswerForCurrentQuestion() {
+            const savedAnswer = this.answers[this.currentQuestionIndex];
+            this.selectedAnswer = savedAnswer || null;
+            
+            if (this.currentQuestion.question_type === 'brief_answer') {
+                this.briefAnswer = savedAnswer || '';
+            } else {
+                this.briefAnswer = '';
+            }
+        },
+
         finishQuiz() {
             this.clearTimer();
+            this.timeTaken = Math.floor((Date.now() - this.startTime) / 1000);
             this.calculateScore();
             this.quizCompleted = true;
         },
 
         calculateScore() {
             this.score = this.quizzes.reduce((total, quiz, index) => {
-                if (this.answers[index] === quiz.correct_answer) {
-                    return total + 1;
+                const userAnswer = this.answers[index];
+                if (userAnswer && userAnswer.toString().toLowerCase().trim() === quiz.correct_answer.toString().toLowerCase().trim()) {
+                    return total + (quiz.points || 1);
                 }
                 return total;
             }, 0);
@@ -248,8 +398,6 @@ export default {
                 return;
             }
 
-            const timeTaken = Math.floor((Date.now() - this.startTime) / 1000);
-
             try {
                 const response = await fetch('/api/quiz-results', {
                     method: 'POST',
@@ -261,8 +409,10 @@ export default {
                         participant_name: this.participantName,
                         score: this.score,
                         total_questions: this.quizzes.length,
+                        total_points: this.totalPossiblePoints,
                         answers: this.answers,
-                        time_taken: timeTaken
+                        time_taken: this.timeTaken,
+                        percentage: ((this.score / this.totalPossiblePoints) * 100).toFixed(1)
                     })
                 });
 

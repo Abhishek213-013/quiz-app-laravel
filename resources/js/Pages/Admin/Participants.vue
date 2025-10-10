@@ -11,7 +11,7 @@
         <ul class="space-y-1">
           <li>
             <Link href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/dashboard')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/dashboard'}">
               <i class="fas fa-home w-5"></i>
               <span>Dashboard</span>
             </Link>
@@ -19,7 +19,7 @@
 
           <li>
             <Link href="/admin/participants" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/participants')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/participants'}">
               <i class="fas fa-users w-5"></i>
               <span>Participants</span>
             </Link>
@@ -27,7 +27,7 @@
 
           <li>
             <Link href="/admin/quizzes" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/quizzes')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/quizzes'}">
               <i class="fas fa-clipboard-list w-5"></i>
               <span>Manage Quizzes</span>
             </Link>
@@ -35,7 +35,7 @@
 
           <li>
             <Link href="/admin/records" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': activeIs('/admin/records')}">
+                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/records'}">
               <i class="fas fa-chart-bar w-5"></i>
               <span>Records</span>
             </Link>
@@ -103,172 +103,190 @@
       <!-- Content -->
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <!-- Header -->
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-900">Participants Overview</h1>
-          <p class="text-gray-600 mt-2">View and manage all quiz participants and their performance</p>
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Participants Overview</h1>
+          <p class="text-lg text-gray-600">View and manage all quiz participants and their performance</p>
         </div>
 
-        <!-- Stats Cards -->
+        <!-- Stats Cards - Enhanced with Dashboard styling -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <i class="fas fa-users text-3xl text-blue-600"></i>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Total Participants</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ participants.length }}</dd>
-                </dl>
+          <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center shadow-lg border border-blue-200">
+            <div class="flex items-center justify-center mb-4">
+              <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                <i class="fas fa-users text-white text-xl"></i>
               </div>
             </div>
+            <div class="text-3xl font-bold text-blue-700 mb-2">{{ participants.length }}</div>
+            <div class="text-sm font-medium text-blue-600">Total Participants</div>
           </div>
 
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <i class="fas fa-chart-line text-3xl text-green-600"></i>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Total Attempts</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ totalAttempts }}</dd>
-                </dl>
+          <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center shadow-lg border border-green-200">
+            <div class="flex items-center justify-center mb-4">
+              <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                <i class="fas fa-chart-line text-white text-xl"></i>
               </div>
             </div>
+            <div class="text-3xl font-bold text-green-700 mb-2">{{ totalAttempts }}</div>
+            <div class="text-sm font-medium text-green-600">Total Attempts</div>
           </div>
 
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <i class="fas fa-trophy text-3xl text-yellow-600"></i>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Avg. Score</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ averageScore }}%</dd>
-                </dl>
+          <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-6 text-center shadow-lg border border-yellow-200">
+            <div class="flex items-center justify-center mb-4">
+              <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                <i class="fas fa-trophy text-white text-xl"></i>
               </div>
             </div>
+            <div class="text-3xl font-bold text-yellow-700 mb-2">{{ averageScore }}%</div>
+            <div class="text-sm font-medium text-yellow-600">Avg. Score</div>
           </div>
 
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <i class="fas fa-star text-3xl text-purple-600"></i>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Best Score</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ bestScore }}%</dd>
-                </dl>
+          <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center shadow-lg border border-purple-200">
+            <div class="flex items-center justify-center mb-4">
+              <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                <i class="fas fa-star text-white text-xl"></i>
               </div>
             </div>
+            <div class="text-3xl font-bold text-purple-700 mb-2">{{ bestScore }}%</div>
+            <div class="text-sm font-medium text-purple-600">Best Score</div>
           </div>
         </div>
 
-        <!-- Participants Table -->
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-medium text-gray-900">All Participants</h2>
+        <!-- Search and Filters Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-gray-800 mb-1">All Participants</h2>
+              <p class="text-gray-600 text-sm">Manage and analyze participant performance</p>
+            </div>
+            <div class="relative w-full sm:w-auto">
               <div class="relative">
                 <input
                   v-model="search"
                   type="text"
                   placeholder="Search participants..."
-                  class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+                  class="pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-80 bg-gray-50 transition-all duration-200"
                 >
-                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
               </div>
             </div>
           </div>
+        </div>
 
+        <!-- Participants Table - Enhanced Styling -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" @click="sortBy('name')">
-                    <div class="flex items-center space-x-1">
-                      <span>Participant Name</span>
-                      <i :class="sortColumn === 'name' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-300'"></i>
+                  <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors" @click="sortBy('name')">
+                    <div class="flex items-center space-x-2">
+                      <span>Participant</span>
+                      <i :class="sortColumn === 'name' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
                     </div>
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" @click="sortBy('best_score')">
-                    <div class="flex items-center space-x-1">
+                  <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors" @click="sortBy('best_score')">
+                    <div class="flex items-center space-x-2">
                       <span>Best Score</span>
-                      <i :class="sortColumn === 'best_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-300'"></i>
+                      <i :class="sortColumn === 'best_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
                     </div>
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" @click="sortBy('best_percentage')">
-                    <div class="flex items-center space-x-1">
-                      <span>Best Percentage</span>
-                      <i :class="sortColumn === 'best_percentage' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-300'"></i>
+                  <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors" @click="sortBy('best_percentage')">
+                    <div class="flex items-center space-x-2">
+                      <span>Best %</span>
+                      <i :class="sortColumn === 'best_percentage' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
                     </div>
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" @click="sortBy('total_attempts')">
-                    <div class="flex items-center space-x-1">
-                      <span>Total Attempts</span>
-                      <i :class="sortColumn === 'total_attempts' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-300'"></i>
+                  <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors" @click="sortBy('total_attempts')">
+                    <div class="flex items-center space-x-2">
+                      <span>Attempts</span>
+                      <i :class="sortColumn === 'total_attempts' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
                     </div>
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" @click="sortBy('average_score')">
-                    <div class="flex items-center space-x-1">
-                      <span>Average Score</span>
-                      <i :class="sortColumn === 'average_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-300'"></i>
+                  <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors" @click="sortBy('average_score')">
+                    <div class="flex items-center space-x-2">
+                      <span>Avg. Score</span>
+                      <i :class="sortColumn === 'average_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
                     </div>
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" @click="sortBy('last_attempt')">
-                    <div class="flex items-center space-x-1">
-                      <span>Last Attempt</span>
-                      <i :class="sortColumn === 'last_attempt' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-300'"></i>
+                  <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors" @click="sortBy('last_attempt')">
+                    <div class="flex items-center space-x-2">
+                      <span>Last Activity</span>
+                      <i :class="sortColumn === 'last_attempt' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
                     </div>
                   </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="participant in filteredParticipants" :key="participant.name" class="hover:bg-gray-50">
+                <tr 
+                  v-for="participant in filteredParticipants" 
+                  :key="participant.name" 
+                  class="hover:bg-blue-50 transition-all duration-200 group"
+                >
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
-                      <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium mr-3">
+                      <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md mr-4 group-hover:scale-110 transition-transform duration-200">
                         {{ getInitials(participant.name) }}
                       </div>
-                      <div class="text-sm font-medium text-gray-900">{{ participant.name }}</div>
+                      <div>
+                        <div class="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{{ participant.name }}</div>
+                        <div class="text-xs text-gray-500">Active Participant</div>
+                      </div>
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">{{ participant.best_score }}/15</div>
+                    <div class="text-sm font-medium text-gray-900">{{ participant.best_score }}/15</div>
+                    <div class="text-xs text-gray-500">Questions</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span :class="getPercentageClass(participant.best_percentage)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                    <span :class="getPercentageClass(participant.best_percentage)" class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full shadow-sm transition-all duration-200">
                       {{ participant.best_percentage }}%
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ participant.total_attempts }}
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="text-sm font-semibold text-gray-900 mr-2">{{ participant.total_attempts }}</div>
+                      <div class="w-16 bg-gray-200 rounded-full h-2">
+                        <div 
+                          class="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                          :style="{ width: Math.min(100, (participant.total_attempts / Math.max(...props.participants.map(p => p.total_attempts))) * 100) + '%' }"
+                        ></div>
+                      </div>
+                    </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span :class="getPercentageClass(participant.average_score)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                    <span :class="getPercentageClass(participant.average_score)" class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full shadow-sm transition-all duration-200">
                       {{ participant.average_score }}%
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ formatDate(participant.last_attempt) }}
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900 font-medium">{{ formatDate(participant.last_attempt) }}</div>
+                    <div class="text-xs text-gray-500">Last attempt</div>
                   </td>
                 </tr>
                 <tr v-if="filteredParticipants.length === 0">
-                  <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-                    No participants found matching your search.
+                  <td colspan="6" class="px-6 py-8 text-center">
+                    <div class="flex flex-col items-center justify-center text-gray-500">
+                      <i class="fas fa-users text-4xl mb-3 text-gray-300"></i>
+                      <p class="text-lg font-medium mb-1">No participants found</p>
+                      <p class="text-sm">Try adjusting your search criteria</p>
+                    </div>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Pagination -->
-          <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <div class="text-sm text-gray-700">
-              Showing {{ filteredParticipants.length }} of {{ participants.length }} participants
+          <!-- Enhanced Footer -->
+          <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div class="text-sm text-gray-700 font-medium">
+                Showing <span class="text-blue-600 font-bold">{{ filteredParticipants.length }}</span> of 
+                <span class="text-blue-600 font-bold">{{ participants.length }}</span> participants
+              </div>
+              <div class="flex items-center space-x-2 text-sm text-gray-600">
+                <i class="fas fa-info-circle text-blue-500"></i>
+                <span>Sorted by {{ sortColumn.replace('_', ' ') }} ({{ sortDirection }})</span>
+              </div>
             </div>
           </div>
         </div>
@@ -278,8 +296,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Link, router, usePage } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 
 // Props
 const props = defineProps({
@@ -349,20 +367,28 @@ const getInitials = (name) => {
 }
 
 const getPercentageClass = (percentage) => {
-  if (percentage >= 80) return 'bg-green-100 text-green-800'
-  if (percentage >= 60) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-red-100 text-red-800'
+  if (percentage >= 80) return 'bg-green-100 text-green-800 border border-green-200 hover:bg-green-200'
+  if (percentage >= 60) return 'bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200'
+  return 'bg-red-100 text-red-800 border border-red-200 hover:bg-red-200'
 }
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
   const date = new Date(dateString)
+  const now = new Date()
+  const diff = now - date
+  const minutes = Math.floor(diff / 60000)
+  
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    day: 'numeric'
   })
 }
 
@@ -373,18 +399,32 @@ const toggleMobileSidebar = () => {
 const logout = () => {
   router.post('/admin/logout')
 }
-
-const page = usePage()
-const activeIs = (path) => {
-  return page.url === path
-}
 </script>
 
 <style scoped>
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 0.2s;
+  transition: opacity 0.3s ease-in-out;
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* Custom scrollbar for table */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 </style>

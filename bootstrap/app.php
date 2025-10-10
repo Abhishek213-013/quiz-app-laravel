@@ -12,9 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Register your middleware alias here
+        // Register your middleware aliases here
         $middleware->alias([
-            'admin.auth' => \App\Http\Middleware\AdminAuth::class,
+            'admin' => \App\Http\Middleware\AdminAuth::class, // For web routes
+            'admin.auth' => \App\Http\Middleware\AdminAuth::class, // For API routes
         ]);
 
         // Add Inertia middleware to web group

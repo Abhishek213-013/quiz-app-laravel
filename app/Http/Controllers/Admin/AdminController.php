@@ -9,9 +9,16 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
+
+    private $adminCredentials = [
+        'email' => 'admin@quiz.com',
+        'password' => 'admin123' // You should hash this in production
+    ];
+
     public function login()
     {
         // If already authenticated, redirect to dashboard
@@ -26,17 +33,20 @@ class AdminController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'secret_key' => 'required|string|min:3'
+                'email' => 'required|email',
+                'password' => 'required|string|min:6'
             ]);
 
             if ($validator->fails()) {
                 return redirect()->back()->withErrors($validator)->withInput();
             }
 
-            $adminSecretKey = config('app.admin_secret_key', 'admin123');
-            
-            if ($request->secret_key === $adminSecretKey) {
+            // Check credentials (in production, use proper user authentication)
+            if ($request->email === $this->adminCredentials['email'] && 
+                $request->password === $this->adminCredentials['password']) {
+                
                 Session::put('admin_authenticated', true);
+                Session::put('admin_email', $request->email);
                 Session::save();
                 
                 return redirect()->route('admin.dashboard')->with([
@@ -46,13 +56,13 @@ class AdminController extends Controller
             }
 
             return back()->withErrors([
-                'secret_key' => 'Invalid secret key. Please try again.'
+                'email' => 'Invalid credentials. Please try again.'
             ])->withInput();
 
         } catch (\Exception $e) {
             Log::error('Admin authentication error: ' . $e->getMessage());
             return back()->withErrors([
-                'secret_key' => 'Authentication failed. Please try again.'
+                'email' => 'Authentication failed. Please try again.'
             ])->withInput();
         }
     }
@@ -115,6 +125,7 @@ class AdminController extends Controller
     public function logout(Request $request)
     {
         Session::forget('admin_authenticated');
+        Session::forget('admin_email');
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         
@@ -123,6 +134,7 @@ class AdminController extends Controller
             'type' => 'success'
         ]);
     }
+
     public function getRecordsData()
     {
         // Check authentication
@@ -298,20 +310,20 @@ class AdminController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'secret_key' => 'required|string'
+                'email' => 'required|email',
+                'password' => 'required|string'
             ]);
 
             if ($validator->fails()) {
                 return response()->json(['error' => 'Invalid input'], 422);
             }
 
-            $adminSecretKey = config('app.admin_secret_key', 'admin123');
-            
-            if ($request->secret_key === $adminSecretKey) {
+            if ($request->email === $this->adminCredentials['email'] && 
+                $request->password === $this->adminCredentials['password']) {
                 return response()->json(['authenticated' => true]);
             }
 
-            return response()->json(['error' => 'Invalid secret key'], 401);
+            return response()->json(['error' => 'Invalid credentials'], 401);
 
         } catch (\Exception $e) {
             Log::error('Admin verification error: ' . $e->getMessage());

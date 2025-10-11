@@ -1,931 +1,1438 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r hidden md:flex flex-col sticky top-0 h-screen">
-      <div class="px-6 py-5 flex items-center gap-3 border-b">
-        <i class="fas fa-brain text-blue-600 text-2xl"></i>
-        <span class="font-bold text-lg text-gray-800">Quiz Admin</span>
-      </div>
+  <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
+    <AdminNavbar 
+      title="Records & Analytics"
+      :is-dark="isDark"
+      @toggle-theme="toggleTheme"
+      @toggle-mobile-sidebar="toggleMobileSidebar"
+      @logout="handleLogout"
+    />
 
-      <nav class="flex-1 overflow-auto px-2 py-4">
-        <ul class="space-y-1">
-          <li>
-            <Link href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/dashboard'}">
-              <i class="fas fa-home w-5"></i>
-              <span>Dashboard</span>
-            </Link>
-          </li>
+    <div class="flex">
+      <AdminSidebar 
+        :mobile-sidebar="mobileSidebar"
+        current-page="/admin/records"
+        @close-mobile-sidebar="toggleMobileSidebar"
+      />
 
-          <li>
-            <Link href="/admin/participants" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/participants'}">
-              <i class="fas fa-users w-5"></i>
-              <span>Participants</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link href="/admin/quizzes" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/quizzes'}">
-              <i class="fas fa-clipboard-list w-5"></i>
-              <span>Manage Quizzes</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link href="/admin/records" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/records'}">
-              <i class="fas fa-chart-bar w-5"></i>
-              <span>Records</span>
-            </Link>
-          </li>
-        </ul>
-      </nav>
-
-      <div class="p-4 border-t">
-        <div class="text-xs text-gray-400 mb-2">Logged in as</div>
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-user text-blue-600 text-sm"></i>
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Content -->
+        <main class="content">
+          <!-- Loading State -->
+          <div v-if="loading" class="loading-state">
+            <i class="fas fa-spinner fa-spin loading-icon"></i>
+            <p class="loading-text">Loading records data...</p>
           </div>
-          <div>
-            <div class="text-sm font-medium text-gray-800">Administrator</div>
-            <div class="text-xs text-gray-500">Super Admin</div>
-          </div>
-        </div>
-      </div>
-    </aside>
 
-    <!-- Main panel -->
-    <div class="flex-1 min-w-0">
-      <!-- Topbar -->
-      <header class="bg-white border-b sticky top-0 z-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-4">
-              <!-- Mobile menu button -->
-              <button @click="toggleMobileSidebar" class="md:hidden p-2 rounded-md hover:bg-gray-100">
-                <i class="fas fa-bars"></i>
-              </button>
-              <h1 class="text-xl font-semibold text-gray-800">Records & Analytics</h1>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <button @click="logout" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800">
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="hidden sm:inline">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <!-- Mobile sliding sidebar -->
-      <transition name="fade">
-        <aside v-if="mobileSidebar" class="md:hidden fixed inset-y-0 left-0 w-64 bg-white z-30 border-r p-4 overflow-auto">
-          <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-brain text-blue-600"></i>
-              <span class="font-semibold">Quiz Admin</span>
-            </div>
-            <button @click="toggleMobileSidebar"><i class="fas fa-times"></i></button>
-          </div>
-          <nav class="space-y-2">
-            <Link href="/admin/dashboard" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Dashboard</Link>
-            <Link href="/admin/participants" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Participants</Link>
-            <Link href="/admin/quizzes" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Manage Quizzes</Link>
-            <Link href="/admin/records" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Records</Link>
-          </nav>
-        </aside>
-      </transition>
-
-      <!-- Content -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <!-- Header -->
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">Performance Records</h1>
-          <p class="text-lg text-gray-600">Comprehensive analytics and performance metrics</p>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="loading" class="text-center py-12">
-          <i class="fas fa-spinner fa-spin text-3xl text-blue-600 mb-4"></i>
-          <p class="text-gray-600">Loading records data...</p>
-        </div>
-
-        <!-- Main Content -->
-        <div v-else>
-          <!-- Overall Stats Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center shadow-lg border border-blue-200">
-              <div class="flex items-center justify-center mb-4">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                  <i class="fas fa-trophy text-white text-xl"></i>
+          <!-- Main Content -->
+          <div v-else>
+            <!-- Quick Stats Section -->
+            <div class="stats-section">
+              <h2 class="section-title">Performance Records</h2>
+              <div class="stats-grid">
+                <div class="stat-card blue">
+                  <div class="stat-number">{{ overallStats.highestScore }}%</div>
+                  <div class="stat-label">Highest Score</div>
+                </div>
+                <div class="stat-card green">
+                  <div class="stat-number">{{ overallStats.averageScore }}%</div>
+                  <div class="stat-label">Average Score</div>
+                </div>
+                <div class="stat-card purple">
+                  <div class="stat-number">{{ overallStats.totalParticipants }}</div>
+                  <div class="stat-label">Total Participants</div>
+                </div>
+                <div class="stat-card orange">
+                  <div class="stat-number">{{ overallStats.totalAttempts }}</div>
+                  <div class="stat-label">Total Attempts</div>
                 </div>
               </div>
-              <div class="text-3xl font-bold text-blue-700 mb-2">{{ overallStats.highestScore }}%</div>
-              <div class="text-sm font-medium text-blue-600">Highest Score</div>
             </div>
 
-            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center shadow-lg border border-green-200">
-              <div class="flex items-center justify-center mb-4">
-                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <i class="fas fa-chart-line text-white text-xl"></i>
-                </div>
+            <!-- Charts Section -->
+            <div class="charts-section">
+              <!-- Score Distribution Chart -->
+              <div class="chart-card">
+                <h2 class="chart-title">Score Distribution</h2>
+                <canvas id="scoreDistributionChart"></canvas>
               </div>
-              <div class="text-3xl font-bold text-green-700 mb-2">{{ overallStats.averageScore }}%</div>
-              <div class="text-sm font-medium text-green-600">Average Score</div>
-            </div>
 
-            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center shadow-lg border border-purple-200">
-              <div class="flex items-center justify-center mb-4">
-                <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                  <i class="fas fa-users text-white text-xl"></i>
-                </div>
+              <!-- Weekly Performance Trend -->
+              <div class="chart-card">
+                <h2 class="chart-title">Weekly Performance Trend</h2>
+                <canvas id="weeklyTrendChart"></canvas>
               </div>
-              <div class="text-3xl font-bold text-purple-700 mb-2">{{ overallStats.totalParticipants }}</div>
-              <div class="text-sm font-medium text-purple-600">Total Participants</div>
             </div>
 
-            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 text-center shadow-lg border border-orange-200">
-              <div class="flex items-center justify-center mb-4">
-                <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
-                  <i class="fas fa-clock text-white text-xl"></i>
-                </div>
-              </div>
-              <div class="text-3xl font-bold text-orange-700 mb-2">{{ overallStats.totalAttempts }}</div>
-              <div class="text-sm font-medium text-orange-600">Total Attempts</div>
-            </div>
-          </div>
-
-          <!-- Charts Section -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <!-- Score Distribution Chart -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-              <h2 class="text-xl font-bold text-gray-800 mb-4">Score Distribution</h2>
-              <canvas id="scoreDistributionChart"></canvas>
-            </div>
-
-            <!-- Weekly Performance Trend -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-              <h2 class="text-xl font-bold text-gray-800 mb-4">Weekly Performance Trend</h2>
-              <canvas id="weeklyTrendChart"></canvas>
-            </div>
-          </div>
-
-          <!-- Top Performers Section -->
-          <div class="bg-white rounded-2xl shadow-lg p-6 mb-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Top Performers</h2>
-            
-            <!-- All-time Top Scorers -->
-            <div class="mb-8">
-              <h3 class="text-lg font-semibold text-gray-700 mb-4">All-time Highest Scores</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div 
-                  v-for="(performer, index) in topPerformers.allTime" 
-                  :key="performer.id"
-                  class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow"
-                >
-                  <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center">
-                      <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
-                        {{ index + 1 }}
+            <!-- Top Performers Section -->
+            <div class="content-card mb-8">
+              <h2 class="card-title-large">Top Performers</h2>
+              <p class="card-subtitle">Best performing participants across all quizzes</p>
+              
+              <!-- All-time Top Scorers -->
+              <div class="mb-8">
+                <h3 class="card-subtitle mb-4">All-time Highest Scores</h3>
+                <div class="scorers-grid">
+                  <div 
+                    v-for="(performer, index) in topPerformers.allTime" 
+                    :key="performer.id"
+                    class="scorer-card"
+                  >
+                    <div class="scorer-header">
+                      <div class="scorer-info">
+                        <div class="scorer-rank">
+                          {{ index + 1 }}
+                        </div>
+                        <div>
+                          <h3 class="scorer-title">{{ performer.participant_name }}</h3>
+                          <p class="scorer-category">{{ performer.quiz_set_name }}</p>
+                        </div>
                       </div>
-                      <div>
-                        <div class="font-semibold text-gray-800">{{ performer.participant_name }}</div>
-                        <div class="text-xs text-gray-500">{{ performer.quiz_set_name }}</div>
+                      <div class="scorer-performance">
+                        <div class="scorer-percentage">{{ performer.percentage }}%</div>
+                        <div class="scorer-score">{{ performer.score }}/{{ performer.total_questions }}</div>
                       </div>
                     </div>
-                    <div class="text-right">
-                      <div class="text-2xl font-bold text-green-600">{{ performer.percentage }}%</div>
-                      <div class="text-xs text-gray-500">{{ performer.score }}/{{ performer.total_questions }}</div>
+                    <div class="scorer-footer">
+                      <div class="scorer-date">{{ formatDate(performer.created_at) }}</div>
+                      <div class="scorer-time">{{ performer.time_taken }}s</div>
                     </div>
-                  </div>
-                  <div class="text-xs text-gray-500">
-                    {{ formatDate(performer.created_at) }} • {{ performer.time_taken }}s
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Weekly Leaderboard -->
-            <div>
-              <h3 class="text-lg font-semibold text-gray-700 mb-4">Weekly Leaderboard</h3>
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Rank</th>
-                      <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Participant</th>
-                      <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Quiz Set</th>
-                      <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Score</th>
-                      <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Percentage</th>
-                      <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Time</th>
-                      <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                    <tr 
-                      v-for="(leader, index) in weeklyLeaderboard" 
-                      :key="leader.id"
-                      class="hover:bg-gray-50 transition-colors"
-                    >
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                               :class="getRankClass(index + 1)">
+              <!-- Weekly Leaderboard -->
+              <div>
+                <h3 class="card-subtitle mb-4">Weekly Leaderboard</h3>
+                <div class="overflow-x-auto">
+                  <table class="participants-table">
+                    <thead>
+                      <tr>
+                        <th class="table-header">Rank</th>
+                        <th class="table-header">Participant</th>
+                        <th class="table-header">Quiz Set</th>
+                        <th class="table-header">Score</th>
+                        <th class="table-header">Percentage</th>
+                        <th class="table-header">Time</th>
+                        <th class="table-header">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr 
+                        v-for="(leader, index) in weeklyLeaderboard" 
+                        :key="leader.id"
+                        class="table-row"
+                      >
+                        <td class="table-cell">
+                          <div :class="getRankClass(index + 1)" class="rank-badge">
                             {{ index + 1 }}
                           </div>
+                        </td>
+                        <td class="table-cell">
+                          <div class="user-name">{{ leader.participant_name }}</div>
+                        </td>
+                        <td class="table-cell">
+                          <div class="quiz-name">{{ leader.quiz_set_name }}</div>
+                        </td>
+                        <td class="table-cell">
+                          <div class="score-value">{{ leader.score }}/{{ leader.total_questions }}</div>
+                        </td>
+                        <td class="table-cell">
+                          <div :class="progressBadgeClass(leader.percentage)" class="progress-badge">
+                            {{ leader.percentage }}%
+                          </div>
+                        </td>
+                        <td class="table-cell">
+                          <div class="score-date">{{ leader.time_taken }}s</div>
+                        </td>
+                        <td class="table-cell">
+                          <div class="score-date">{{ formatDate(leader.created_at) }}</div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quiz Set Performance -->
+            <div class="performance-section">
+              <!-- Highest Scores by Quiz Set -->
+              <div class="content-card">
+                <h2 class="card-title-large">Highest Scores by Quiz Set</h2>
+                <div class="performance-content">
+                  <div class="score-distribution">
+                    <div class="distribution-grid">
+                      <div 
+                        v-for="set in quizSetPerformance.highest" 
+                        :key="set.quiz_set_id"
+                        class="distribution-item high"
+                      >
+                        <div class="distribution-count">{{ set.highest_percentage }}%</div>
+                        <div class="distribution-range">{{ set.quiz_set_name }}</div>
+                        <div class="distribution-label">by {{ set.top_performer }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lowest Scores by Quiz Set -->
+              <div class="content-card">
+                <h2 class="card-title-large">Lowest Scores by Quiz Set</h2>
+                <div class="performance-content">
+                  <div class="score-distribution">
+                    <div class="distribution-grid">
+                      <div 
+                        v-for="set in quizSetPerformance.lowest" 
+                        :key="set.quiz_set_id"
+                        class="distribution-item low"
+                      >
+                        <div class="distribution-count">{{ set.lowest_percentage }}%</div>
+                        <div class="distribution-range">{{ set.quiz_set_name }}</div>
+                        <div class="distribution-label">by {{ set.lowest_performer }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Individual Records Section -->
+            <div class="content-card">
+              <h2 class="card-title-large">Individual Records</h2>
+              <p class="card-subtitle">Detailed view of all quiz attempts and performances</p>
+              
+              <!-- Filters -->
+              <div class="filters-section">
+                <div class="search-input-container">
+                  <input 
+                    v-model="searchParticipant"
+                    type="text"
+                    placeholder="Search participant..."
+                    class="search-input"
+                  >
+                  <i class="fas fa-search search-icon"></i>
+                </div>
+                <select 
+                  v-model="selectedQuizSet"
+                  class="filter-select"
+                >
+                  <option value="">All Quiz Sets</option>
+                  <option v-for="set in quizSets" :key="set.id" :value="set.id">{{ set.name }}</option>
+                </select>
+              </div>
+
+              <!-- Records Table -->
+              <div class="overflow-x-auto">
+                <table class="participants-table">
+                  <thead>
+                    <tr>
+                      <th class="table-header" @click="sortRecords('participant_name')">
+                        <div class="flex items-center space-x-2">
+                          <span>Participant</span>
+                          <i :class="getSortIcon('participant_name')"></i>
+                        </div>
+                      </th>
+                      <th class="table-header" @click="sortRecords('quiz_set_name')">
+                        <div class="flex items-center space-x-2">
+                          <span>Quiz Set</span>
+                          <i :class="getSortIcon('quiz_set_name')"></i>
+                        </div>
+                      </th>
+                      <th class="table-header" @click="sortRecords('score')">
+                        <div class="flex items-center space-x-2">
+                          <span>Score</span>
+                          <i :class="getSortIcon('score')"></i>
+                        </div>
+                      </th>
+                      <th class="table-header" @click="sortRecords('percentage')">
+                        <div class="flex items-center space-x-2">
+                          <span>Percentage</span>
+                          <i :class="getSortIcon('percentage')"></i>
+                        </div>
+                      </th>
+                      <th class="table-header" @click="sortRecords('time_taken')">
+                        <div class="flex items-center space-x-2">
+                          <span>Time Taken</span>
+                          <i :class="getSortIcon('time_taken')"></i>
+                        </div>
+                      </th>
+                      <th class="table-header" @click="sortRecords('created_at')">
+                        <div class="flex items-center space-x-2">
+                          <span>Date</span>
+                          <i :class="getSortIcon('created_at')"></i>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="record in filteredRecords" 
+                      :key="record.id"
+                      class="table-row"
+                    >
+                      <td class="table-cell">
+                        <div class="user-name">{{ record.participant_name }}</div>
+                      </td>
+                      <td class="table-cell">
+                        <div class="quiz-name">{{ record.quiz_set_name }}</div>
+                        <div class="quiz-category">{{ record.category }}</div>
+                      </td>
+                      <td class="table-cell">
+                        <div class="score-value">{{ record.score }}/{{ record.total_questions }}</div>
+                      </td>
+                      <td class="table-cell">
+                        <div :class="progressBadgeClass(record.percentage)" class="progress-badge">
+                          {{ record.percentage }}%
                         </div>
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">{{ leader.participant_name }}</div>
+                      <td class="table-cell">
+                        <div class="score-date">{{ record.time_taken }}s</div>
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">{{ leader.quiz_set_name }}</div>
+                      <td class="table-cell">
+                        <div class="score-date">{{ formatDate(record.created_at) }}</div>
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-semibold text-gray-900">{{ leader.score }}/{{ leader.total_questions }}</div>
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <span :class="getPercentageClass(leader.percentage)" class="px-2 py-1 text-xs font-semibold rounded-full">
-                          {{ leader.percentage }}%
-                        </span>
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ leader.time_taken }}s
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ formatDate(leader.created_at) }}
+                    </tr>
+                    <tr v-if="filteredRecords.length === 0">
+                      <td colspan="6" class="empty-state">
+                        <div class="empty-content">
+                          <i class="fas fa-chart-bar empty-icon"></i>
+                          <p class="empty-title">No records found</p>
+                          <p class="empty-subtitle">Try adjusting your search criteria</p>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
 
-          <!-- Quiz Set Performance -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <!-- Highest Scores by Quiz Set -->
-            <div class="bg-white rounded-2xl shadow-lg p-6">
-              <h2 class="text-xl font-bold text-gray-800 mb-4">Highest Scores by Quiz Set</h2>
-              <div class="space-y-4">
-                <div 
-                  v-for="set in quizSetPerformance.highest" 
-                  :key="set.quiz_set_id"
-                  class="border border-gray-200 rounded-lg p-4 hover:bg-blue-50 transition-colors"
-                >
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <h3 class="font-semibold text-gray-800">{{ set.quiz_set_name }}</h3>
-                      <p class="text-sm text-gray-600">{{ set.category }}</p>
-                    </div>
-                    <div class="text-right">
-                      <div class="text-2xl font-bold text-green-600">{{ set.highest_percentage }}%</div>
-                      <div class="text-xs text-gray-500">by {{ set.top_performer }}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Lowest Scores by Quiz Set -->
-            <div class="bg-white rounded-2xl shadow-lg p-6">
-              <h2 class="text-xl font-bold text-gray-800 mb-4">Lowest Scores by Quiz Set</h2>
-              <div class="space-y-4">
-                <div 
-                  v-for="set in quizSetPerformance.lowest" 
-                  :key="set.quiz_set_id"
-                  class="border border-gray-200 rounded-lg p-4 hover:bg-red-50 transition-colors"
-                >
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <h3 class="font-semibold text-gray-800">{{ set.quiz_set_name }}</h3>
-                      <p class="text-sm text-gray-600">{{ set.category }}</p>
-                    </div>
-                    <div class="text-right">
-                      <div class="text-2xl font-bold text-red-600">{{ set.lowest_percentage }}%</div>
-                      <div class="text-xs text-gray-500">by {{ set.lowest_performer }}</div>
-                    </div>
-                  </div>
+              <!-- Table Footer -->
+              <div class="table-footer">
+                <div class="footer-text">
+                  Showing <span class="highlight">{{ filteredRecords.length }}</span> of 
+                  <span class="highlight">{{ allRecords.length }}</span> records
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- Individual Records Section -->
-          <div class="bg-white rounded-2xl shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Individual Records</h2>
-            
-            <!-- Filters -->
-            <div class="flex flex-col sm:flex-row gap-4 mb-6">
-              <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Search Participant</label>
-                <input 
-                  v-model="searchParticipant"
-                  type="text"
-                  placeholder="Enter participant name..."
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-              </div>
-              <div class="w-full sm:w-48">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Quiz Set</label>
-                <select 
-                  v-model="selectedQuizSet"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">All Sets</option>
-                  <option v-for="set in quizSets" :key="set.id" :value="set.id">{{ set.name }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Records Table -->
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer" @click="sortRecords('participant_name')">
-                      Participant
-                      <i :class="getSortIcon('participant_name')" class="ml-1"></i>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer" @click="sortRecords('quiz_set_name')">
-                      Quiz Set
-                      <i :class="getSortIcon('quiz_set_name')" class="ml-1"></i>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer" @click="sortRecords('score')">
-                      Score
-                      <i :class="getSortIcon('score')" class="ml-1"></i>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer" @click="sortRecords('percentage')">
-                      Percentage
-                      <i :class="getSortIcon('percentage')" class="ml-1"></i>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer" @click="sortRecords('time_taken')">
-                      Time Taken
-                      <i :class="getSortIcon('time_taken')" class="ml-1"></i>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer" @click="sortRecords('created_at')">
-                      Date
-                      <i :class="getSortIcon('created_at')" class="ml-1"></i>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr 
-                    v-for="record in filteredRecords" 
-                    :key="record.id"
-                    class="hover:bg-gray-50 transition-colors"
-                  >
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-gray-900">{{ record.participant_name }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-gray-900">{{ record.quiz_set_name }}</div>
-                      <div class="text-xs text-gray-500">{{ record.category }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-semibold text-gray-900">{{ record.score }}/{{ record.total_questions }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span :class="getPercentageClass(record.percentage)" class="px-2 py-1 text-xs font-semibold rounded-full">
-                        {{ record.percentage }}%
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ record.time_taken }}s
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ formatDate(record.created_at) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Pagination -->
-            <div class="flex items-center justify-between mt-6">
-              <div class="text-sm text-gray-700">
-                Showing {{ filteredRecords.length }} of {{ allRecords.length }} records
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
-import Chart from 'chart.js/auto'
+<script>
+import Chart from 'chart.js/auto';
+import AdminNavbar from './AdminNavbar.vue';
+import AdminSidebar from './AdminSidebar.vue';
 
-// Reactive data
-const loading = ref(true)
-const mobileSidebar = ref(false)
-const searchParticipant = ref('')
-const selectedQuizSet = ref('')
-const sortField = ref('created_at')
-const sortDirection = ref('desc')
-
-// Data stores
-const overallStats = ref({})
-const topPerformers = ref({ allTime: [] })
-const weeklyLeaderboard = ref([])
-const quizSetPerformance = ref({ highest: [], lowest: [] })
-const allRecords = ref([])
-const quizSets = ref([])
-
-// Fetch all data
-const fetchRecordsData = async () => {
-  try {
-    loading.value = true
-    
-    // Fetch records data
-    const recordsResponse = await fetch('/admin/records-data')
-    const recordsData = await recordsResponse.json()
-
-    // Fetch quiz sets
-    const setsResponse = await fetch('/api/quiz-sets')
-    const setsData = await setsResponse.json()
-
-    allRecords.value = recordsData
-    quizSets.value = setsData
-
-    // Calculate overall stats
-    calculateOverallStats()
-    
-    // Calculate top performers
-    calculateTopPerformers()
-    
-    // Calculate weekly leaderboard
-    calculateWeeklyLeaderboard()
-    
-    // Calculate quiz set performance
-    calculateQuizSetPerformance()
-
-    // Render charts after data is loaded
-    setTimeout(renderCharts, 100)
-
-  } catch (error) {
-    console.error('Error fetching records data:', error)
-    alert('Failed to load records data')
-  } finally {
-    loading.value = false
-  }
-}
-
-// Calculate overall statistics
-const calculateOverallStats = () => {
-  const records = allRecords.value
-  
-  if (records.length === 0) {
-    overallStats.value = {
-      highestScore: 0,
-      averageScore: 0,
-      totalParticipants: 0,
-      totalAttempts: 0
+export default {
+  name: 'Records',
+  components: {
+    AdminNavbar,
+    AdminSidebar
+  },
+  data() {
+    return {
+      isDark: false,
+      mobileSidebar: false,
+      loading: true,
+      searchParticipant: '',
+      selectedQuizSet: '',
+      sortField: 'created_at',
+      sortDirection: 'desc',
+      overallStats: {},
+      topPerformers: { allTime: [] },
+      weeklyLeaderboard: [],
+      quizSetPerformance: { highest: [], lowest: [] },
+      allRecords: [],
+      quizSets: []
     }
-    return
-  }
-
-  // Convert percentages to numbers and filter out invalid values
-  const validRecords = records.filter(record => {
-    const percentage = parseFloat(record.percentage)
-    return !isNaN(percentage) && isFinite(percentage)
-  })
-
-  if (validRecords.length === 0) {
-    overallStats.value = {
-      highestScore: 0,
-      averageScore: 0,
-      totalParticipants: 0,
-      totalAttempts: 0
-    }
-    return
-  }
-
-  const percentages = validRecords.map(record => parseFloat(record.percentage))
-  
-  overallStats.value = {
-    highestScore: Math.max(...percentages),
-    averageScore: Math.round(percentages.reduce((sum, percentage) => sum + percentage, 0) / percentages.length),
-    totalParticipants: new Set(validRecords.map(r => r.participant_name)).size,
-    totalAttempts: validRecords.length
-  }
-}
-
-// Calculate top performers
-const calculateTopPerformers = () => {
-  const records = allRecords.value
-  
-  if (records.length === 0) {
-    topPerformers.value.allTime = []
-    return
-  }
-
-  // Filter valid records with numeric percentages
-  const validRecords = records.filter(record => {
-    const percentage = parseFloat(record.percentage)
-    return !isNaN(percentage) && isFinite(percentage)
-  })
-
-  // All-time top performers (top 6)
-  topPerformers.value.allTime = validRecords
-    .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
-    .slice(0, 6)
-}
-
-// Calculate weekly leaderboard
-const calculateWeeklyLeaderboard = () => {
-  const oneWeekAgo = new Date()
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-  
-  const weeklyRecords = allRecords.value
-    .filter(record => {
-      const recordDate = new Date(record.created_at)
-      const percentage = parseFloat(record.percentage)
-      return recordDate >= oneWeekAgo && !isNaN(percentage) && isFinite(percentage)
-    })
-    
-  if (weeklyRecords.length === 0) {
-    weeklyLeaderboard.value = []
-    return
-  }
-
-  weeklyLeaderboard.value = weeklyRecords
-    .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
-    .slice(0, 10)
-}
-
-// Calculate quiz set performance
-const calculateQuizSetPerformance = () => {
-  const records = allRecords.value
-  
-  if (records.length === 0) {
-    quizSetPerformance.value = { highest: [], lowest: [] }
-    return
-  }
-
-  const setPerformance = {}
-  
-  // Group records by quiz set
-  records.forEach(record => {
-    const percentage = parseFloat(record.percentage)
-    if (isNaN(percentage) || !isFinite(percentage)) return
-    
-    if (!setPerformance[record.quiz_set_id]) {
-      setPerformance[record.quiz_set_id] = {
-        quiz_set_id: record.quiz_set_id,
-        quiz_set_name: record.quiz_set_name,
-        category: record.category,
-        percentages: []
+  },
+  computed: {
+    filteredRecords() {
+      let filtered = this.allRecords
+      
+      // Filter by participant name
+      if (this.searchParticipant) {
+        filtered = filtered.filter(record =>
+          record.participant_name.toLowerCase().includes(this.searchParticipant.toLowerCase())
+        )
       }
-    }
-    setPerformance[record.quiz_set_id].percentages.push({
-      percentage: percentage,
-      participant_name: record.participant_name
-    })
-  })
-  
-  // Calculate highest and lowest for each set
-  const highest = []
-  const lowest = []
-  
-  Object.values(setPerformance).forEach(set => {
-    if (set.percentages.length > 0) {
-      const percentages = set.percentages.map(p => p.percentage)
-      const highestScore = Math.max(...percentages)
-      const lowestScore = Math.min(...percentages)
       
-      highest.push({
-        ...set,
-        highest_percentage: highestScore,
-        top_performer: set.percentages.find(p => p.percentage === highestScore)?.participant_name || 'Unknown'
+      // Filter by quiz set
+      if (this.selectedQuizSet) {
+        filtered = filtered.filter(record => record.quiz_set_id == this.selectedQuizSet)
+      }
+      
+      // Sort records
+      filtered.sort((a, b) => {
+        let aValue = a[this.sortField]
+        let bValue = b[this.sortField]
+        
+        if (this.sortField === 'created_at') {
+          aValue = new Date(aValue)
+          bValue = new Date(bValue)
+        }
+        
+        if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1
+        if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1
+        return 0
       })
       
-      lowest.push({
-        ...set,
-        lowest_percentage: lowestScore,
-        lowest_performer: set.percentages.find(p => p.percentage === lowestScore)?.participant_name || 'Unknown'
-      })
+      return filtered
     }
-  })
-  
-  quizSetPerformance.value.highest = highest.sort((a, b) => b.highest_percentage - a.highest_percentage)
-  quizSetPerformance.value.lowest = lowest.sort((a, b) => a.lowest_percentage - b.lowest_percentage)
-}
-
-// Filtered records based on search and filter
-const filteredRecords = computed(() => {
-  let filtered = allRecords.value
-  
-  // Filter by participant name
-  if (searchParticipant.value) {
-    filtered = filtered.filter(record =>
-      record.participant_name.toLowerCase().includes(searchParticipant.value.toLowerCase())
-    )
-  }
-  
-  // Filter by quiz set
-  if (selectedQuizSet.value) {
-    filtered = filtered.filter(record => record.quiz_set_id == selectedQuizSet.value)
-  }
-  
-  // Sort records
-  filtered.sort((a, b) => {
-    let aValue = a[sortField.value]
-    let bValue = b[sortField.value]
-    
-    if (sortField.value === 'created_at') {
-      aValue = new Date(aValue)
-      bValue = new Date(bValue)
-    }
-    
-    if (aValue < bValue) return sortDirection.value === 'asc' ? -1 : 1
-    if (aValue > bValue) return sortDirection.value === 'asc' ? 1 : -1
-    return 0
-  })
-  
-  return filtered
-})
-
-// Chart rendering functions
-const renderCharts = () => {
-  renderScoreDistributionChart()
-  renderWeeklyTrendChart()
-}
-
-const renderScoreDistributionChart = () => {
-  const ctx = document.getElementById('scoreDistributionChart')
-  if (!ctx) return
-
-  const records = allRecords.value
-  
-  if (records.length === 0) {
-    // Show empty state for chart
-    return
-  }
-
-  // Filter valid records
-  const validRecords = records.filter(record => {
-    const percentage = parseFloat(record.percentage)
-    return !isNaN(percentage) && isFinite(percentage)
-  })
-
-  const scoreRanges = [
-    { range: '90-100%', min: 90, max: 100 },
-    { range: '80-89%', min: 80, max: 89 },
-    { range: '70-79%', min: 70, max: 79 },
-    { range: '60-69%', min: 60, max: 69 },
-    { range: '50-59%', min: 50, max: 59 },
-    { range: '0-49%', min: 0, max: 49 }
-  ]
-
-  const data = scoreRanges.map(range => {
-    return validRecords.filter(record => {
-      const percentage = parseFloat(record.percentage)
-      return percentage >= range.min && percentage <= range.max
-    }).length
-  })
-
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: scoreRanges.map(r => r.range),
-      datasets: [{
-        label: 'Number of Attempts',
-        data: data,
-        backgroundColor: [
-          '#10B981', '#34D399', '#60A5FA', '#FBBF24', '#F59E0B', '#EF4444'
-        ],
-        borderRadius: 6,
-      }]
+  },
+  mounted() {
+    this.fetchRecordsData()
+  },
+  beforeUnmount() {
+    this.cleanupCharts()
+  },
+  methods: {
+    toggleTheme() {
+      this.isDark = !this.isDark
     },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Number of Attempts'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Score Range'
-          }
-        }
+    toggleMobileSidebar() {
+      this.mobileSidebar = !this.mobileSidebar
+    },
+    handleLogout() {
+      this.$inertia.post('/admin/logout');
+    },
+    async fetchRecordsData() {
+      try {
+        this.loading = true
+        
+        // Simulate API calls with demo data
+        await this.loadDemoData()
+        
+        // Calculate statistics
+        this.calculateOverallStats()
+        this.calculateTopPerformers()
+        this.calculateWeeklyLeaderboard()
+        this.calculateQuizSetPerformance()
+
+        // Render charts
+        setTimeout(this.renderCharts, 100)
+
+      } catch (error) {
+        console.error('Error fetching records data:', error)
+      } finally {
+        this.loading = false
       }
-    }
-  })
-}
-
-const renderWeeklyTrendChart = () => {
-  const ctx = document.getElementById('weeklyTrendChart')
-  if (!ctx) return
-
-  const records = allRecords.value
-  
-  if (records.length === 0) {
-    // Show empty state for chart
-    return
-  }
-
-  const oneWeekAgo = new Date()
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-
-  const weeklyData = {}
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
-    const dateStr = date.toISOString().split('T')[0]
-    weeklyData[dateStr] = { total: 0, sum: 0, count: 0 }
-  }
-
-  records.forEach(record => {
-    const percentage = parseFloat(record.percentage)
-    if (isNaN(percentage) || !isFinite(percentage)) return
-    
-    const recordDate = new Date(record.created_at).toISOString().split('T')[0]
-    if (weeklyData[recordDate]) {
-      weeklyData[recordDate].total++
-      weeklyData[recordDate].sum += percentage
-      weeklyData[recordDate].count++
-    }
-  })
-
-  const labels = Object.keys(weeklyData).map(date => {
-    return new Date(date).toLocaleDateString('en-US', { weekday: 'short' })
-  })
-
-  const averageScores = Object.values(weeklyData).map(day => 
-    day.count > 0 ? Math.round(day.sum / day.count) : 0
-  )
-
-  const attemptCounts = Object.values(weeklyData).map(day => day.total)
-
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [
+    },
+    loadDemoData() {
+      // Demo data for records
+      this.allRecords = [
         {
-          label: 'Average Score (%)',
-          data: averageScores,
-          borderColor: '#3B82F6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          fill: true,
-          tension: 0.4,
-          yAxisID: 'y'
+          id: 1,
+          participant_name: 'John Smith',
+          quiz_set_name: 'World Geography',
+          category: 'Geography',
+          quiz_set_id: 1,
+          score: 18,
+          total_questions: 20,
+          percentage: 90,
+          time_taken: 45,
+          created_at: new Date()
         },
         {
-          label: 'Attempts',
-          data: attemptCounts,
-          borderColor: '#10B981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          fill: true,
-          tension: 0.4,
-          yAxisID: 'y1'
+          id: 2,
+          participant_name: 'Emily Wilson',
+          quiz_set_name: 'Basic Science',
+          category: 'Science',
+          quiz_set_id: 2,
+          score: 19,
+          total_questions: 20,
+          percentage: 95,
+          time_taken: 52,
+          created_at: new Date(Date.now() - 86400000)
+        },
+        {
+          id: 3,
+          participant_name: 'Mike Davis',
+          quiz_set_name: 'World Geography',
+          category: 'Geography',
+          quiz_set_id: 1,
+          score: 16,
+          total_questions: 20,
+          percentage: 80,
+          time_taken: 38,
+          created_at: new Date(Date.now() - 172800000)
+        },
+        {
+          id: 4,
+          participant_name: 'Sarah Johnson',
+          quiz_set_name: 'Movie Trivia',
+          category: 'Entertainment',
+          quiz_set_id: 3,
+          score: 14,
+          total_questions: 20,
+          percentage: 70,
+          time_taken: 61,
+          created_at: new Date(Date.now() - 259200000)
+        },
+        {
+          id: 5,
+          participant_name: 'David Brown',
+          quiz_set_name: 'Basic Science',
+          category: 'Science',
+          quiz_set_id: 2,
+          score: 17,
+          total_questions: 20,
+          percentage: 85,
+          time_taken: 49,
+          created_at: new Date(Date.now() - 345600000)
         }
       ]
+
+      this.quizSets = [
+        { id: 1, name: 'World Geography' },
+        { id: 2, name: 'Basic Science' },
+        { id: 3, name: 'Movie Trivia' }
+      ]
     },
-    options: {
-      responsive: true,
-      interaction: {
-        mode: 'index',
-        intersect: false,
-      },
-      scales: {
-        y: {
-          type: 'linear',
-          display: true,
-          position: 'left',
-          title: {
-            display: true,
-            text: 'Average Score (%)'
-          },
-          min: 0,
-          max: 100
-        },
-        y1: {
-          type: 'linear',
-          display: true,
-          position: 'right',
-          title: {
-            display: true,
-            text: 'Number of Attempts'
-          },
-          grid: {
-            drawOnChartArea: false,
-          },
+    calculateOverallStats() {
+      const records = this.allRecords
+      
+      if (records.length === 0) {
+        this.overallStats = {
+          highestScore: 0,
+          averageScore: 0,
+          totalParticipants: 0,
+          totalAttempts: 0
         }
+        return
+      }
+
+      const percentages = records.map(record => parseFloat(record.percentage))
+      const uniqueParticipants = new Set(records.map(r => r.participant_name))
+      
+      this.overallStats = {
+        highestScore: Math.max(...percentages),
+        averageScore: Math.round(percentages.reduce((sum, percentage) => sum + percentage, 0) / percentages.length),
+        totalParticipants: uniqueParticipants.size,
+        totalAttempts: records.length
+      }
+    },
+    calculateTopPerformers() {
+      const records = this.allRecords
+      
+      if (records.length === 0) {
+        this.topPerformers.allTime = []
+        return
+      }
+
+      this.topPerformers.allTime = records
+        .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
+        .slice(0, 6)
+    },
+    calculateWeeklyLeaderboard() {
+      const oneWeekAgo = new Date()
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+      
+      const weeklyRecords = this.allRecords
+        .filter(record => new Date(record.created_at) >= oneWeekAgo)
+        
+      this.weeklyLeaderboard = weeklyRecords
+        .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
+        .slice(0, 10)
+    },
+    calculateQuizSetPerformance() {
+      const records = this.allRecords
+      
+      if (records.length === 0) {
+        this.quizSetPerformance = { highest: [], lowest: [] }
+        return
+      }
+
+      const setPerformance = {}
+      
+      // Group records by quiz set
+      records.forEach(record => {
+        if (!setPerformance[record.quiz_set_id]) {
+          setPerformance[record.quiz_set_id] = {
+            quiz_set_id: record.quiz_set_id,
+            quiz_set_name: record.quiz_set_name,
+            category: record.category,
+            percentages: []
+          }
+        }
+        setPerformance[record.quiz_set_id].percentages.push({
+          percentage: parseFloat(record.percentage),
+          participant_name: record.participant_name
+        })
+      })
+      
+      // Calculate highest and lowest for each set
+      const highest = []
+      const lowest = []
+      
+      Object.values(setPerformance).forEach(set => {
+        if (set.percentages.length > 0) {
+          const percentages = set.percentages.map(p => p.percentage)
+          const highestScore = Math.max(...percentages)
+          const lowestScore = Math.min(...percentages)
+          
+          highest.push({
+            ...set,
+            highest_percentage: highestScore,
+            top_performer: set.percentages.find(p => p.percentage === highestScore)?.participant_name || 'Unknown'
+          })
+          
+          lowest.push({
+            ...set,
+            lowest_percentage: lowestScore,
+            lowest_performer: set.percentages.find(p => p.percentage === lowestScore)?.participant_name || 'Unknown'
+          })
+        }
+      })
+      
+      this.quizSetPerformance.highest = highest.sort((a, b) => b.highest_percentage - a.highest_percentage)
+      this.quizSetPerformance.lowest = lowest.sort((a, b) => a.lowest_percentage - b.lowest_percentage)
+    },
+    renderCharts() {
+      this.renderScoreDistributionChart()
+      this.renderWeeklyTrendChart()
+    },
+    renderScoreDistributionChart() {
+      const ctx = document.getElementById('scoreDistributionChart')
+      if (!ctx) return
+
+      const records = this.allRecords
+      
+      if (records.length === 0) return
+
+      const scoreRanges = [
+        { range: '90-100%', min: 90, max: 100 },
+        { range: '80-89%', min: 80, max: 89 },
+        { range: '70-79%', min: 70, max: 79 },
+        { range: '60-69%', min: 60, max: 69 },
+        { range: '50-59%', min: 50, max: 59 },
+        { range: '0-49%', min: 0, max: 49 }
+      ]
+
+      const data = scoreRanges.map(range => {
+        return records.filter(record => {
+          const percentage = parseFloat(record.percentage)
+          return percentage >= range.min && percentage <= range.max
+        }).length
+      })
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: scoreRanges.map(r => r.range),
+          datasets: [{
+            label: 'Number of Attempts',
+            data: data,
+            backgroundColor: [
+              '#10B981', '#34D399', '#60A5FA', '#FBBF24', '#F59E0B', '#EF4444'
+            ],
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Attempts'
+              }
+            }
+          }
+        }
+      })
+    },
+    renderWeeklyTrendChart() {
+      const ctx = document.getElementById('weeklyTrendChart')
+      if (!ctx) return
+
+      // Demo data for weekly trend
+      const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      const averageScores = [75, 82, 78, 85, 88, 80, 83]
+      const attemptCounts = [12, 15, 18, 22, 25, 20, 16]
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Average Score (%)',
+              data: averageScores,
+              borderColor: '#3B82F6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: true,
+              tension: 0.4,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Attempts',
+              data: attemptCounts,
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              fill: true,
+              tension: 0.4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Average Score (%)'
+              },
+              min: 0,
+              max: 100
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Number of Attempts'
+              },
+              grid: {
+                drawOnChartArea: false,
+              },
+            }
+          }
+        }
+      })
+    },
+    cleanupCharts() {
+      const charts = ['scoreDistributionChart', 'weeklyTrendChart']
+      charts.forEach(chartId => {
+        const canvas = document.getElementById(chartId)
+        if (canvas && canvas.chart) {
+          canvas.chart.destroy()
+        }
+      })
+    },
+    formatDate(dateString) {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    },
+    progressBadgeClass(percentage) {
+      const perc = parseFloat(percentage)
+      if (isNaN(perc)) return 'progress-badge-low'
+      
+      if (perc >= 80) return 'progress-badge-high'
+      if (perc >= 60) return 'progress-badge-medium'
+      return 'progress-badge-low'
+    },
+    getRankClass(rank) {
+      if (rank === 1) return 'rank-gold'
+      if (rank === 2) return 'rank-silver'
+      if (rank === 3) return 'rank-bronze'
+      return 'rank-other'
+    },
+    getSortIcon(field) {
+      if (this.sortField !== field) return 'fas fa-sort text-gray-400'
+      return this.sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600'
+    },
+    sortRecords(field) {
+      if (this.sortField === field) {
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortField = field
+        this.sortDirection = 'desc'
       }
     }
-  })
+  }
+}
+</script>
+
+<style>
+/* Import Font Awesome */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+/* Light Theme */
+.light-theme {
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --bg-sidebar: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --hover-bg: #f3f4f6;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-// Helper functions
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
+/* Dark Theme */
+.dark-theme {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-sidebar: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-muted: #9ca3af;
+  --border-color: #374151;
+  --hover-bg: #374151;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
-const getPercentageClass = (percentage) => {
-  const perc = parseFloat(percentage)
-  if (isNaN(perc)) return 'bg-gray-100 text-gray-800'
-  
-  if (perc >= 80) return 'bg-green-100 text-green-800'
-  if (perc >= 60) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-red-100 text-red-800'
+/* Base Styles */
+.min-h-screen {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  transition: all 0.3s ease;
 }
 
-const getRankClass = (rank) => {
-  if (rank === 1) return 'bg-yellow-400 text-white'
-  if (rank === 2) return 'bg-gray-400 text-white'
-  if (rank === 3) return 'bg-orange-400 text-white'
-  return 'bg-blue-100 text-blue-800'
+.main-content {
+  flex: 1;
+  min-width: 0;
 }
 
-const getSortIcon = (field) => {
-  if (sortField.value !== field) return 'fas fa-sort text-gray-300'
-  return sortDirection.value === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600'
+.content {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-const sortRecords = (field) => {
-  if (sortField.value === field) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortField.value = field
-    sortDirection.value = 'desc'
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.loading-icon {
+  font-size: 1.875rem;
+  color: #2563eb;
+  margin-bottom: 1rem;
+}
+.dark-theme .loading-icon {
+  color: #60a5fa;
+}
+
+.loading-text {
+  color: var(--text-muted);
+}
+
+/* Stats Section */
+.stats-section {
+  max-width: 56rem;
+  margin: 0 auto 3rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
-const toggleMobileSidebar = () => {
-  mobileSidebar.value = !mobileSidebar.value
+.stat-card {
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.stat-card.blue {
+  background-color: #dbeafe;
+}
+.dark-theme .stat-card.blue {
+  background-color: #1e3a8a;
+}
+.stat-card.green {
+  background-color: #dcfce7;
+}
+.dark-theme .stat-card.green {
+  background-color: #14532d;
+}
+.stat-card.purple {
+  background-color: #f3e8ff;
+}
+.dark-theme .stat-card.purple {
+  background-color: #581c87;
+}
+.stat-card.orange {
+  background-color: #ffedd5;
+}
+.dark-theme .stat-card.orange {
+  background-color: #7c2d12;
 }
 
-const logout = () => {
-  router.post('/admin/logout')
+.stat-number {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.stat-card.blue .stat-number {
+  color: #2563eb;
+}
+.dark-theme .stat-card.blue .stat-number {
+  color: #60a5fa;
+}
+.stat-card.green .stat-number {
+  color: #16a34a;
+}
+.dark-theme .stat-card.green .stat-number {
+  color: #4ade80;
+}
+.stat-card.purple .stat-number {
+  color: #7c3aed;
+}
+.dark-theme .stat-card.purple .stat-number {
+  color: #a855f7;
+}
+.stat-card.orange .stat-number {
+  color: #ea580c;
+}
+.dark-theme .stat-card.orange .stat-number {
+  color: #fdba74;
 }
 
-// Lifecycle
-onMounted(() => {
-  fetchRecordsData()
-})
-
-// Clean up charts when component is destroyed
-import { onUnmounted } from 'vue'
-onUnmounted(() => {
-  const charts = ['scoreDistributionChart', 'weeklyTrendChart']
-  charts.forEach(chartId => {
-    const canvas = document.getElementById(chartId)
-    if (canvas && canvas.chart) {
-      canvas.chart.destroy()
-    }
-  })
-})
-</script>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease-in-out;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+.stat-label {
+  color: var(--text-muted);
 }
 
-/* Custom scrollbar */
+/* Charts Section */
+.charts-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+@media (min-width: 1024px) {
+  .charts-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.chart-card {
+  background-color: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.chart-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+/* Content Cards */
+.content-card {
+  background-color: var(--bg-secondary);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-title-large {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* Scorers Grid */
+.scorers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .scorers-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .scorers-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.scorer-card {
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+.scorer-card:hover {
+  background-color: var(--hover-bg);
+  transform: translateY(-2px);
+}
+
+.scorer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.scorer-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scorer-rank {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.scorer-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.scorer-category {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.scorer-performance {
+  text-align: right;
+}
+
+.scorer-percentage {
+  font-weight: 700;
+  color: #16a34a;
+  font-size: 1.125rem;
+}
+.dark-theme .scorer-percentage {
+  color: #4ade80;
+}
+
+.scorer-score {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.scorer-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Rank Badges */
+.rank-badge {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.rank-gold {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.rank-silver {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  color: white;
+}
+
+.rank-bronze {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  color: white;
+}
+
+.rank-other {
+  background-color: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+/* Filters Section */
+.filters-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (min-width: 640px) {
+  .filters-section {
+    flex-direction: row;
+    align-items: end;
+  }
+}
+
+.search-input-container {
+  position: relative;
+  flex: 1;
+}
+
+.search-input {
+  padding-left: 2.5rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  width: 100%;
+  transition: all 0.2s ease;
+}
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.filter-select {
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  width: 100%;
+  min-width: 10rem;
+}
+@media (min-width: 640px) {
+  .filter-select {
+    width: auto;
+  }
+}
+
+/* Table Styles */
+.participants-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-header {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--hover-bg);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.table-header:hover {
+  background-color: var(--border-color);
+}
+
+.table-row {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
+}
+.table-row:hover {
+  background-color: var(--hover-bg);
+}
+
+.table-cell {
+  padding: 1rem 1.5rem;
+  white-space: nowrap;
+}
+
+/* User Styles */
+.user-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.quiz-name {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.quiz-category {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Score Styles */
+.score-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.score-date {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Progress Badges */
+.progress-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.progress-badge-high {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+.dark-theme .progress-badge-high {
+  background-color: #14532d;
+  color: #4ade80;
+}
+
+.progress-badge-medium {
+  background-color: #fef9c3;
+  color: #ca8a04;
+}
+.dark-theme .progress-badge-medium {
+  background-color: #713f12;
+  color: #facc15;
+}
+
+.progress-badge-low {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+.dark-theme .progress-badge-low {
+  background-color: #7f1d1d;
+  color: #f87171;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--border-color);
+}
+
+.empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-subtitle {
+  font-size: 0.875rem;
+}
+
+/* Table Footer */
+.table-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--hover-bg);
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.footer-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.highlight {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+/* Performance Section */
+.performance-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  max-width: 56rem;
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  .performance-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.performance-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.score-distribution {
+  margin-top: 1rem;
+}
+
+.distribution-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .distribution-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.distribution-item {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+.distribution-item:hover {
+  transform: translateY(-2px);
+}
+
+.distribution-item.high {
+  background-color: #dcfce7;
+}
+.dark-theme .distribution-item.high {
+  background-color: #14532d;
+}
+
+.distribution-item.low {
+  background-color: #fee2e2;
+}
+.dark-theme .distribution-item.low {
+  background-color: #7f1d1d;
+}
+
+.distribution-count {
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.distribution-item.high .distribution-count {
+  color: #16a34a;
+}
+.dark-theme .distribution-item.high .distribution-count {
+  color: #4ade80;
+}
+.distribution-item.low .distribution-count {
+  color: #dc2626;
+}
+.dark-theme .distribution-item.low .distribution-count {
+  color: #f87171;
+}
+
+.distribution-range {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.distribution-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Custom scrollbar for table */
 .overflow-x-auto::-webkit-scrollbar {
-  height: 8px;
+  height: 6px;
 }
 
 .overflow-x-auto::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
+  background: var(--hover-bg);
+  border-radius: 3px;
 }
 
 .overflow-x-auto::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: var(--border-color);
+  border-radius: 3px;
 }
 
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--text-muted);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content {
+    padding: 1rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .performance-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .scorers-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-cell {
+    padding: 0.75rem 1rem;
+  }
 }
 </style>

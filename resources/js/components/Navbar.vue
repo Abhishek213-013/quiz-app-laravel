@@ -4,11 +4,7 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Logo and App Name -->
                 <div class="flex items-center space-x-3">
-                    <img 
-                        src="/images/logo.png" 
-                        alt="Quiz App Logo" 
-                        class="h-8 w-8"
-                    >
+                    <i class="fas fa-brain sidebar-logo"></i>
                     <h1 class="text-xl font-bold text-gray-800">MindSpark</h1>
                 </div>
 

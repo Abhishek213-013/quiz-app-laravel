@@ -9,25 +9,39 @@
                     Admin Login
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-600">
-                    Enter the secret key to access the admin panel
+                    Enter your credentials to access the admin panel
                 </p>
             </div>
             
             <form class="mt-8 space-y-6" @submit.prevent="login">
                 <div v-if="hasErrors" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    {{ errors.secret_key || 'Invalid secret key' }}
+                    {{ errors.email || errors.password || 'Invalid credentials' }}
                 </div>
 
-                <div>
-                    <label for="secret_key" class="sr-only">Secret Key</label>
-                    <input 
-                        id="secret_key" 
-                        v-model="form.secret_key"
-                        type="password" 
-                        required 
-                        class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                        placeholder="Enter secret key"
-                    >
+                <div class="space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input 
+                            id="email" 
+                            v-model="form.email"
+                            type="email" 
+                            required 
+                            class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                            placeholder="Enter your email"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input 
+                            id="password" 
+                            v-model="form.password"
+                            type="password" 
+                            required 
+                            class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                            placeholder="Enter your password"
+                        >
+                    </div>
                 </div>
 
                 <div>
@@ -38,10 +52,10 @@
                     >
                         <span v-if="processing">
                             <i class="fas fa-spinner fa-spin mr-2"></i>
-                            Verifying...
+                            Signing in...
                         </span>
                         <span v-else>
-                            Access Admin Panel
+                            Sign in to Admin Panel
                         </span>
                     </button>
                 </div>
@@ -56,7 +70,8 @@ import { router, usePage } from '@inertiajs/vue3'
 
 const processing = ref(false)
 const form = ref({
-    secret_key: ''
+    email: '',
+    password: ''
 })
 
 // Get errors from Inertia
@@ -68,7 +83,6 @@ const login = () => {
     
     router.post('/admin/login', form.value, {
         onSuccess: () => {
-            // This will run if login is successful
             processing.value = false
         },
         onError: (errors) => {

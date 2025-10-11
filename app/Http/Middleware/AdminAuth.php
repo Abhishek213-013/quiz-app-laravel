@@ -14,12 +14,17 @@ class AdminAuth
         // Check if admin is authenticated via session
         if (!Session::get('admin_authenticated')) {
             // If it's an API request, return JSON error
-            if ($request->expectsJson() || $request->is('admin/dashboard-data')) {
+            if ($request->expectsJson() || $request->is('admin/*-data')) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             
             // For page requests, redirect to login
             return redirect()->route('admin.login');
+        }
+
+        // Share admin email with all admin views
+        if ($request->is('admin/*') && !$request->expectsJson()) {
+            view()->share('adminEmail', Session::get('admin_email'));
         }
 
         return $next($request);

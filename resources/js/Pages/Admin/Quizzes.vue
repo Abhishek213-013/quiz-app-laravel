@@ -1,1051 +1,1587 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r hidden md:flex flex-col sticky top-0 h-screen">
-      <div class="px-6 py-5 flex items-center gap-3 border-b">
-        <i class="fas fa-brain text-blue-600 text-2xl"></i>
-        <span class="font-bold text-lg text-gray-800">Quiz Admin</span>
-      </div>
+  <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
+    <AdminNavbar 
+      title="Manage Quizzes"
+      :is-dark="isDark"
+      @toggle-theme="toggleTheme"
+      @toggle-mobile-sidebar="toggleMobileSidebar"
+      @logout="handleLogout"
+    />
 
-      <nav class="flex-1 overflow-auto px-2 py-4">
-        <ul class="space-y-1">
-          <li>
-            <Link href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/dashboard'}">
-              <i class="fas fa-home w-5"></i>
-              <span>Dashboard</span>
-            </Link>
-          </li>
+    <div class="flex">
+      <AdminSidebar 
+        :mobile-sidebar="mobileSidebar"
+        current-page="/admin/quizzes"
+        @close-mobile-sidebar="toggleMobileSidebar"
+      />
 
-          <li>
-            <Link href="/admin/participants" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/participants'}">
-              <i class="fas fa-users w-5"></i>
-              <span>Participants</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link href="/admin/quizzes" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/quizzes'}">
-              <i class="fas fa-clipboard-list w-5"></i>
-              <span>Manage Quizzes</span>
-            </Link>
-          </li>
-
-          <li>
-            <Link href="/admin/records" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50"
-                  :class="{'bg-blue-50 text-blue-600 font-semibold': $page.url === '/admin/records'}">
-              <i class="fas fa-chart-bar w-5"></i>
-              <span>Records</span>
-            </Link>
-          </li>
-        </ul>
-      </nav>
-
-      <div class="p-4 border-t">
-        <div class="text-xs text-gray-400 mb-2">Logged in as</div>
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-user text-blue-600 text-sm"></i>
-          </div>
-          <div>
-            <div class="text-sm font-medium text-gray-800">Administrator</div>
-            <div class="text-xs text-gray-500">Super Admin</div>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main panel -->
-    <div class="flex-1 min-w-0">
-      <!-- Topbar -->
-      <header class="bg-white border-b sticky top-0 z-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-4">
-              <!-- Mobile menu button -->
-              <button @click="toggleMobileSidebar" class="md:hidden p-2 rounded-md hover:bg-gray-100">
-                <i class="fas fa-bars"></i>
-              </button>
-              <h1 class="text-xl font-semibold text-gray-800">Manage Quizzes</h1>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <button @click="logout" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800">
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="hidden sm:inline">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <!-- Mobile sliding sidebar -->
-      <transition name="fade">
-        <aside v-if="mobileSidebar" class="md:hidden fixed inset-y-0 left-0 w-64 bg-white z-30 border-r p-4 overflow-auto">
-          <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-brain text-blue-600"></i>
-              <span class="font-semibold">Quiz Admin</span>
-            </div>
-            <button @click="toggleMobileSidebar"><i class="fas fa-times"></i></button>
-          </div>
-          <nav class="space-y-2">
-            <Link href="/admin/dashboard" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Dashboard</Link>
-            <Link href="/admin/participants" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Participants</Link>
-            <Link href="/admin/quizzes" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Manage Quizzes</Link>
-            <Link href="/admin/records" class="block py-2 px-3 rounded hover:bg-gray-50" @click="toggleMobileSidebar">Records</Link>
-          </nav>
-        </aside>
-      </transition>
-
-      <!-- Content -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <!-- Error Alert -->
-        <div v-if="errorMessage" class="mb-6">
-          <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-            <div class="flex items-center">
-              <i class="fas fa-exclamation-circle text-red-600 mr-3 text-lg"></i>
-              <div class="flex-1">
-                <h3 class="text-sm font-semibold text-red-800">Error</h3>
-                <p class="text-sm text-red-700 mt-1">{{ errorMessage }}</p>
-              </div>
-              <button @click="errorMessage = ''" class="text-red-600 hover:text-red-800">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Success Alert -->
-        <div v-if="successMessage" class="mb-6">
-          <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-            <div class="flex items-center">
-              <i class="fas fa-check-circle text-green-600 mr-3 text-lg"></i>
-              <div class="flex-1">
-                <h3 class="text-sm font-semibold text-green-800">Success</h3>
-                <p class="text-sm text-green-700 mt-1">{{ successMessage }}</p>
-              </div>
-              <button @click="successMessage = ''" class="text-green-600 hover:text-green-800">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div v-if="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div class="bg-white rounded-xl p-6 flex items-center gap-3">
-            <i class="fas fa-spinner fa-spin text-blue-600 text-xl"></i>
-            <span class="text-gray-700">Processing...</span>
-          </div>
-        </div>
-
-        <!-- Header -->
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Quizzes</h1>
-          <p class="text-lg text-gray-600">Add, edit, or delete quiz sets and questions with different question types</p>
-        </div>
-
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center shadow-lg border border-blue-200">
-            <div class="flex items-center justify-center mb-4">
-              <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                <i class="fas fa-clipboard-list text-white text-xl"></i>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-blue-700 mb-2">{{ quizSets.length }}</div>
-            <div class="text-sm font-medium text-blue-600">Total Quiz Sets</div>
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Content -->
+        <main class="content">
+          <!-- Loading State -->
+          <div v-if="loading" class="loading-state">
+            <i class="fas fa-spinner fa-spin loading-icon"></i>
+            <p class="loading-text">Loading quizzes data...</p>
           </div>
 
-          <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center shadow-lg border border-green-200">
-            <div class="flex items-center justify-center mb-4">
-              <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                <i class="fas fa-question-circle text-white text-xl"></i>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-green-700 mb-2">{{ totalQuestions }}</div>
-            <div class="text-sm font-medium text-green-600">Total Questions</div>
-          </div>
-
-          <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center shadow-lg border border-purple-200">
-            <div class="flex items-center justify-center mb-4">
-              <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                <i class="fas fa-list-alt text-white text-xl"></i>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-purple-700 mb-2">{{ multipleChoiceCount }}</div>
-            <div class="text-sm font-medium text-purple-600">Multiple Choice</div>
-          </div>
-
-          <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 text-center shadow-lg border border-orange-200">
-            <div class="flex items-center justify-center mb-4">
-              <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
-                <i class="fas fa-edit text-white text-xl"></i>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-orange-700 mb-2">{{ briefAnswerCount }}</div>
-            <div class="text-sm font-medium text-orange-600">Brief Answers</div>
-          </div>
-        </div>
-
-        <!-- Quiz Sets Grid -->
-        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h2 class="text-xl font-bold text-gray-800 mb-1">Quiz Sets</h2>
-              <p class="text-gray-600 text-sm">Create and manage your quiz collections</p>
-            </div>
-            <button 
-              @click="showAddSetModal = true"
-              class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 font-semibold shadow-md transition-all duration-200 flex items-center gap-2"
-              :disabled="loading"
-            >
-              <i class="fas fa-plus"></i>
-              Add New Set
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div 
-              v-for="quizSet in quizSets" 
-              :key="quizSet.id"
-              class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-all duration-200"
-            >
-              <div class="flex items-center justify-between mb-4">
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                  {{ quizSet.category }}
-                </span>
-                <div class="flex space-x-2">
-                  <button 
-                    @click="editQuizSet(quizSet)"
-                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Edit Quiz Set"
-                    :disabled="loading"
-                  >
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button 
-                    @click="deleteQuizSet(quizSet.id)"
-                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete Quiz Set"
-                    :disabled="loading"
-                  >
-                    <i class="fas fa-trash"></i>
-                  </button>
+          <!-- Main Content -->
+          <div v-else>
+            <!-- Quick Stats Section -->
+            <div class="stats-section">
+              <h2 class="section-title">Quiz Management Overview</h2>
+              <div class="stats-grid">
+                <div class="stat-card blue">
+                  <div class="stat-number">{{ quizSets.length }}</div>
+                  <div class="stat-label">Total Quiz Sets</div>
+                </div>
+                <div class="stat-card green">
+                  <div class="stat-number">{{ totalQuestions }}</div>
+                  <div class="stat-label">Total Questions</div>
+                </div>
+                <div class="stat-card purple">
+                  <div class="stat-number">{{ multipleChoiceCount }}</div>
+                  <div class="stat-label">Multiple Choice</div>
+                </div>
+                <div class="stat-card orange">
+                  <div class="stat-number">{{ briefAnswerCount }}</div>
+                  <div class="stat-label">Brief Answers</div>
                 </div>
               </div>
-              <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ quizSet.name }}</h3>
-              <p class="text-gray-600 mb-4 text-sm">{{ quizSet.description }}</p>
-              <div class="flex items-center justify-between text-sm text-gray-500">
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold">{{ quizSet.question_count }} questions</span>
-                  <span class="text-xs bg-gray-100 px-2 py-1 rounded">{{ quizSet.time_limit }}s</span>
-                </div>
-                <button 
-                  @click="viewQuestions(quizSet)"
-                  class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
-                  :disabled="loading"
-                >
-                  Manage Questions
-                </button>
-              </div>
             </div>
-          </div>
 
-          <!-- Empty state for quiz sets -->
-          <div v-if="quizSets.length === 0 && !loading" class="text-center py-12">
-            <div class="flex flex-col items-center justify-center text-gray-500">
-              <i class="fas fa-clipboard-list text-6xl mb-4 text-gray-300"></i>
-              <h3 class="text-xl font-medium mb-2">No quiz sets yet</h3>
-              <p class="text-sm mb-4">Get started by creating your first quiz set</p>
-              <button 
-                @click="showAddSetModal = true"
-                class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
-                :disabled="loading"
-              >
-                Create Your First Set
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Questions Management -->
-        <div v-if="selectedSet" class="bg-white rounded-2xl shadow-lg p-6">
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h2 class="text-2xl font-bold text-gray-800">Questions for {{ selectedSet.name }}</h2>
-              <p class="text-gray-600 mt-1">Total: {{ quizzes.length }} questions</p>
-            </div>
-            <div class="flex space-x-3">
-              <button 
-                @click="selectedSet = null; quizzes = []"
-                class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium transition-colors"
-                :disabled="loading"
-              >
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Sets
-              </button>
-              <button 
-                @click="showAddQuestionModal = true"
-                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
-                :disabled="loading"
-              >
-                <i class="fas fa-plus mr-2"></i>
-                Add Question
-              </button>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <div 
-              v-for="(quiz, index) in quizzes" 
-              :key="quiz.id"
-              class="border border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-colors"
-            >
-              <div class="flex items-start justify-between mb-4">
+            <!-- Error Alert -->
+            <div v-if="errorMessage" class="content-card mb-6">
+              <div class="flex items-center p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <i class="fas fa-exclamation-circle text-red-600 dark:text-red-400 mr-3 text-lg"></i>
                 <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-2">
-                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                      Q{{ index + 1 }}
-                    </span>
-                    <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
-                      {{ getQuestionTypeLabel(quiz.question_type) }}
-                    </span>
-                    <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                      {{ quiz.points }} point{{ quiz.points !== 1 ? 's' : '' }}
-                    </span>
-                  </div>
-                  <h3 class="text-lg font-semibold text-gray-800">{{ quiz.question }}</h3>
+                  <h3 class="text-sm font-semibold text-red-800 dark:text-red-300">Error</h3>
+                  <p class="text-sm text-red-700 dark:text-red-400 mt-1">{{ errorMessage }}</p>
                 </div>
-                <div class="flex space-x-2 ml-4">
-                  <button 
-                    @click="editQuestion(quiz)"
-                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Edit Question"
-                    :disabled="loading"
-                  >
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button 
-                    @click="deleteQuestion(quiz.id)"
-                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete Question"
-                    :disabled="loading"
-                  >
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Display based on question type -->
-              <div v-if="quiz.question_type === 'multiple_choice'" class="grid grid-cols-2 gap-3">
-                <div 
-                  v-for="(option, optIndex) in quiz.options" 
-                  :key="optIndex"
-                  class="p-3 border border-gray-200 rounded-lg"
-                  :class="{'bg-green-50 border-green-300': option === quiz.correct_answer}"
-                >
-                  <div class="flex items-center">
-                    <span class="font-semibold text-gray-700 mr-3">{{ String.fromCharCode(65 + optIndex) }}.</span>
-                    <span class="flex-1">{{ option }}</span>
-                    <span v-if="option === quiz.correct_answer" class="text-green-600 ml-2">
-                      <i class="fas fa-check-circle"></i>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-else-if="quiz.question_type === 'brief_answer'" class="bg-gray-50 p-4 rounded-lg">
-                <div class="flex items-center gap-2 mb-2">
-                  <i class="fas fa-key text-green-600"></i>
-                  <span class="font-medium text-gray-700">Correct Answer:</span>
-                </div>
-                <p class="text-gray-800 bg-white p-3 rounded border">{{ quiz.correct_answer }}</p>
-              </div>
-
-              <div v-else-if="quiz.question_type === 'true_false'" class="flex gap-4">
-                <div 
-                  class="flex-1 p-4 border rounded-lg"
-                  :class="quiz.correct_answer === 'True' ? 'bg-green-50 border-green-300' : 'bg-gray-50'"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="font-semibold">True</span>
-                    <span v-if="quiz.correct_answer === 'True'" class="text-green-600">
-                      <i class="fas fa-check-circle"></i>
-                    </span>
-                  </div>
-                </div>
-                <div 
-                  class="flex-1 p-4 border rounded-lg"
-                  :class="quiz.correct_answer === 'False' ? 'bg-green-50 border-green-300' : 'bg-gray-50'"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="font-semibold">False</span>
-                    <span v-if="quiz.correct_answer === 'False'" class="text-green-600">
-                      <i class="fas fa-check-circle"></i>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empty state for questions -->
-          <div v-if="quizzes.length === 0 && !loading" class="text-center py-12">
-            <div class="flex flex-col items-center justify-center text-gray-500">
-              <i class="fas fa-question-circle text-6xl mb-4 text-gray-300"></i>
-              <h3 class="text-xl font-medium mb-2">No questions yet</h3>
-              <p class="text-sm mb-4">Get started by adding your first question</p>
-              <button 
-                @click="showAddQuestionModal = true"
-                class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
-                :disabled="loading"
-              >
-                Add First Question
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Add/Edit Quiz Set Modal -->
-        <div v-if="showAddSetModal || showEditSetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div class="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-semibold mb-4 text-gray-800">
-              {{ showEditSetModal ? 'Edit Quiz Set' : 'Add New Quiz Set' }}
-            </h3>
-            <form @submit.prevent="saveQuizSet">
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                  <input 
-                    v-model="quizSetForm.name"
-                    type="text" 
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter quiz set name"
-                    :disabled="loading"
-                  >
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <input 
-                    v-model="quizSetForm.category"
-                    type="text" 
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="e.g., Science, History, Geography"
-                    :disabled="loading"
-                  >
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea 
-                    v-model="quizSetForm.description"
-                    rows="3"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Describe this quiz set..."
-                    :disabled="loading"
-                  ></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Time Limit (seconds)</label>
-                    <input 
-                      v-model.number="quizSetForm.time_limit"
-                      type="number" 
-                      required
-                      min="1"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      :disabled="loading"
-                    >
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Question Count</label>
-                    <input 
-                      v-model.number="quizSetForm.question_count"
-                      type="number" 
-                      required
-                      min="1"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      :disabled="loading"
-                    >
-                  </div>
-                </div>
-              </div>
-              <div class="flex justify-end space-x-3 mt-6">
-                <button 
-                  type="button"
-                  @click="closeSetModal"
-                  class="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors"
-                  :disabled="loading"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  class="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold transition-colors flex items-center gap-2"
-                  :disabled="loading"
-                >
-                  <i v-if="loading" class="fas fa-spinner fa-spin"></i>
-                  {{ showEditSetModal ? 'Update' : 'Create' }} Set
+                <button @click="errorMessage = ''" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
+                  <i class="fas fa-times"></i>
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
 
-        <!-- Add/Edit Question Modal -->
-        <div v-if="showAddQuestionModal || showEditQuestionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div class="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-semibold mb-4 text-gray-800">
-              {{ showEditQuestionModal ? 'Edit Question' : 'Add New Question' }}
-            </h3>
-            <form @submit.prevent="saveQuestion">
-              <div class="space-y-6">
-                <!-- Question Type Selection -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-3">Question Type</label>
-                  <div class="grid grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      @click="setQuestionType('multiple_choice')"
-                      :class="[
-                        'p-4 border-2 rounded-xl text-center transition-all duration-200',
-                        questionForm.question_type === 'multiple_choice' 
-                          ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      ]"
-                      :disabled="loading"
-                    >
-                      <i class="fas fa-list-ol text-xl mb-2 block"></i>
-                      <span class="font-medium">Multiple Choice</span>
-                    </button>
-                    <button
-                      type="button"
-                      @click="setQuestionType('brief_answer')"
-                      :class="[
-                        'p-4 border-2 rounded-xl text-center transition-all duration-200',
-                        questionForm.question_type === 'brief_answer' 
-                          ? 'border-green-500 bg-green-50 text-green-700' 
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      ]"
-                      :disabled="loading"
-                    >
-                      <i class="fas fa-edit text-xl mb-2 block"></i>
-                      <span class="font-medium">Brief Answer</span>
-                    </button>
-                    <button
-                      type="button"
-                      @click="setQuestionType('true_false')"
-                      :class="[
-                        'p-4 border-2 rounded-xl text-center transition-all duration-200',
-                        questionForm.question_type === 'true_false' 
-                          ? 'border-purple-500 bg-purple-50 text-purple-700' 
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      ]"
-                      :disabled="loading"
-                    >
-                      <i class="fas fa-check-circle text-xl mb-2 block"></i>
-                      <span class="font-medium">True/False</span>
-                    </button>
-                  </div>
+            <!-- Success Alert -->
+            <div v-if="successMessage" class="content-card mb-6">
+              <div class="flex items-center p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-3 text-lg"></i>
+                <div class="flex-1">
+                  <h3 class="text-sm font-semibold text-green-800 dark:text-green-300">Success</h3>
+                  <p class="text-sm text-green-700 dark:text-green-400 mt-1">{{ successMessage }}</p>
                 </div>
+                <button @click="successMessage = ''" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
 
-                <!-- Question Text -->
+            <!-- Quiz Sets Section -->
+            <div class="content-card mb-8">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Question</label>
-                  <textarea 
-                    v-model="questionForm.question"
-                    rows="3"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your question here..."
-                    :disabled="loading"
-                  ></textarea>
+                  <h2 class="card-title-large">Quiz Sets</h2>
+                  <p class="card-subtitle">Create and manage your quiz collections</p>
                 </div>
+                <button 
+                  @click="showAddSetModal = true"
+                  class="primary-button"
+                  :disabled="loading"
+                >
+                  <i class="fas fa-plus"></i>
+                  Add New Set
+                </button>
+              </div>
 
-                <!-- Multiple Choice Options -->
-                <div v-if="questionForm.question_type === 'multiple_choice'">
-                  <label class="block text-sm font-medium text-gray-700 mb-3">Options</label>
-                  <div class="grid grid-cols-2 gap-4">
-                    <div v-for="(_, index) in 4" :key="index" class="relative">
-                      <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Option {{ String.fromCharCode(65 + index) }}
-                      </label>
-                      <input 
-                        v-model="questionForm.options[index]"
-                        type="text" 
-                        required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        :placeholder="`Enter option ${String.fromCharCode(65 + index)}`"
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div 
+                  v-for="quizSet in quizSets" 
+                  :key="quizSet.id"
+                  class="quiz-set-card"
+                >
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="category-badge">
+                      {{ quizSet.category }}
+                    </span>
+                    <div class="flex space-x-2">
+                      <button 
+                        @click="editQuizSet(quizSet)"
+                        class="icon-button blue"
+                        title="Edit Quiz Set"
                         :disabled="loading"
                       >
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button 
+                        @click="deleteQuizSet(quizSet.id)"
+                        class="icon-button red"
+                        title="Delete Quiz Set"
+                        :disabled="loading"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
                     </div>
                   </div>
-                  <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Correct Answer</label>
-                    <select 
-                      v-model="questionForm.correct_answer"
-                      required
-                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  <h3 class="quiz-set-title">{{ quizSet.name }}</h3>
+                  <p class="quiz-set-description">{{ quizSet.description }}</p>
+                  <div class="flex items-center justify-between mt-4">
+                    <div class="flex items-center gap-2">
+                      <span class="question-count">{{ quizSet.question_count }} questions</span>
+                      <span class="time-badge">{{ quizSet.time_limit }}s</span>
+                    </div>
+                    <button 
+                      @click="viewQuestions(quizSet)"
+                      class="secondary-button"
                       :disabled="loading"
                     >
-                      <option value="">Select correct option</option>
-                      <option 
-                        v-for="(option, index) in questionForm.options" 
-                        :key="index"
-                        :value="option"
-                      >
-                        {{ String.fromCharCode(65 + index) }}: {{ option }}
-                      </option>
-                    </select>
+                      Manage Questions
+                    </button>
                   </div>
                 </div>
+              </div>
 
-                <!-- Brief Answer -->
-                <div v-else-if="questionForm.question_type === 'brief_answer'">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Correct Answer</label>
-                  <textarea 
-                    v-model="questionForm.correct_answer"
-                    rows="2"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter the correct answer..."
+              <!-- Empty state for quiz sets -->
+              <div v-if="quizSets.length === 0 && !loading" class="empty-state">
+                <div class="empty-content">
+                  <i class="fas fa-clipboard-list empty-icon"></i>
+                  <p class="empty-title">No quiz sets yet</p>
+                  <p class="empty-subtitle">Get started by creating your first quiz set</p>
+                  <button 
+                    @click="showAddSetModal = true"
+                    class="primary-button"
                     :disabled="loading"
-                  ></textarea>
+                  >
+                    Create Your First Set
+                  </button>
                 </div>
+              </div>
+            </div>
 
-                <!-- True/False -->
-                <div v-else-if="questionForm.question_type === 'true_false'">
-                  <label class="block text-sm font-medium text-gray-700 mb-3">Correct Answer</label>
-                  <div class="grid grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      @click="questionForm.correct_answer = 'True'"
-                      :class="[
-                        'p-4 border-2 rounded-xl text-center transition-all duration-200',
-                        questionForm.correct_answer === 'True' 
-                          ? 'border-green-500 bg-green-50 text-green-700' 
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      ]"
-                      :disabled="loading"
+            <!-- Questions Management -->
+            <div v-if="selectedSet" class="content-card">
+              <div class="flex items-center justify-between mb-6">
+                <div>
+                  <h2 class="card-title-large">Questions for {{ selectedSet.name }}</h2>
+                  <p class="card-subtitle">Total: {{ quizzes.length }} questions</p>
+                </div>
+                <div class="flex space-x-3">
+                  <button 
+                    @click="selectedSet = null; quizzes = []"
+                    class="secondary-button gray"
+                    :disabled="loading"
+                  >
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Sets
+                  </button>
+                  <button 
+                    @click="showAddQuestionModal = true"
+                    class="primary-button"
+                    :disabled="loading"
+                  >
+                    <i class="fas fa-plus mr-2"></i>
+                    Add Question
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div 
+                  v-for="(quiz, index) in quizzes" 
+                  :key="quiz.id"
+                  class="question-card"
+                >
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-3 mb-2">
+                        <span class="question-number">
+                          Q{{ index + 1 }}
+                        </span>
+                        <span class="type-badge">
+                          {{ getQuestionTypeLabel(quiz.question_type) }}
+                        </span>
+                        <span class="points-badge">
+                          {{ quiz.points }} point{{ quiz.points !== 1 ? 's' : '' }}
+                        </span>
+                      </div>
+                      <h3 class="question-text">{{ quiz.question }}</h3>
+                    </div>
+                    <div class="flex space-x-2 ml-4">
+                      <button 
+                        @click="editQuestion(quiz)"
+                        class="icon-button blue"
+                        title="Edit Question"
+                        :disabled="loading"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button 
+                        @click="deleteQuestion(quiz.id)"
+                        class="icon-button red"
+                        title="Delete Question"
+                        :disabled="loading"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Display based on question type -->
+                  <div v-if="quiz.question_type === 'multiple_choice'" class="options-grid">
+                    <div 
+                      v-for="(option, optIndex) in quiz.options" 
+                      :key="optIndex"
+                      class="option-item"
+                      :class="{'correct-option': option === quiz.correct_answer}"
                     >
-                      <i class="fas fa-check text-xl mb-2 block"></i>
-                      <span class="font-medium">True</span>
-                    </button>
-                    <button
-                      type="button"
-                      @click="questionForm.correct_answer = 'False'"
-                      :class="[
-                        'p-4 border-2 rounded-xl text-center transition-all duration-200',
-                        questionForm.correct_answer === 'False' 
-                          ? 'border-red-500 bg-red-50 text-red-700' 
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      ]"
-                      :disabled="loading"
+                      <div class="flex items-center">
+                        <span class="option-label">{{ String.fromCharCode(65 + optIndex) }}.</span>
+                        <span class="option-text">{{ option }}</span>
+                        <span v-if="option === quiz.correct_answer" class="correct-indicator">
+                          <i class="fas fa-check-circle"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else-if="quiz.question_type === 'brief_answer'" class="answer-container">
+                    <div class="answer-header">
+                      <i class="fas fa-key"></i>
+                      <span>Correct Answer:</span>
+                    </div>
+                    <p class="answer-text">{{ quiz.correct_answer }}</p>
+                  </div>
+
+                  <div v-else-if="quiz.question_type === 'true_false'" class="true-false-grid">
+                    <div 
+                      class="tf-option"
+                      :class="quiz.correct_answer === 'True' ? 'correct-tf' : ''"
                     >
-                      <i class="fas fa-times text-xl mb-2 block"></i>
-                      <span class="font-medium">False</span>
-                    </button>
+                      <div class="flex items-center justify-between">
+                        <span class="tf-label">True</span>
+                        <span v-if="quiz.correct_answer === 'True'" class="correct-indicator">
+                          <i class="fas fa-check-circle"></i>
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      class="tf-option"
+                      :class="quiz.correct_answer === 'False' ? 'correct-tf' : ''"
+                    >
+                      <div class="flex items-center justify-between">
+                        <span class="tf-label">False</span>
+                        <span v-if="quiz.correct_answer === 'False'" class="correct-indicator">
+                          <i class="fas fa-check-circle"></i>
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <!-- Points -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Points</label>
+              <!-- Empty state for questions -->
+              <div v-if="quizzes.length === 0 && !loading" class="empty-state">
+                <div class="empty-content">
+                  <i class="fas fa-question-circle empty-icon"></i>
+                  <p class="empty-title">No questions yet</p>
+                  <p class="empty-subtitle">Get started by adding your first question</p>
+                  <button 
+                    @click="showAddQuestionModal = true"
+                    class="primary-button"
+                    :disabled="loading"
+                  >
+                    Add First Question
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Add/Edit Quiz Set Modal -->
+    <div v-if="showAddSetModal || showEditSetModal" class="modal-overlay">
+      <div class="modal-container">
+        <h3 class="modal-title">
+          {{ showEditSetModal ? 'Edit Quiz Set' : 'Add New Quiz Set' }}
+        </h3>
+        <form @submit.prevent="saveQuizSet">
+          <div class="space-y-4">
+            <div>
+              <label class="form-label">Name</label>
+              <input 
+                v-model="quizSetForm.name"
+                type="text" 
+                required
+                class="form-input"
+                placeholder="Enter quiz set name"
+                :disabled="loading"
+              >
+            </div>
+            <div>
+              <label class="form-label">Category</label>
+              <input 
+                v-model="quizSetForm.category"
+                type="text" 
+                required
+                class="form-input"
+                placeholder="e.g., Science, History, Geography"
+                :disabled="loading"
+              >
+            </div>
+            <div>
+              <label class="form-label">Description</label>
+              <textarea 
+                v-model="quizSetForm.description"
+                rows="3"
+                class="form-textarea"
+                placeholder="Describe this quiz set..."
+                :disabled="loading"
+              ></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="form-label">Time Limit (seconds)</label>
+                <input 
+                  v-model.number="quizSetForm.time_limit"
+                  type="number" 
+                  required
+                  min="1"
+                  class="form-input"
+                  :disabled="loading"
+                >
+              </div>
+              <div>
+                <label class="form-label">Question Count</label>
+                <input 
+                  v-model.number="quizSetForm.question_count"
+                  type="number" 
+                  required
+                  min="1"
+                  class="form-input"
+                  :disabled="loading"
+                >
+              </div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button 
+              type="button"
+              @click="closeSetModal"
+              class="secondary-button"
+              :disabled="loading"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              class="primary-button"
+              :disabled="loading"
+            >
+              <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+              {{ showEditSetModal ? 'Update' : 'Create' }} Set
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add/Edit Question Modal -->
+    <div v-if="showAddQuestionModal || showEditQuestionModal" class="modal-overlay">
+      <div class="modal-container large">
+        <h3 class="modal-title">
+          {{ showEditQuestionModal ? 'Edit Question' : 'Add New Question' }}
+        </h3>
+        <form @submit.prevent="saveQuestion">
+          <div class="space-y-6">
+            <!-- Question Type Selection -->
+            <div>
+              <label class="form-label">Question Type</label>
+              <div class="type-grid">
+                <button
+                  type="button"
+                  @click="setQuestionType('multiple_choice')"
+                  :class="[
+                    'type-option',
+                    questionForm.question_type === 'multiple_choice' ? 'type-option-selected blue' : 'type-option-default'
+                  ]"
+                  :disabled="loading"
+                >
+                  <i class="fas fa-list-ol type-icon"></i>
+                  <span class="type-label">Multiple Choice</span>
+                </button>
+                <button
+                  type="button"
+                  @click="setQuestionType('brief_answer')"
+                  :class="[
+                    'type-option',
+                    questionForm.question_type === 'brief_answer' ? 'type-option-selected green' : 'type-option-default'
+                  ]"
+                  :disabled="loading"
+                >
+                  <i class="fas fa-edit type-icon"></i>
+                  <span class="type-label">Brief Answer</span>
+                </button>
+                <button
+                  type="button"
+                  @click="setQuestionType('true_false')"
+                  :class="[
+                    'type-option',
+                    questionForm.question_type === 'true_false' ? 'type-option-selected purple' : 'type-option-default'
+                  ]"
+                  :disabled="loading"
+                >
+                  <i class="fas fa-check-circle type-icon"></i>
+                  <span class="type-label">True/False</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Question Text -->
+            <div>
+              <label class="form-label">Question</label>
+              <textarea 
+                v-model="questionForm.question"
+                rows="3"
+                required
+                class="form-textarea"
+                placeholder="Enter your question here..."
+                :disabled="loading"
+              ></textarea>
+            </div>
+
+            <!-- Multiple Choice Options -->
+            <div v-if="questionForm.question_type === 'multiple_choice'">
+              <label class="form-label">Options</label>
+              <div class="options-grid-modal">
+                <div v-for="(_, index) in 4" :key="index" class="option-input-container">
+                  <label class="option-label-modal">
+                    Option {{ String.fromCharCode(65 + index) }}
+                  </label>
                   <input 
-                    v-model.number="questionForm.points"
-                    type="number" 
+                    v-model="questionForm.options[index]"
+                    type="text" 
                     required
-                    min="1"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    class="form-input"
+                    :placeholder="`Enter option ${String.fromCharCode(65 + index)}`"
                     :disabled="loading"
                   >
                 </div>
               </div>
-              <div class="flex justify-end space-x-3 mt-6">
-                <button 
+              <div class="mt-4">
+                <label class="form-label">Correct Answer</label>
+                <select 
+                  v-model="questionForm.correct_answer"
+                  required
+                  class="form-input"
+                  :disabled="loading"
+                >
+                  <option value="">Select correct option</option>
+                  <option 
+                    v-for="(option, index) in questionForm.options" 
+                    :key="index"
+                    :value="option"
+                  >
+                    {{ String.fromCharCode(65 + index) }}: {{ option }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Brief Answer -->
+            <div v-else-if="questionForm.question_type === 'brief_answer'">
+              <label class="form-label">Correct Answer</label>
+              <textarea 
+                v-model="questionForm.correct_answer"
+                rows="2"
+                required
+                class="form-textarea"
+                placeholder="Enter the correct answer..."
+                :disabled="loading"
+              ></textarea>
+            </div>
+
+            <!-- True/False -->
+            <div v-else-if="questionForm.question_type === 'true_false'">
+              <label class="form-label">Correct Answer</label>
+              <div class="tf-grid-modal">
+                <button
                   type="button"
-                  @click="closeQuestionModal"
-                  class="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                  @click="questionForm.correct_answer = 'True'"
+                  :class="[
+                    'tf-option-modal',
+                    questionForm.correct_answer === 'True' ? 'tf-option-selected green' : 'tf-option-default'
+                  ]"
                   :disabled="loading"
                 >
-                  Cancel
+                  <i class="fas fa-check tf-icon"></i>
+                  <span class="tf-label-modal">True</span>
                 </button>
-                <button 
-                  type="submit"
-                  class="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold transition-colors flex items-center gap-2"
+                <button
+                  type="button"
+                  @click="questionForm.correct_answer = 'False'"
+                  :class="[
+                    'tf-option-modal',
+                    questionForm.correct_answer === 'False' ? 'tf-option-selected red' : 'tf-option-default'
+                  ]"
                   :disabled="loading"
                 >
-                  <i v-if="loading" class="fas fa-spinner fa-spin"></i>
-                  {{ showEditQuestionModal ? 'Update' : 'Add' }} Question
+                  <i class="fas fa-times tf-icon"></i>
+                  <span class="tf-label-modal">False</span>
                 </button>
               </div>
-            </form>
+            </div>
+
+            <!-- Points -->
+            <div>
+              <label class="form-label">Points</label>
+              <input 
+                v-model.number="questionForm.points"
+                type="number" 
+                required
+                min="1"
+                class="form-input"
+                :disabled="loading"
+              >
+            </div>
           </div>
-        </div>
-      </main>
+          <div class="modal-actions">
+            <button 
+              type="button"
+              @click="closeQuestionModal"
+              class="secondary-button"
+              :disabled="loading"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              class="primary-button"
+              :disabled="loading"
+            >
+              <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+              {{ showEditQuestionModal ? 'Update' : 'Add' }} Question
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+<script>
+import AdminNavbar from './AdminNavbar.vue';
+import AdminSidebar from './AdminSidebar.vue';
 
-// State management
-const errorMessage = ref('')
-const successMessage = ref('')
-const loading = ref(false)
-const quizSets = ref([])
-const selectedSet = ref(null)
-const quizzes = ref([])
-const showAddSetModal = ref(false)
-const showEditSetModal = ref(false)
-const showAddQuestionModal = ref(false)
-const showEditQuestionModal = ref(false)
-const mobileSidebar = ref(false)
-const editingId = ref(null)
-
-// Forms
-const quizSetForm = ref({
-  name: '',
-  category: '',
-  description: '',
-  time_limit: 60,
-  question_count: 10
-})
-
-const questionForm = ref({
-  question: '',
-  question_type: 'multiple_choice',
-  options: ['', '', '', ''],
-  correct_answer: '',
-  points: 1
-})
-
-// Computed properties
-const totalQuestions = computed(() => {
-  return quizSets.value.reduce((total, set) => total + set.question_count, 0)
-})
-
-const multipleChoiceCount = computed(() => {
-  return quizzes.value.filter(q => q.question_type === 'multiple_choice').length
-})
-
-const briefAnswerCount = computed(() => {
-  return quizzes.value.filter(q => q.question_type === 'brief_answer').length
-})
-
-// Utility functions
-const clearMessages = () => {
-  errorMessage.value = ''
-  successMessage.value = ''
-}
-
-const showError = (message) => {
-  errorMessage.value = message
-  setTimeout(() => {
-    errorMessage.value = ''
-  }, 5000)
-}
-
-const showSuccess = (message) => {
-  successMessage.value = message
-  setTimeout(() => {
-    successMessage.value = ''
-  }, 3000)
-}
-
-// API helper function
-// In your Vue component, replace the apiRequest function with this:
-const apiRequest = async (url, options = {}) => {
-  const defaultHeaders = {
-    'X-Admin-Key': 'admin123',
-    'Content-Type': 'application/json',
-    ...options.headers
-  }
-
-  try {
-    console.log(`Making API request to: ${url}`, options)
-    
-    const response = await fetch(url, { ...options, headers: defaultHeaders })
-    
-    console.log(`Response status: ${response.status}`, response)
-    
-    // Get the response text first to see what we're dealing with
-    const responseText = await response.text()
-    console.log('Raw response:', responseText)
-    
-    if (!response.ok) {
-      // Try to parse as JSON, but if it fails, use the raw text
-      let errorData
-      try {
-        errorData = JSON.parse(responseText)
-      } catch {
-        errorData = { 
-          error: `HTTP ${response.status}: ${response.statusText}`,
-          rawResponse: responseText.substring(0, 200) // First 200 chars
-        }
+export default {
+  name: 'Quizzes',
+  components: {
+    AdminNavbar,
+    AdminSidebar
+  },
+  data() {
+    return {
+      isDark: false,
+      mobileSidebar: false,
+      loading: false,
+      errorMessage: '',
+      successMessage: '',
+      quizSets: [],
+      selectedSet: null,
+      quizzes: [],
+      showAddSetModal: false,
+      showEditSetModal: false,
+      showAddQuestionModal: false,
+      showEditQuestionModal: false,
+      editingId: null,
+      quizSetForm: {
+        name: '',
+        category: '',
+        description: '',
+        time_limit: 60,
+        question_count: 10
+      },
+      questionForm: {
+        question: '',
+        question_type: 'multiple_choice',
+        options: ['', '', '', ''],
+        correct_answer: '',
+        points: 1
       }
-      throw new Error(errorData.error || 'Request failed')
     }
-
-    // Parse the successful response
-    try {
-      return JSON.parse(responseText)
-    } catch (parseError) {
-      console.error('Failed to parse JSON response:', parseError)
-      throw new Error('Invalid JSON response from server')
+  },
+  computed: {
+    totalQuestions() {
+      return this.quizSets.reduce((total, set) => total + set.question_count, 0)
+    },
+    multipleChoiceCount() {
+      return this.quizzes.filter(q => q.question_type === 'multiple_choice').length
+    },
+    briefAnswerCount() {
+      return this.quizzes.filter(q => q.question_type === 'brief_answer').length
     }
-  } catch (error) {
-    console.error('API Request failed:', error)
-    throw error
-  }
-}
+  },
+  methods: {
+    toggleTheme() {
+      this.isDark = !this.isDark
+    },
+    toggleMobileSidebar() {
+      this.mobileSidebar = !this.mobileSidebar
+    },
+    handleLogout() {
+      this.$inertia.post('/admin/logout');
+    },
+    clearMessages() {
+      this.errorMessage = ''
+      this.successMessage = ''
+    },
+    showError(message) {
+      this.errorMessage = message
+      setTimeout(() => {
+        this.errorMessage = ''
+      }, 5000)
+    },
+    showSuccess(message) {
+      this.successMessage = message
+      setTimeout(() => {
+        this.successMessage = ''
+      }, 3000)
+    },
+    getQuestionTypeLabel(type) {
+      const labels = {
+        'multiple_choice': 'Multiple Choice',
+        'brief_answer': 'Brief Answer',
+        'true_false': 'True/False'
+      }
+      return labels[type] || type
+    },
+    setQuestionType(type) {
+      this.questionForm.question_type = type
+      this.questionForm.correct_answer = ''
+      if (type === 'multiple_choice') {
+        this.questionForm.options = ['', '', '', '']
+      }
+    },
+    async apiRequest(url, options = {}) {
+      const defaultHeaders = {
+        'X-Admin-Key': 'admin123',
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
 
-// Core methods
-const toggleMobileSidebar = () => {
-  mobileSidebar.value = !mobileSidebar.value
-}
+      try {
+        console.log(`Making API request to: ${url}`, options)
+        
+        const response = await fetch(url, { ...options, headers: defaultHeaders })
+        
+        console.log(`Response status: ${response.status}`, response)
+        
+        const responseText = await response.text()
+        console.log('Raw response:', responseText)
+        
+        if (!response.ok) {
+          let errorData
+          try {
+            errorData = JSON.parse(responseText)
+          } catch {
+            errorData = { 
+              error: `HTTP ${response.status}: ${response.statusText}`,
+              rawResponse: responseText.substring(0, 200)
+            }
+          }
+          throw new Error(errorData.error || 'Request failed')
+        }
 
-const logout = () => {
-  router.post('/admin/logout')
-}
+        try {
+          return JSON.parse(responseText)
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError)
+          throw new Error('Invalid JSON response from server')
+        }
+      } catch (error) {
+        console.error('API Request failed:', error)
+        throw error
+      }
+    },
+    async fetchQuizSets() {
+      try {
+        this.loading = true
+        this.clearMessages()
+        
+        const data = await this.apiRequest('/api/admin-api/quiz-sets')
+        this.quizSets = data
+        
+      } catch (error) {
+        this.showError(`Failed to load quiz sets: ${error.message}`)
+      } finally {
+        this.loading = false
+      }
+    },
+    async viewQuestions(quizSet) {
+      this.selectedSet = quizSet
+      try {
+        this.loading = true
+        this.clearMessages()
+        
+        const data = await this.apiRequest(`/api/quiz-sets/${quizSet.id}/quizzes`)
+        this.quizzes = data
+        
+      } catch (error) {
+        this.showError(`Failed to load questions: ${error.message}`)
+      } finally {
+        this.loading = false
+      }
+    },
+    editQuizSet(quizSet) {
+      this.quizSetForm = { ...quizSet }
+      this.editingId = quizSet.id
+      this.showEditSetModal = true
+    },
+    async deleteQuizSet(id) {
+      if (!confirm('Are you sure you want to delete this quiz set? This will also delete all questions in this set.')) return
 
-const getQuestionTypeLabel = (type) => {
-  const labels = {
-    'multiple_choice': 'Multiple Choice',
-    'brief_answer': 'Brief Answer',
-    'true_false': 'True/False'
-  }
-  return labels[type] || type
-}
+      try {
+        this.loading = true
+        this.clearMessages()
+        
+        await this.apiRequest(`/api/admin-api/quiz-sets/${id}`, { method: 'DELETE' })
+        
+        await this.fetchQuizSets()
+        if (this.selectedSet && this.selectedSet.id === id) {
+          this.selectedSet = null
+          this.quizzes = []
+        }
+        
+        this.showSuccess('Quiz set deleted successfully')
+      } catch (error) {
+        this.showError(`Failed to delete quiz set: ${error.message}`)
+      } finally {
+        this.loading = false
+      }
+    },
+    async saveQuizSet() {
+      try {
+        this.loading = true
+        this.clearMessages()
+        
+        const url = this.showEditSetModal 
+          ? `/api/admin-api/quiz-sets/${this.editingId}`
+          : '/api/admin-api/quiz-sets'
+        
+        const method = this.showEditSetModal ? 'PUT' : 'POST'
 
-const setQuestionType = (type) => {
-  questionForm.value.question_type = type
-  questionForm.value.correct_answer = ''
-  if (type === 'multiple_choice') {
-    questionForm.value.options = ['', '', '', '']
-  }
-}
+        await this.apiRequest(url, {
+          method: method,
+          body: JSON.stringify(this.quizSetForm)
+        })
 
-// Data fetching
-const fetchQuizSets = async () => {
-  try {
-    loading.value = true
-    clearMessages()
-    
-    const data = await apiRequest('/api/admin-api/quiz-sets')
-    quizSets.value = data
-    
-  } catch (error) {
-    showError(`Failed to load quiz sets: ${error.message}`)
-  } finally {
-    loading.value = false
-  }
-}
+        await this.fetchQuizSets()
+        this.closeSetModal()
+        
+        this.showSuccess(`Quiz set ${this.showEditSetModal ? 'updated' : 'created'} successfully`)
+      } catch (error) {
+        this.showError(`Failed to save quiz set: ${error.message}`)
+      } finally {
+        this.loading = false
+      }
+    },
+    closeSetModal() {
+      this.showAddSetModal = false
+      this.showEditSetModal = false
+      this.quizSetForm = {
+        name: '',
+        category: '',
+        description: '',
+        time_limit: 60,
+        question_count: 10
+      }
+      this.editingId = null
+    },
+    editQuestion(quiz) {
+      this.questionForm = {
+        question: quiz.question,
+        question_type: quiz.question_type,
+        options: [...(quiz.options || ['', '', '', ''])],
+        correct_answer: quiz.correct_answer,
+        points: quiz.points
+      }
+      this.editingId = quiz.id
+      this.showEditQuestionModal = true
+    },
+    async deleteQuestion(id) {
+      if (!confirm('Are you sure you want to delete this question?')) return
 
-const viewQuestions = async (quizSet) => {
-  selectedSet.value = quizSet
-  try {
-    loading.value = true
-    clearMessages()
-    
-    const data = await apiRequest(`/api/quiz-sets/${quizSet.id}/quizzes`)
-    quizzes.value = data
-    
-  } catch (error) {
-    showError(`Failed to load questions: ${error.message}`)
-  } finally {
-    loading.value = false
-  }
-}
+      try {
+        this.loading = true
+        this.clearMessages()
+        
+        await this.apiRequest(`/api/admin-api/quizzes/${id}`, { method: 'DELETE' })
+        await this.viewQuestions(this.selectedSet)
+        
+        this.showSuccess('Question deleted successfully')
+      } catch (error) {
+        this.showError(`Failed to delete question: ${error.message}`)
+      } finally {
+        this.loading = false
+      }
+    },
+    async saveQuestion() {
+      try {
+        this.loading = true
+        this.clearMessages()
+        
+        const formData = {
+          ...this.questionForm,
+          quiz_set_id: this.selectedSet.id
+        }
 
-// Quiz Set operations
-const editQuizSet = (quizSet) => {
-  quizSetForm.value = { ...quizSet }
-  editingId.value = quizSet.id
-  showEditSetModal.value = true
-}
+        if (formData.question_type !== 'multiple_choice') {
+          delete formData.options
+        }
 
-const deleteQuizSet = async (id) => {
-  if (!confirm('Are you sure you want to delete this quiz set? This will also delete all questions in this set.')) return
+        const url = this.showEditQuestionModal 
+          ? `/api/admin-api/quizzes/${this.editingId}`
+          : '/api/admin-api/quizzes'
+        
+        const method = this.showEditQuestionModal ? 'PUT' : 'POST'
 
-  try {
-    loading.value = true
-    clearMessages()
-    
-    await apiRequest(`/api/admin-api/quiz-sets/${id}`, { method: 'DELETE' })
-    
-    await fetchQuizSets()
-    if (selectedSet.value && selectedSet.value.id === id) {
-      selectedSet.value = null
-      quizzes.value = []
+        await this.apiRequest(url, {
+          method: method,
+          body: JSON.stringify(formData)
+        })
+
+        await this.viewQuestions(this.selectedSet)
+        this.closeQuestionModal()
+        
+        this.showSuccess(`Question ${this.showEditQuestionModal ? 'updated' : 'added'} successfully`)
+      } catch (error) {
+        this.showError(`Failed to save question: ${error.message}`)
+      } finally {
+        this.loading = false
+      }
+    },
+    closeQuestionModal() {
+      this.showAddQuestionModal = false
+      this.showEditQuestionModal = false
+      this.questionForm = {
+        question: '',
+        question_type: 'multiple_choice',
+        options: ['', '', '', ''],
+        correct_answer: '',
+        points: 1
+      }
+      this.editingId = null
     }
-    
-    showSuccess('Quiz set deleted successfully')
-  } catch (error) {
-    showError(`Failed to delete quiz set: ${error.message}`)
-  } finally {
-    loading.value = false
+  },
+  mounted() {
+    this.fetchQuizSets()
   }
 }
-
-const saveQuizSet = async () => {
-  try {
-    loading.value = true
-    clearMessages()
-    
-    const url = showEditSetModal.value 
-      ? `/api/admin-api/quiz-sets/${editingId.value}`
-      : '/api/admin-api/quiz-sets'
-    
-    const method = showEditSetModal.value ? 'PUT' : 'POST'
-
-    await apiRequest(url, {
-      method: method,
-      body: JSON.stringify(quizSetForm.value)
-    })
-
-    await fetchQuizSets()
-    closeSetModal()
-    
-    showSuccess(`Quiz set ${showEditSetModal.value ? 'updated' : 'created'} successfully`)
-  } catch (error) {
-    showError(`Failed to save quiz set: ${error.message}`)
-  } finally {
-    loading.value = false
-  }
-}
-
-const closeSetModal = () => {
-  showAddSetModal.value = false
-  showEditSetModal.value = false
-  quizSetForm.value = {
-    name: '',
-    category: '',
-    description: '',
-    time_limit: 60,
-    question_count: 10
-  }
-  editingId.value = null
-}
-
-// Question operations
-const editQuestion = (quiz) => {
-  questionForm.value = {
-    question: quiz.question,
-    question_type: quiz.question_type,
-    options: [...(quiz.options || ['', '', '', ''])],
-    correct_answer: quiz.correct_answer,
-    points: quiz.points
-  }
-  editingId.value = quiz.id
-  showEditQuestionModal.value = true
-}
-
-const deleteQuestion = async (id) => {
-  if (!confirm('Are you sure you want to delete this question?')) return
-
-  try {
-    loading.value = true
-    clearMessages()
-    
-    await apiRequest(`/api/admin-api/quizzes/${id}`, { method: 'DELETE' })
-    await viewQuestions(selectedSet.value)
-    
-    showSuccess('Question deleted successfully')
-  } catch (error) {
-    showError(`Failed to delete question: ${error.message}`)
-  } finally {
-    loading.value = false
-  }
-}
-
-const saveQuestion = async () => {
-  try {
-    loading.value = true
-    clearMessages()
-    
-    const formData = {
-      ...questionForm.value,
-      quiz_set_id: selectedSet.value.id
-    }
-
-    // For brief answer and true/false, we don't need options array
-    if (formData.question_type !== 'multiple_choice') {
-      delete formData.options
-    }
-
-    const url = showEditQuestionModal.value 
-      ? `/api/admin-api/quizzes/${editingId.value}`
-      : '/api/admin-api/quizzes'
-    
-    const method = showEditQuestionModal.value ? 'PUT' : 'POST'
-
-    await apiRequest(url, {
-      method: method,
-      body: JSON.stringify(formData)
-    })
-
-    await viewQuestions(selectedSet.value)
-    closeQuestionModal()
-    
-    showSuccess(`Question ${showEditQuestionModal.value ? 'updated' : 'added'} successfully`)
-  } catch (error) {
-    showError(`Failed to save question: ${error.message}`)
-  } finally {
-    loading.value = false
-  }
-}
-
-const closeQuestionModal = () => {
-  showAddQuestionModal.value = false
-  showEditQuestionModal.value = false
-  questionForm.value = {
-    question: '',
-    question_type: 'multiple_choice',
-    options: ['', '', '', ''],
-    correct_answer: '',
-    points: 1
-  }
-  editingId.value = null
-}
-
-// Lifecycle
-onMounted(() => {
-  fetchQuizSets()
-})
 </script>
 
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease-in-out;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+<style>
+/* Import Font Awesome */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+/* Light Theme */
+.light-theme {
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --bg-sidebar: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --hover-bg: #f3f4f6;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Custom scrollbar */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
+/* Dark Theme */
+.dark-theme {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-sidebar: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-muted: #9ca3af;
+  --border-color: #374151;
+  --hover-bg: #374151;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
+/* Base Styles */
+.min-h-screen {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  transition: all 0.3s ease;
 }
 
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+.main-content {
+  flex: 1;
+  min-width: 0;
 }
 
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.content {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.loading-icon {
+  font-size: 1.875rem;
+  color: #2563eb;
+  margin-bottom: 1rem;
+}
+.dark-theme .loading-icon {
+  color: #60a5fa;
+}
+
+.loading-text {
+  color: var(--text-muted);
+}
+
+/* Stats Section */
+.stats-section {
+  max-width: 56rem;
+  margin: 0 auto 3rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat-card {
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.stat-card.blue {
+  background-color: #dbeafe;
+}
+.dark-theme .stat-card.blue {
+  background-color: #1e3a8a;
+}
+.stat-card.green {
+  background-color: #dcfce7;
+}
+.dark-theme .stat-card.green {
+  background-color: #14532d;
+}
+.stat-card.purple {
+  background-color: #f3e8ff;
+}
+.dark-theme .stat-card.purple {
+  background-color: #581c87;
+}
+.stat-card.orange {
+  background-color: #fed7aa;
+}
+.dark-theme .stat-card.orange {
+  background-color: #7c2d12;
+}
+
+.stat-number {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.stat-card.blue .stat-number {
+  color: #2563eb;
+}
+.dark-theme .stat-card.blue .stat-number {
+  color: #60a5fa;
+}
+.stat-card.green .stat-number {
+  color: #16a34a;
+}
+.dark-theme .stat-card.green .stat-number {
+  color: #4ade80;
+}
+.stat-card.purple .stat-number {
+  color: #7c3aed;
+}
+.dark-theme .stat-card.purple .stat-number {
+  color: #a855f7;
+}
+.stat-card.orange .stat-number {
+  color: #ea580c;
+}
+.dark-theme .stat-card.orange .stat-number {
+  color: #fdba74;
+}
+
+.stat-label {
+  color: var(--text-muted);
+}
+
+/* Content Cards */
+.content-card {
+  background-color: var(--bg-secondary);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-title-large {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* Buttons */
+.primary-button {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.primary-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+}
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.secondary-button:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+.secondary-button.gray {
+  background-color: #6b7280;
+}
+.secondary-button.gray:hover:not(:disabled) {
+  background-color: #4b5563;
+}
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.icon-button {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+.icon-button.blue {
+  color: #3b82f6;
+}
+.icon-button.blue:hover:not(:disabled) {
+  background-color: #dbeafe;
+}
+.icon-button.red {
+  color: #ef4444;
+}
+.icon-button.red:hover:not(:disabled) {
+  background-color: #fef2f2;
+}
+.icon-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Quiz Set Cards */
+.quiz-set-card {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--hover-bg) 100%);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+.quiz-set-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.category-badge {
+  padding: 0.25rem 0.75rem;
+  background-color: #dbeafe;
+  color: #1e40af;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+.dark-theme .category-badge {
+  background-color: #1e3a8a;
+  color: #93c5fd;
+}
+
+.quiz-set-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.quiz-set-description {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.question-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.time-badge {
+  padding: 0.25rem 0.5rem;
+  background-color: var(--hover-bg);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+}
+
+/* Question Cards */
+.question-card {
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+.question-card:hover {
+  border-color: #3b82f6;
+}
+
+.question-number {
+  padding: 0.25rem 0.75rem;
+  background-color: #dbeafe;
+  color: #1e40af;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.type-badge {
+  padding: 0.25rem 0.5rem;
+  background-color: var(--hover-bg);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+}
+
+.points-badge {
+  padding: 0.25rem 0.5rem;
+  background-color: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+}
+.dark-theme .points-badge {
+  background-color: #14532d;
+  color: #4ade80;
+}
+
+.question-text {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Options Grid */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.option-item {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+.option-item.correct-option {
+  background-color: #dcfce7;
+  border-color: #22c55e;
+}
+.dark-theme .option-item.correct-option {
+  background-color: #14532d;
+  border-color: #4ade80;
+}
+
+.option-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 0.75rem;
+}
+
+.option-text {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.correct-indicator {
+  color: #22c55e;
+  margin-left: 0.5rem;
+}
+
+/* Answer Container */
+.answer-container {
+  background-color: var(--hover-bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.answer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.answer-text {
+  background-color: var(--bg-secondary);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+/* True/False Grid */
+.true-false-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tf-option {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+.tf-option.correct-tf {
+  background-color: #dcfce7;
+  border-color: #22c55e;
+}
+.dark-theme .tf-option.correct-tf {
+  background-color: #14532d;
+  border-color: #4ade80;
+}
+
+.tf-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Empty States */
+.empty-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  color: var(--border-color);
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-subtitle {
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal-container {
+  background-color: var(--bg-secondary);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 28rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-container.large {
+  max-width: 42rem;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.form-input:disabled, .form-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Type Selection Grid */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.type-option {
+  padding: 1rem;
+  border: 2px solid;
+  border-radius: 0.75rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.type-option-default {
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+.type-option-default:hover:not(:disabled) {
+  border-color: var(--text-muted);
+}
+.type-option-selected.blue {
+  border-color: #3b82f6;
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+.dark-theme .type-option-selected.blue {
+  background-color: #1e3a8a;
+  color: #93c5fd;
+}
+.type-option-selected.green {
+  border-color: #10b981;
+  background-color: #dcfce7;
+  color: #047857;
+}
+.dark-theme .type-option-selected.green {
+  background-color: #14532d;
+  color: #4ade80;
+}
+.type-option-selected.purple {
+  border-color: #8b5cf6;
+  background-color: #f3e8ff;
+  color: #7c3aed;
+}
+.dark-theme .type-option-selected.purple {
+  background-color: #581c87;
+  color: #c4b5fd;
+}
+
+.type-icon {
+  font-size: 1.5rem;
+}
+
+.type-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Options Grid Modal */
+.options-grid-modal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.option-input-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.option-label-modal {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* True/False Modal */
+.tf-grid-modal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.tf-option-modal {
+  padding: 1rem;
+  border: 2px solid;
+  border-radius: 0.75rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.tf-option-default {
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+.tf-option-default:hover:not(:disabled) {
+  border-color: var(--text-muted);
+}
+.tf-option-selected.green {
+  border-color: #10b981;
+  background-color: #dcfce7;
+  color: #047857;
+}
+.dark-theme .tf-option-selected.green {
+  background-color: #14532d;
+  color: #4ade80;
+}
+.tf-option-selected.red {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+.dark-theme .tf-option-selected.red {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+.tf-icon {
+  font-size: 1.5rem;
+}
+
+.tf-label-modal {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content {
+    padding: 1rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .true-false-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .type-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .options-grid-modal {
+    grid-template-columns: 1fr;
+  }
+  
+  .tf-grid-modal {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
 }
 </style>

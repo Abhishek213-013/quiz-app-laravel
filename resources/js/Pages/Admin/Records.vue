@@ -25,11 +25,27 @@
             <p class="loading-text">Loading records data...</p>
           </div>
 
+          <!-- Error State -->
+          <div v-else-if="error" class="error-state">
+            <i class="fas fa-exclamation-triangle error-icon"></i>
+            <p class="error-text">{{ error }}</p>
+            <button @click="fetchRecordsData" class="retry-button">
+              <i class="fas fa-redo"></i>
+              Try Again
+            </button>
+          </div>
+
           <!-- Main Content -->
           <div v-else>
             <!-- Quick Stats Section -->
             <div class="stats-section">
-              <h2 class="section-title">Performance Records</h2>
+              <div class="flex justify-between items-center mb-8">
+                <h2 class="section-title">Performance Records</h2>
+                <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+                  {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
+                </button>
+              </div>
               <div class="stats-grid">
                 <div class="stat-card blue">
                   <div class="stat-number">{{ overallStats.highestScore }}%</div>
@@ -50,6 +66,7 @@
               </div>
             </div>
 
+            <!-- Rest of the template remains exactly the same -->
             <!-- Charts Section -->
             <div class="charts-section">
               <!-- Score Distribution Chart -->
@@ -150,6 +167,15 @@
                           <div class="score-date">{{ formatDate(leader.created_at) }}</div>
                         </td>
                       </tr>
+                      <tr v-if="weeklyLeaderboard.length === 0">
+                        <td colspan="7" class="empty-state">
+                          <div class="empty-content">
+                            <i class="fas fa-trophy empty-icon"></i>
+                            <p class="empty-title">No weekly records found</p>
+                            <p class="empty-subtitle">No quiz attempts this week</p>
+                          </div>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -173,6 +199,11 @@
                         <div class="distribution-range">{{ set.quiz_set_name }}</div>
                         <div class="distribution-label">by {{ set.top_performer }}</div>
                       </div>
+                      <div v-if="quizSetPerformance.highest.length === 0" class="distribution-item high">
+                        <div class="distribution-count">0%</div>
+                        <div class="distribution-range">No data available</div>
+                        <div class="distribution-label">No quiz sets found</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -192,6 +223,11 @@
                         <div class="distribution-count">{{ set.lowest_percentage }}%</div>
                         <div class="distribution-range">{{ set.quiz_set_name }}</div>
                         <div class="distribution-label">by {{ set.lowest_performer }}</div>
+                      </div>
+                      <div v-if="quizSetPerformance.lowest.length === 0" class="distribution-item low">
+                        <div class="distribution-count">0%</div>
+                        <div class="distribution-range">No data available</div>
+                        <div class="distribution-label">No quiz sets found</div>
                       </div>
                     </div>
                   </div>
@@ -339,11 +375,18 @@ export default {
       isDark: false,
       mobileSidebar: false,
       loading: true,
+      refreshing: false, // Added refreshing state
+      error: null,
       searchParticipant: '',
       selectedQuizSet: '',
       sortField: 'created_at',
       sortDirection: 'desc',
-      overallStats: {},
+      overallStats: {
+        highestScore: 0,
+        averageScore: 0,
+        totalParticipants: 0,
+        totalAttempts: 0
+      },
       topPerformers: { allTime: [] },
       weeklyLeaderboard: [],
       quizSetPerformance: { highest: [], lowest: [] },
@@ -401,29 +444,97 @@ export default {
     handleLogout() {
       this.$inertia.post('/admin/logout');
     },
-    async fetchRecordsData() {
+    // Added refreshData method
+    async refreshData() {
+      this.refreshing = true;
+      
       try {
-        this.loading = true
-        
-        // Simulate API calls with demo data
-        await this.loadDemoData()
-        
-        // Calculate statistics
-        this.calculateOverallStats()
-        this.calculateTopPerformers()
-        this.calculateWeeklyLeaderboard()
-        this.calculateQuizSetPerformance()
-
-        // Render charts
-        setTimeout(this.renderCharts, 100)
-
+        this.error = null;
+        await this.fetchRecordsData();
       } catch (error) {
-        console.error('Error fetching records data:', error)
+        this.error = 'Failed to refresh data. Please try again.';
       } finally {
-        this.loading = false
+        this.refreshing = false;
       }
     },
+    async fetchRecordsData() {
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        // Fetch all records from your API
+        const response = await fetch('/api/quiz-results');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch records: ${response.status}`);
+        }
+        
+        const allRecords = await response.json();
+        
+        // Transform the data to match your component structure
+        this.allRecords = allRecords.map(record => ({
+          id: record.id,
+          participant_name: record.participant_name,
+          quiz_set_name: record.quiz_set?.name || 'Unknown Quiz Set',
+          category: record.quiz_set?.category || 'General',
+          quiz_set_id: record.quiz_set_id,
+          score: record.score,
+          total_questions: record.total_questions,
+          percentage: parseFloat(record.percentage),
+          time_taken: record.time_taken,
+          created_at: new Date(record.created_at)
+        }));
+
+        // Fetch quiz sets for the filter dropdown
+        await this.fetchQuizSets();
+        
+        // Calculate statistics
+        this.calculateOverallStats();
+        this.calculateTopPerformers();
+        this.calculateWeeklyLeaderboard();
+        this.calculateQuizSetPerformance();
+
+        // Render charts
+        setTimeout(this.renderCharts, 100);
+
+      } catch (error) {
+        console.error('Error fetching records data:', error);
+        this.error = 'Failed to load records data. Please check your connection and try again.';
+        // Fallback to demo data if API fails
+        await this.loadDemoData();
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchQuizSets() {
+      try {
+        const response = await fetch('/api/quiz-sets');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch quiz sets: ${response.status}`);
+        }
+        
+        this.quizSets = await response.json();
+      } catch (error) {
+        console.error('Error fetching quiz sets:', error);
+        // Fallback to extracting from records
+        const uniqueSets = {};
+        this.allRecords.forEach(record => {
+          if (record.quiz_set_id && !uniqueSets[record.quiz_set_id]) {
+            uniqueSets[record.quiz_set_id] = {
+              id: record.quiz_set_id,
+              name: record.quiz_set_name
+            };
+          }
+        });
+        this.quizSets = Object.values(uniqueSets);
+      }
+    },
+
     loadDemoData() {
+      console.warn('Using demo data - API might be unavailable');
+      
       // Demo data for records
       this.allRecords = [
         {
@@ -486,16 +597,17 @@ export default {
           time_taken: 49,
           created_at: new Date(Date.now() - 345600000)
         }
-      ]
+      ];
 
       this.quizSets = [
         { id: 1, name: 'World Geography' },
         { id: 2, name: 'Basic Science' },
         { id: 3, name: 'Movie Trivia' }
-      ]
+      ];
     },
+
     calculateOverallStats() {
-      const records = this.allRecords
+      const records = this.allRecords;
       
       if (records.length === 0) {
         this.overallStats = {
@@ -503,107 +615,112 @@ export default {
           averageScore: 0,
           totalParticipants: 0,
           totalAttempts: 0
-        }
-        return
+        };
+        return;
       }
 
-      const percentages = records.map(record => parseFloat(record.percentage))
-      const uniqueParticipants = new Set(records.map(r => r.participant_name))
+      const percentages = records.map(record => parseFloat(record.percentage));
+      const uniqueParticipants = new Set(records.map(r => r.participant_name));
       
       this.overallStats = {
         highestScore: Math.max(...percentages),
         averageScore: Math.round(percentages.reduce((sum, percentage) => sum + percentage, 0) / percentages.length),
         totalParticipants: uniqueParticipants.size,
         totalAttempts: records.length
-      }
+      };
     },
+
     calculateTopPerformers() {
-      const records = this.allRecords
+      const records = this.allRecords;
       
       if (records.length === 0) {
-        this.topPerformers.allTime = []
-        return
+        this.topPerformers.allTime = [];
+        return;
       }
 
       this.topPerformers.allTime = records
         .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
-        .slice(0, 6)
+        .slice(0, 6);
     },
+
     calculateWeeklyLeaderboard() {
-      const oneWeekAgo = new Date()
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       
       const weeklyRecords = this.allRecords
-        .filter(record => new Date(record.created_at) >= oneWeekAgo)
+        .filter(record => new Date(record.created_at) >= oneWeekAgo);
         
       this.weeklyLeaderboard = weeklyRecords
         .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
-        .slice(0, 10)
+        .slice(0, 10);
     },
+
     calculateQuizSetPerformance() {
-      const records = this.allRecords
+      const records = this.allRecords;
       
       if (records.length === 0) {
-        this.quizSetPerformance = { highest: [], lowest: [] }
-        return
+        this.quizSetPerformance = { highest: [], lowest: [] };
+        return;
       }
 
-      const setPerformance = {}
+      const setPerformance = {};
       
       // Group records by quiz set
       records.forEach(record => {
         if (!setPerformance[record.quiz_set_id]) {
           setPerformance[record.quiz_set_id] = {
             quiz_set_id: record.quiz_set_id,
-            quiz_set_name: record.quiz_set_name,
-            category: record.category,
+            quiz_set_name: record.quiz_set_name || `Quiz Set ${record.quiz_set_id}`,
+            category: record.category || 'General',
             percentages: []
-          }
+          };
         }
         setPerformance[record.quiz_set_id].percentages.push({
           percentage: parseFloat(record.percentage),
           participant_name: record.participant_name
-        })
-      })
+        });
+      });
       
       // Calculate highest and lowest for each set
-      const highest = []
-      const lowest = []
+      const highest = [];
+      const lowest = [];
       
       Object.values(setPerformance).forEach(set => {
         if (set.percentages.length > 0) {
-          const percentages = set.percentages.map(p => p.percentage)
-          const highestScore = Math.max(...percentages)
-          const lowestScore = Math.min(...percentages)
+          const percentages = set.percentages.map(p => p.percentage);
+          const highestScore = Math.max(...percentages);
+          const lowestScore = Math.min(...percentages);
           
           highest.push({
             ...set,
             highest_percentage: highestScore,
             top_performer: set.percentages.find(p => p.percentage === highestScore)?.participant_name || 'Unknown'
-          })
+          });
           
           lowest.push({
             ...set,
             lowest_percentage: lowestScore,
             lowest_performer: set.percentages.find(p => p.percentage === lowestScore)?.participant_name || 'Unknown'
-          })
+          });
         }
-      })
+      });
       
-      this.quizSetPerformance.highest = highest.sort((a, b) => b.highest_percentage - a.highest_percentage)
-      this.quizSetPerformance.lowest = lowest.sort((a, b) => a.lowest_percentage - b.lowest_percentage)
+      this.quizSetPerformance.highest = highest.sort((a, b) => b.highest_percentage - a.highest_percentage);
+      this.quizSetPerformance.lowest = lowest.sort((a, b) => a.lowest_percentage - b.lowest_percentage);
     },
-    renderCharts() {
-      this.renderScoreDistributionChart()
-      this.renderWeeklyTrendChart()
-    },
-    renderScoreDistributionChart() {
-      const ctx = document.getElementById('scoreDistributionChart')
-      if (!ctx) return
 
-      const records = this.allRecords
+    renderCharts() {
+      this.renderScoreDistributionChart();
+      this.renderWeeklyTrendChart();
+    },
+
+    renderScoreDistributionChart() {
+      const ctx = document.getElementById('scoreDistributionChart');
+      if (!ctx) return;
+
+      const records = this.allRecords;
       
-      if (records.length === 0) return
+      if (records.length === 0) return;
 
       const scoreRanges = [
         { range: '90-100%', min: 90, max: 100 },
@@ -612,16 +729,21 @@ export default {
         { range: '60-69%', min: 60, max: 69 },
         { range: '50-59%', min: 50, max: 59 },
         { range: '0-49%', min: 0, max: 49 }
-      ]
+      ];
 
       const data = scoreRanges.map(range => {
         return records.filter(record => {
-          const percentage = parseFloat(record.percentage)
-          return percentage >= range.min && percentage <= range.max
-        }).length
-      })
+          const percentage = parseFloat(record.percentage);
+          return percentage >= range.min && percentage <= range.max;
+        }).length;
+      });
 
-      new Chart(ctx, {
+      // Destroy existing chart if it exists
+      if (ctx.chartInstance) {
+        ctx.chartInstance.destroy();
+      }
+
+      ctx.chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: scoreRanges.map(r => r.range),
@@ -651,21 +773,51 @@ export default {
             }
           }
         }
-      })
+      });
     },
+
     renderWeeklyTrendChart() {
-      const ctx = document.getElementById('weeklyTrendChart')
-      if (!ctx) return
+      const ctx = document.getElementById('weeklyTrendChart');
+      if (!ctx) return;
 
-      // Demo data for weekly trend
-      const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      const averageScores = [75, 82, 78, 85, 88, 80, 83]
-      const attemptCounts = [12, 15, 18, 22, 25, 20, 16]
+      // Calculate actual weekly data from records
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+      }).reverse();
 
-      new Chart(ctx, {
+      const averageScores = [];
+      const attemptCounts = [];
+
+      last7Days.forEach((day, index) => {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() - (6 - index));
+        
+        const dayRecords = this.allRecords.filter(record => {
+          const recordDate = new Date(record.created_at);
+          return recordDate.toDateString() === targetDate.toDateString();
+        });
+
+        attemptCounts.push(dayRecords.length);
+
+        if (dayRecords.length > 0) {
+          const avgScore = dayRecords.reduce((sum, record) => sum + parseFloat(record.percentage), 0) / dayRecords.length;
+          averageScores.push(Math.round(avgScore));
+        } else {
+          averageScores.push(0);
+        }
+      });
+
+      // Destroy existing chart if it exists
+      if (ctx.chartInstance) {
+        ctx.chartInstance.destroy();
+      }
+
+      ctx.chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels,
+          labels: last7Days,
           datasets: [
             {
               label: 'Average Score (%)',
@@ -719,57 +871,87 @@ export default {
             }
           }
         }
-      })
+      });
     },
+
     cleanupCharts() {
-      const charts = ['scoreDistributionChart', 'weeklyTrendChart']
+      const charts = ['scoreDistributionChart', 'weeklyTrendChart'];
       charts.forEach(chartId => {
-        const canvas = document.getElementById(chartId)
-        if (canvas && canvas.chart) {
-          canvas.chart.destroy()
+        const canvas = document.getElementById(chartId);
+        if (canvas && canvas.chartInstance) {
+          canvas.chartInstance.destroy();
         }
-      })
+      });
     },
+
     formatDate(dateString) {
-      if (!dateString) return ''
-      const date = new Date(dateString)
+      if (!dateString) return '';
+      const date = new Date(dateString);
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
-      })
+      });
     },
+
     progressBadgeClass(percentage) {
-      const perc = parseFloat(percentage)
-      if (isNaN(perc)) return 'progress-badge-low'
+      const perc = parseFloat(percentage);
+      if (isNaN(perc)) return 'progress-badge-low';
       
-      if (perc >= 80) return 'progress-badge-high'
-      if (perc >= 60) return 'progress-badge-medium'
-      return 'progress-badge-low'
+      if (perc >= 80) return 'progress-badge-high';
+      if (perc >= 60) return 'progress-badge-medium';
+      return 'progress-badge-low';
     },
+
     getRankClass(rank) {
-      if (rank === 1) return 'rank-gold'
-      if (rank === 2) return 'rank-silver'
-      if (rank === 3) return 'rank-bronze'
-      return 'rank-other'
+      if (rank === 1) return 'rank-gold';
+      if (rank === 2) return 'rank-silver';
+      if (rank === 3) return 'rank-bronze';
+      return 'rank-other';
     },
+
     getSortIcon(field) {
-      if (this.sortField !== field) return 'fas fa-sort text-gray-400'
-      return this.sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600'
+      if (this.sortField !== field) return 'fas fa-sort text-gray-400';
+      return this.sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600';
     },
+
     sortRecords(field) {
       if (this.sortField === field) {
-        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
       } else {
-        this.sortField = field
-        this.sortDirection = 'desc'
+        this.sortField = field;
+        this.sortDirection = 'desc';
       }
     }
   }
 }
 </script>
 
-<style>
+<style scoped>
+/* All existing styles remain exactly the same */
+
+/* Only adding the refresh button styles */
+.refresh-btn {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* All other existing styles remain unchanged */
 /* Import Font Awesome */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
@@ -836,6 +1018,39 @@ export default {
 
 .loading-text {
   color: var(--text-muted);
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.error-icon {
+  font-size: 3rem;
+  color: #ef4444;
+  margin-bottom: 1rem;
+}
+
+.error-text {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 1.125rem;
+}
+
+.retry-button {
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: #2563eb;
 }
 
 /* Stats Section */
@@ -1434,5 +1649,26 @@ export default {
   .table-cell {
     padding: 0.75rem 1rem;
   }
+}
+
+/* Utility classes */
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.space-x-2 > * + * {
+  margin-left: 0.5rem;
 }
 </style>

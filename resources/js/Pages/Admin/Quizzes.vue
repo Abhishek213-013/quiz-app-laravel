@@ -29,7 +29,13 @@
           <div v-else>
             <!-- Quick Stats Section -->
             <div class="stats-section">
-              <h2 class="section-title">Quiz Management Overview</h2>
+              <div class="flex justify-between items-center mb-8">
+                <h2 class="section-title">Quiz Management Overview</h2>
+                <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+                  {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
+                </button>
+              </div>
               <div class="stats-grid">
                 <div class="stat-card blue">
                   <div class="stat-number">{{ quizSets.length }}</div>
@@ -50,6 +56,7 @@
               </div>
             </div>
 
+            <!-- Rest of the template remains exactly the same -->
             <!-- Error Alert -->
             <div v-if="errorMessage" class="content-card mb-6">
               <div class="flex items-center p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -586,6 +593,7 @@ export default {
       isDark: false,
       mobileSidebar: false,
       loading: false,
+      refreshing: false, // Added refreshing state
       errorMessage: '',
       successMessage: '',
       quizSets: [],
@@ -632,6 +640,26 @@ export default {
     },
     handleLogout() {
       this.$inertia.post('/admin/logout');
+    },
+    // Added refreshData method
+    async refreshData() {
+      this.refreshing = true;
+      
+      try {
+        this.clearMessages();
+        await this.fetchQuizSets();
+        
+        // If we're currently viewing questions for a set, refresh those too
+        if (this.selectedSet) {
+          await this.viewQuestions(this.selectedSet);
+        }
+        
+        this.showSuccess('Data refreshed successfully');
+      } catch (error) {
+        this.showError(`Failed to refresh data: ${error.message}`);
+      } finally {
+        this.refreshing = false;
+      }
     },
     clearMessages() {
       this.errorMessage = ''
@@ -882,6 +910,30 @@ export default {
 </script>
 
 <style>
+/* All existing styles remain exactly the same */
+
+/* Only adding the refresh button styles */
+.refresh-btn {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* All other existing styles remain unchanged */
 /* Import Font Awesome */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 

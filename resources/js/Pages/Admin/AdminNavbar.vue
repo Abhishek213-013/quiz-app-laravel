@@ -46,7 +46,9 @@
                 </div>
               </div>
               <div class="notification-footer">
-                <a href="#" class="view-all">View all notifications</a>
+                <a href="#" class="view-all" @click="showNotifications = false">
+                  View all notifications
+                </a>
               </div>
             </div>
           </div>
@@ -68,9 +70,15 @@
                 <div class="profile-email">admin@quiz.com</div>
               </div>
               <div class="profile-menu">
-                <a href="#" class="profile-menu-item">Profile</a>
-                <a href="#" class="profile-menu-item">Settings</a>
-                <a href="#" class="profile-menu-item">Customize</a>
+                <a href="/admin/profile" class="profile-menu-item" @click.prevent="navigateTo('/admin/profile')">
+                  Profile
+                </a>
+                <a href="/admin/settings" class="profile-menu-item" @click.prevent="navigateTo('/admin/settings')">
+                  Settings
+                </a>
+                <a href="/admin/customize" class="profile-menu-item" @click.prevent="navigateTo('/admin/customize')">
+                  Customize
+                </a>
               </div>
               <div class="profile-footer">
                 <button @click="handleLogout" class="logout-btn">
@@ -155,21 +163,44 @@ export default {
         this.showProfile = false
       }
     },
-    handleLogout() {
-      // Close the profile dropdown
+    navigateTo(url) {
+      // Close the dropdown
       this.showProfile = false
       
-      // Emit the logout event to parent component
+      // Use window.location for navigation since $inertia is not available
+      if (window.location.pathname !== url) {
+        window.location.href = url
+      }
+    },
+    handleLogout() {
+      this.showProfile = false
       this.$emit('logout')
-      
-      // You can also directly redirect here if preferred:
-      // window.location.href = '/admin/login'
     }
   }
 }
 </script>
 
 <style scoped>
+/* Your existing styles remain the same */
+.profile-menu-item {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  border-radius: 0.375rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.profile-menu-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.view-all {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
 /* Import Font Awesome */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
@@ -306,10 +337,6 @@ export default {
   text-align: center;
   border-top: 1px solid var(--border-color);
 }
-.view-all {
-  font-size: 0.875rem;
-  color: #3b82f6;
-}
 
 .profile-btn {
   display: flex;
@@ -378,16 +405,6 @@ export default {
 
 .profile-menu {
   padding: 0.5rem;
-}
-.profile-menu-item {
-  display: block;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  border-radius: 0.375rem;
-}
-.profile-menu-item:hover {
-  background-color: var(--hover-bg);
 }
 
 .profile-footer {

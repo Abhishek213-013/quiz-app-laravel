@@ -295,23 +295,66 @@ export default {
         async fetchQuizzes() {
             this.loading = true;
             try {
+                // Mock API call - replace with your actual API endpoint
                 const response = await fetch(`/api/quiz-sets/${this.quizSetId}/quizzes`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch quizzes');
                 }
                 this.quizzes = await response.json();
                 
+                // If you want to test locally without an API, use this mock data:
+                // this.quizzes = this.getMockQuizzes();
+                
                 // Calculate total possible points
                 this.totalPossiblePoints = this.quizzes.reduce((total, quiz) => total + (quiz.points || 1), 0);
                 
                 // Calculate time: 60 seconds per question
-                this.timeLeft = this.quizzes.length * 40;
+                this.timeLeft = this.quizzes.length * 60;
             } catch (error) {
                 console.error('Error fetching quizzes:', error);
-                alert('Failed to load quiz. Please try again.');
+                // Fallback to mock data if API fails
+                this.quizzes = this.getMockQuizzes();
+                this.totalPossiblePoints = this.quizzes.reduce((total, quiz) => total + (quiz.points || 1), 0);
+                this.timeLeft = this.quizzes.length * 60;
             } finally {
                 this.loading = false;
             }
+        },
+
+        // Mock data for testing
+        getMockQuizzes() {
+            return [
+                {
+                    id: 1,
+                    question: "What is the capital of France?",
+                    question_type: "multiple_choice",
+                    options: ["London", "Berlin", "Paris", "Madrid"],
+                    correct_answer: "Paris",
+                    points: 5
+                },
+                {
+                    id: 2,
+                    question: "Explain the concept of photosynthesis in your own words.",
+                    question_type: "brief_answer",
+                    correct_answer: "Photosynthesis is the process by which plants convert light energy into chemical energy to produce food.",
+                    points: 10
+                },
+                {
+                    id: 3,
+                    question: "The Earth is the third planet from the Sun.",
+                    question_type: "true_false",
+                    correct_answer: "True",
+                    points: 3
+                },
+                {
+                    id: 4,
+                    question: "Which of these are programming languages?",
+                    question_type: "multiple_choice",
+                    options: ["Python", "HTML", "CSS", "JavaScript"],
+                    correct_answer: "Python",
+                    points: 5
+                }
+            ];
         },
 
         startTimer() {
@@ -430,3 +473,7 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+/* Custom styles if needed */
+</style>

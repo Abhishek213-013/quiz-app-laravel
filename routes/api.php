@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\QuizSetController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizResultController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\DashboardController;
 
 // Public API Routes
 Route::get('/quiz-sets', [QuizSetController::class, 'index']);
@@ -39,4 +40,10 @@ Route::prefix('admin-api')->group(function () {
     Route::get('/records', [AdminController::class, 'getAllRecords']);
     Route::get('/records/daily', [AdminController::class, 'getDailyParticipation']);
     Route::get('/records/data', [AdminController::class, 'recordsData']);
+});
+
+Route::prefix('admin')->group(function () {
+    Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData']);
+    // Or if you're using web routes, use this in routes/web.php:
+    // Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData'])->middleware('auth');
 });

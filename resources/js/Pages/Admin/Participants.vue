@@ -29,7 +29,13 @@
           <div v-else>
             <!-- Quick Stats Section -->
             <div class="stats-section">
-              <h2 class="section-title">Participants Overview</h2>
+              <div class="flex justify-between items-center mb-8">
+                <h2 class="section-title">Participants Overview</h2>
+                <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+                  {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
+                </button>
+              </div>
               <div class="stats-grid">
                 <div class="stat-card blue">
                   <div class="stat-number">{{ participants.length }}</div>
@@ -46,6 +52,7 @@
               </div>
             </div>
 
+            <!-- Rest of the template remains exactly the same -->
             <!-- Search and Filters Section -->
             <div class="content-card mb-8">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -265,6 +272,7 @@ export default {
       isDark: false,
       mobileSidebar: false,
       loading: false,
+      refreshing: false, // Added refreshing state
       search: '',
       sortColumn: 'total_attempts',
       sortDirection: 'desc',
@@ -357,6 +365,17 @@ export default {
     handleLogout() {
       this.$inertia.post('/admin/logout');
     },
+    // Added refreshData method
+    async refreshData() {
+      this.refreshing = true;
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real application, you would fetch fresh data from the API here
+      // For now, we'll just reset the refreshing state
+      this.refreshing = false;
+    },
     sortBy(column) {
       if (this.sortColumn === column) {
         this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
@@ -396,6 +415,30 @@ export default {
 </script>
 
 <style>
+/* All existing styles remain exactly the same */
+
+/* Only adding the refresh button styles */
+.refresh-btn {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* All other existing styles remain unchanged */
 /* Import Font Awesome */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 

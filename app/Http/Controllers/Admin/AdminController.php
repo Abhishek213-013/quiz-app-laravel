@@ -10,18 +10,23 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
-
     private $adminCredentials = [
         'email' => 'admin@quiz.com',
         'password' => 'admin123' // You should hash this in production
     ];
 
+    /**
+     * =========================================================================
+     * AUTHENTICATION METHODS
+     * =========================================================================
+     */
+
     public function login()
     {
-        // If already authenticated, redirect to dashboard
         if (Session::get('admin_authenticated')) {
             return redirect()->route('admin.dashboard');
         }
@@ -41,7 +46,6 @@ class AdminController extends Controller
                 return redirect()->back()->withErrors($validator)->withInput();
             }
 
-            // Check credentials (in production, use proper user authentication)
             if ($request->email === $this->adminCredentials['email'] && 
                 $request->password === $this->adminCredentials['password']) {
                 
@@ -67,9 +71,52 @@ class AdminController extends Controller
         }
     }
 
+    public function logout(Request $request)
+    {
+        Session::forget('admin_authenticated');
+        Session::forget('admin_email');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect()->route('admin.login')->with([
+            'message' => 'You have been logged out successfully.',
+            'type' => 'success'
+        ]);
+    }
+
+    public function verify(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'password' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => 'Invalid input'], 422);
+            }
+
+            if ($request->email === $this->adminCredentials['email'] && 
+                $request->password === $this->adminCredentials['password']) {
+                return response()->json(['authenticated' => true]);
+            }
+
+            return response()->json(['error' => 'Invalid credentials'], 401);
+
+        } catch (\Exception $e) {
+            Log::error('Admin verification error: ' . $e->getMessage());
+            return response()->json(['error' => 'Verification failed'], 500);
+        }
+    }
+
+    /**
+     * =========================================================================
+     * PAGE RENDERING METHODS
+     * =========================================================================
+     */
+
     public function dashboard()
     {
-        // Get basic stats from database for initial render
         $stats = [
             'totalParticipants' => DB::table('quiz_results')->distinct('participant_name')->count('participant_name'),
             'totalQuizSets' => DB::table('quiz_sets')->where('is_active', 1)->count(),
@@ -83,7 +130,6 @@ class AdminController extends Controller
 
     public function participants()
     {
-        // Get participants data from database
         $participants = DB::table('quiz_results')
             ->select(
                 'participant_name',
@@ -122,65 +168,47 @@ class AdminController extends Controller
         return Inertia::render('Admin/Quizzes');
     }
 
-    public function logout(Request $request)
-    {
-        Session::forget('admin_authenticated');
-        Session::forget('admin_email');
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        
-        return redirect()->route('admin.login')->with([
-            'message' => 'You have been logged out successfully.',
-            'type' => 'success'
-        ]);
-    }
+    /**
+     * =========================================================================
+     * DASHBOARD DATA METHODS
+     * =========================================================================
+     */
 
-    public function getRecordsData()
-    {
-        // Check authentication
-        if (!Session::get('admin_authenticated')) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        try {
-            // Get all quiz results with quiz set information
-            $records = DB::table('quiz_results')
-                ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
-                ->select(
-                    'quiz_results.id',
-                    'quiz_results.quiz_set_id',
-                    'quiz_results.participant_name',
-                    'quiz_results.score',
-                    'quiz_results.total_questions',
-                    'quiz_results.percentage',
-                    'quiz_results.time_taken',
-                    'quiz_results.created_at',
-                    'quiz_sets.name as quiz_set_name',
-                    'quiz_sets.category'
-                )
-                ->orderBy('quiz_results.created_at', 'desc')
-                ->get();
-
-            return response()->json($records);
-
-        } catch (\Exception $e) {
-            Log::error('Error fetching records data: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to fetch records data'], 500);
-        }
-    }
-    public function dashboardData()
+    public function getDashboardStats()
     {
         try {
             $stats = [
                 'total_participants' => DB::table('quiz_results')->distinct('participant_name')->count('participant_name'),
                 'total_quiz_sets' => DB::table('quiz_sets')->where('is_active', 1)->count(),
                 'total_attempts' => DB::table('quiz_results')->count(),
+                'total_questions' => DB::table('quizzes')->count(),
+                'average_score' => round(DB::table('quiz_results')->avg('percentage') ?? 0, 2),
             ];
 
+            return response()->json($stats);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching dashboard stats: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch dashboard stats'], 500);
+        }
+    }
+
+    public function dashboardData()
+    {
+        try {
+            // Basic stats
+            $stats = [
+                'total_participants' => DB::table('quiz_results')->distinct('participant_name')->count('participant_name'),
+                'total_quiz_sets' => DB::table('quiz_sets')->where('is_active', 1)->count(),
+                'total_attempts' => DB::table('quiz_results')->count(),
+                'average_score' => round(DB::table('quiz_results')->avg('percentage') ?? 0, 2),
+            ];
+
+            // Quiz set distribution
             $quizSetDistribution = DB::table('quiz_results')
                 ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
                 ->select(
-                    'quiz_sets.id as quiz_set_id',
+                    'quiz_sets.id',
                     'quiz_sets.name as quiz_set_name',
                     'quiz_sets.category',
                     DB::raw('COUNT(DISTINCT quiz_results.participant_name) as participant_count')
@@ -190,6 +218,7 @@ class AdminController extends Controller
                 ->orderBy('participant_count', 'desc')
                 ->get();
 
+            // Weekly participants data
             $startOfWeek = now()->subDays(6)->startOfDay();
             $endOfWeek = now()->endOfDay();
             
@@ -217,6 +246,7 @@ class AdminController extends Controller
                 $weeklyParticipants['data'][] = $dayData ? $dayData->participant_count : 0;
             }
 
+            // Top scorers for each quiz set
             $topScorers = [];
             $activeQuizSets = DB::table('quiz_sets')->where('is_active', 1)->get();
 
@@ -233,7 +263,6 @@ class AdminController extends Controller
                     ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
                     ->orderBy('percentage', 'desc')
                     ->orderBy('score', 'desc')
-                    ->orderBy('time_taken', 'asc')
                     ->limit(3)
                     ->get();
 
@@ -256,11 +285,12 @@ class AdminController extends Controller
                                 'percentage' => $result->percentage,
                                 'created_at' => $result->created_at,
                             ];
-                        })->values()
+                        })
                     ];
                 }
             }
 
+            // Recent attempts
             $recentAttempts = DB::table('quiz_results')
                 ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
                 ->select(
@@ -271,32 +301,50 @@ class AdminController extends Controller
                     'quiz_results.score',
                     'quiz_results.total_questions',
                     'quiz_results.percentage',
-                    'quiz_results.time_taken',
                     'quiz_results.created_at'
                 )
                 ->where('quiz_sets.is_active', 1)
                 ->orderBy('quiz_results.created_at', 'desc')
                 ->limit(10)
+                ->get();
+
+            // Score distribution
+            $scoreDistribution = [
+                'high' => DB::table('quiz_results')->where('percentage', '>=', 80)->count(),
+                'medium' => DB::table('quiz_results')->whereBetween('percentage', [60, 79])->count(),
+                'low' => DB::table('quiz_results')->where('percentage', '<', 60)->count(),
+            ];
+
+            // Recent activities
+            $recentActivities = DB::table('quiz_results')
+                ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
+                ->select(
+                    'quiz_results.id',
+                    'quiz_results.participant_name',
+                    'quiz_sets.name as quiz_set_name',
+                    'quiz_results.percentage',
+                    'quiz_results.created_at'
+                )
+                ->orderBy('quiz_results.created_at', 'desc')
+                ->limit(5)
                 ->get()
-                ->map(function ($attempt) {
+                ->map(function ($result) {
                     return [
-                        'id' => $attempt->id,
-                        'participant_name' => $attempt->participant_name,
-                        'quiz_set_name' => $attempt->quiz_set_name,
-                        'category' => $attempt->category,
-                        'score' => $attempt->score,
-                        'total_questions' => $attempt->total_questions,
-                        'percentage' => $attempt->percentage,
-                        'created_at' => $attempt->created_at,
+                        'id' => $result->id,
+                        'type' => 'quiz_completed',
+                        'message' => $result->participant_name . ' completed ' . $result->quiz_set_name . ' with ' . round($result->percentage) . '% score',
+                        'created_at' => $result->created_at,
                     ];
                 });
 
             return response()->json([
                 'stats' => $stats,
-                'quizSetDistribution' => $quizSetDistribution,
-                'weeklyParticipants' => $weeklyParticipants,
-                'topScorers' => $topScorers,
-                'recentAttempts' => $recentAttempts,
+                'quiz_set_distribution' => $quizSetDistribution,
+                'weekly_participants' => $weeklyParticipants,
+                'top_scorers' => $topScorers,
+                'recent_attempts' => $recentAttempts,
+                'score_distribution' => $scoreDistribution,
+                'recent_activities' => $recentActivities,
             ]);
 
         } catch (\Exception $e) {
@@ -305,49 +353,11 @@ class AdminController extends Controller
         }
     }
 
-    // Admin API Methods for Quiz Management
-    public function verify(Request $request)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|email',
-                'password' => 'required|string'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['error' => 'Invalid input'], 422);
-            }
-
-            if ($request->email === $this->adminCredentials['email'] && 
-                $request->password === $this->adminCredentials['password']) {
-                return response()->json(['authenticated' => true]);
-            }
-
-            return response()->json(['error' => 'Invalid credentials'], 401);
-
-        } catch (\Exception $e) {
-            Log::error('Admin verification error: ' . $e->getMessage());
-            return response()->json(['error' => 'Verification failed'], 500);
-        }
-    }
-
-    public function getDashboardStats()
-    {
-        try {
-            $stats = [
-                'total_participants' => DB::table('quiz_results')->distinct('participant_name')->count('participant_name'),
-                'total_quiz_sets' => DB::table('quiz_sets')->where('is_active', 1)->count(),
-                'total_attempts' => DB::table('quiz_results')->count(),
-                'total_questions' => DB::table('quizzes')->count(),
-            ];
-
-            return response()->json($stats);
-
-        } catch (\Exception $e) {
-            Log::error('Error fetching dashboard stats: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to fetch dashboard stats'], 500);
-        }
-    }
+    /**
+     * =========================================================================
+     * PARTICIPANTS DATA METHODS
+     * =========================================================================
+     */
 
     public function getParticipants()
     {
@@ -395,6 +405,12 @@ class AdminController extends Controller
         }
     }
 
+    /**
+     * =========================================================================
+     * RECORDS DATA METHODS
+     * =========================================================================
+     */
+
     public function getAllRecords()
     {
         try {
@@ -438,6 +454,140 @@ class AdminController extends Controller
         }
     }
 
+    public function getRecordsData()
+    {
+        try {
+            $records = DB::table('quiz_results')
+                ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
+                ->select(
+                    'quiz_results.id',
+                    'quiz_results.quiz_set_id',
+                    'quiz_results.participant_name',
+                    'quiz_results.score',
+                    'quiz_results.total_questions',
+                    'quiz_results.percentage',
+                    'quiz_results.time_taken',
+                    'quiz_results.created_at',
+                    'quiz_sets.name as quiz_set_name',
+                    'quiz_sets.category'
+                )
+                ->orderBy('quiz_results.created_at', 'desc')
+                ->get();
+
+            return response()->json($records);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching records data: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch records data'], 500);
+        }
+    }
+
+    public function recordsData(Request $request)
+    {
+        try {
+            $records = DB::table('quiz_results')
+                ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
+                ->select(
+                    'quiz_results.*',
+                    'quiz_sets.name as quiz_set_name',
+                    'quiz_sets.category'
+                )
+                ->where('quiz_sets.is_active', 1)
+                ->orderBy('quiz_results.created_at', 'desc')
+                ->get();
+
+            // Overall stats
+            $overallStats = [
+                'highestScore' => $records->max('percentage'),
+                'averageScore' => round($records->avg('percentage'), 2),
+                'totalParticipants' => $records->unique('participant_name')->count(),
+                'totalAttempts' => $records->count()
+            ];
+
+            // Quiz sets for filtering
+            $quizSets = DB::table('quiz_sets')
+                ->where('is_active', 1)
+                ->select('id', 'name', 'category')
+                ->get();
+
+            // Top performers (all time)
+            $topPerformers = $records
+                ->sortByDesc('percentage')
+                ->take(6)
+                ->values();
+
+            // Weekly leaderboard
+            $oneWeekAgo = now()->subDays(7);
+            $weeklyLeaderboard = $records
+                ->where('created_at', '>=', $oneWeekAgo)
+                ->sortByDesc('percentage')
+                ->take(10)
+                ->values();
+
+            // Quiz set performance
+            $quizSetPerformance = [];
+            $quizSets->each(function ($set) use ($records, &$quizSetPerformance) {
+                $setRecords = $records->where('quiz_set_id', $set->id);
+                if ($setRecords->isNotEmpty()) {
+                    $highest = $setRecords->sortByDesc('percentage')->first();
+                    $lowest = $setRecords->sortBy('percentage')->first();
+                    
+                    $quizSetPerformance['highest'][] = [
+                        'quiz_set_id' => $set->id,
+                        'quiz_set_name' => $set->name,
+                        'category' => $set->category,
+                        'highest_percentage' => $highest->percentage,
+                        'top_performer' => $highest->participant_name
+                    ];
+                    
+                    $quizSetPerformance['lowest'][] = [
+                        'quiz_set_id' => $set->id,
+                        'quiz_set_name' => $set->name,
+                        'category' => $set->category,
+                        'lowest_percentage' => $lowest->percentage,
+                        'lowest_performer' => $lowest->participant_name
+                    ];
+                }
+            });
+
+            // Sort quiz set performance
+            if (isset($quizSetPerformance['highest'])) {
+                $quizSetPerformance['highest'] = collect($quizSetPerformance['highest'])
+                    ->sortByDesc('highest_percentage')
+                    ->values()
+                    ->toArray();
+            }
+            
+            if (isset($quizSetPerformance['lowest'])) {
+                $quizSetPerformance['lowest'] = collect($quizSetPerformance['lowest'])
+                    ->sortBy('lowest_percentage')
+                    ->values()
+                    ->toArray();
+            }
+
+            return response()->json([
+                'overallStats' => $overallStats,
+                'topPerformers' => [
+                    'allTime' => $topPerformers
+                ],
+                'weeklyLeaderboard' => $weeklyLeaderboard,
+                'quizSetPerformance' => $quizSetPerformance,
+                'allRecords' => $records,
+                'quizSets' => $quizSets
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching records data: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch records data'], 500);
+        }
+    }
+
+    /**
+     * =========================================================================
+     * QUIZ SETS MANAGEMENT METHODS
+     * =========================================================================
+     */
+
     public function getQuizSets()
     {
         try {
@@ -448,7 +598,6 @@ class AdminController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($quizSet) {
-                    // Count actual questions for this quiz set
                     $questionCount = DB::table('quizzes')
                         ->where('quiz_set_id', $quizSet->id)
                         ->count();
@@ -459,7 +608,7 @@ class AdminController extends Controller
                         'category' => $quizSet->category,
                         'description' => $quizSet->description,
                         'time_limit' => $quizSet->time_limit,
-                        'question_count' => $questionCount, // Use actual count
+                        'question_count' => $questionCount,
                         'is_active' => $quizSet->is_active,
                         'created_at' => $quizSet->created_at,
                         'updated_at' => $quizSet->updated_at,
@@ -592,10 +741,7 @@ class AdminController extends Controller
         Log::info('Deleting quiz set ID: ' . $id);
 
         try {
-            // First delete all quizzes in this set
             DB::table('quizzes')->where('quiz_set_id', $id)->delete();
-            
-            // Then delete the quiz set
             $deleted = DB::table('quiz_sets')->where('id', $id)->delete();
 
             if ($deleted) {
@@ -619,6 +765,36 @@ class AdminController extends Controller
                 'success' => false,
                 'error' => 'Failed to delete quiz set: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * =========================================================================
+     * QUIZZES MANAGEMENT METHODS
+     * =========================================================================
+     */
+
+    public function getQuizzes($quizSetId = null)
+    {
+        try {
+            $query = DB::table('quizzes')
+                ->join('quiz_sets', 'quizzes.quiz_set_id', '=', 'quiz_sets.id')
+                ->select(
+                    'quizzes.*',
+                    'quiz_sets.name as quiz_set_name'
+                );
+
+            if ($quizSetId) {
+                $query->where('quizzes.quiz_set_id', $quizSetId);
+            }
+
+            $quizzes = $query->orderBy('quizzes.created_at', 'desc')->get();
+
+            return response()->json($quizzes);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching quizzes: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch quizzes'], 500);
         }
     }
 
@@ -654,7 +830,6 @@ class AdminController extends Controller
                 'updated_at' => now(),
             ];
 
-            // Only include options for multiple_choice questions
             if ($request->question_type === 'multiple_choice') {
                 if (!isset($request->options) || !is_array($request->options)) {
                     return response()->json([
@@ -719,7 +894,6 @@ class AdminController extends Controller
                 'updated_at' => now(),
             ];
 
-            // Only include options for multiple_choice questions
             if ($request->question_type === 'multiple_choice') {
                 if (!isset($request->options) || !is_array($request->options)) {
                     return response()->json([
@@ -729,7 +903,6 @@ class AdminController extends Controller
                 }
                 $quizData['options'] = json_encode($request->options);
             } else {
-                // For non-multiple choice, set options to null
                 $quizData['options'] = null;
             }
 
@@ -790,108 +963,6 @@ class AdminController extends Controller
                 'success' => false,
                 'error' => 'Failed to delete question: ' . $e->getMessage()
             ], 500);
-        }
-    }
-
-    // Records Data API Method
-   public function recordsData(Request $request)
-    {
-        try {
-            // Get all records with quiz set information
-            $records = DB::table('quiz_results')
-                ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
-                ->select(
-                    'quiz_results.*',
-                    'quiz_sets.name as quiz_set_name',
-                    'quiz_sets.category'
-                )
-                ->where('quiz_sets.is_active', 1)
-                ->orderBy('quiz_results.created_at', 'desc')
-                ->get();
-
-            // Calculate overall stats
-            $overallStats = [
-                'highestScore' => $records->max('percentage'),
-                'averageScore' => round($records->avg('percentage'), 2),
-                'totalParticipants' => $records->unique('participant_name')->count(),
-                'totalAttempts' => $records->count()
-            ];
-
-            // Get quiz sets for filtering
-            $quizSets = DB::table('quiz_sets')
-                ->where('is_active', 1)
-                ->select('id', 'name', 'category')
-                ->get();
-
-            // Top performers (all time)
-            $topPerformers = $records
-                ->sortByDesc('percentage')
-                ->take(6)
-                ->values();
-
-            // Weekly leaderboard (last 7 days)
-            $oneWeekAgo = now()->subDays(7);
-            $weeklyLeaderboard = $records
-                ->where('created_at', '>=', $oneWeekAgo)
-                ->sortByDesc('percentage')
-                ->take(10)
-                ->values();
-
-            // Quiz set performance
-            $quizSetPerformance = [];
-            $quizSets->each(function ($set) use ($records, &$quizSetPerformance) {
-                $setRecords = $records->where('quiz_set_id', $set->id);
-                if ($setRecords->isNotEmpty()) {
-                    $highest = $setRecords->sortByDesc('percentage')->first();
-                    $lowest = $setRecords->sortBy('percentage')->first();
-                    
-                    $quizSetPerformance['highest'][] = [
-                        'quiz_set_id' => $set->id,
-                        'quiz_set_name' => $set->name,
-                        'category' => $set->category,
-                        'highest_percentage' => $highest->percentage,
-                        'top_performer' => $highest->participant_name
-                    ];
-                    
-                    $quizSetPerformance['lowest'][] = [
-                        'quiz_set_id' => $set->id,
-                        'quiz_set_name' => $set->name,
-                        'category' => $set->category,
-                        'lowest_percentage' => $lowest->percentage,
-                        'lowest_performer' => $lowest->participant_name
-                    ];
-                }
-            });
-
-            // Sort quiz set performance
-            if (isset($quizSetPerformance['highest'])) {
-                $quizSetPerformance['highest'] = collect($quizSetPerformance['highest'])
-                    ->sortByDesc('highest_percentage')
-                    ->values()
-                    ->toArray();
-            }
-            
-            if (isset($quizSetPerformance['lowest'])) {
-                $quizSetPerformance['lowest'] = collect($quizSetPerformance['lowest'])
-                    ->sortBy('lowest_percentage')
-                    ->values()
-                    ->toArray();
-            }
-
-            return response()->json([
-                'overallStats' => $overallStats,
-                'topPerformers' => [
-                    'allTime' => $topPerformers
-                ],
-                'weeklyLeaderboard' => $weeklyLeaderboard,
-                'quizSetPerformance' => $quizSetPerformance,
-                'allRecords' => $records,
-                'quizSets' => $quizSets
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error fetching records data: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to fetch records data'], 500);
         }
     }
 }

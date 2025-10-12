@@ -25,22 +25,38 @@
             <p class="loading-text">Loading dashboard data...</p>
           </div>
 
+          <!-- Error State -->
+          <div v-else-if="error" class="error-state">
+            <i class="fas fa-exclamation-triangle error-icon"></i>
+            <p class="error-text">{{ error }}</p>
+            <button @click="fetchDashboardData" class="retry-btn">
+              <i class="fas fa-redo"></i>
+              Try Again
+            </button>
+          </div>
+
           <!-- Main Content -->
           <div v-else>
             <!-- Quick Stats Section -->
             <div class="stats-section">
-              <h2 class="section-title">Quick Overview</h2>
+              <div class="flex justify-between items-center mb-8">
+                <h2 class="section-title">Quick Overview</h2>
+                <button @click="fetchDashboardData" class="refresh-btn" :disabled="refreshing">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+                  {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
+                </button>
+              </div>
               <div class="stats-grid">
                 <div class="stat-card blue">
-                  <div class="stat-number">{{ displayStats.total_participants || initialStats.totalParticipants || 0 }}</div>
+                  <div class="stat-number">{{ displayStats.total_participants || 0 }}</div>
                   <div class="stat-label">Total Participants</div>
                 </div>
                 <div class="stat-card green">
-                  <div class="stat-number">{{ displayStats.total_quiz_sets || initialStats.totalQuizSets || 0 }}</div>
+                  <div class="stat-number">{{ displayStats.total_quiz_sets || 0 }}</div>
                   <div class="stat-label">Active Quiz Sets</div>
                 </div>
                 <div class="stat-card purple">
-                  <div class="stat-number">{{ displayStats.total_attempts || initialStats.totalAttempts || 0 }}</div>
+                  <div class="stat-number">{{ displayStats.total_attempts || 0 }}</div>
                   <div class="stat-label">Total Attempts</div>
                 </div>
               </div>
@@ -51,13 +67,25 @@
               <!-- Pie Chart -->
               <div class="chart-card">
                 <h2 class="chart-title">Quiz Set Participation</h2>
-                <canvas id="pieChart"></canvas>
+                <div v-if="quizSetDistribution.length === 0" class="no-data">
+                  <i class="fas fa-chart-pie no-data-icon"></i>
+                  <p>No participation data available</p>
+                </div>
+                <div v-else class="chart-container">
+                  <canvas id="pieChart" height="300"></canvas>
+                </div>
               </div>
 
               <!-- Bar Chart -->
               <div class="chart-card">
                 <h2 class="chart-title">Participants per Day (This Week)</h2>
-                <canvas id="barChart"></canvas>
+                <div v-if="weeklyParticipants.data.length === 0 || weeklyParticipants.data.every(val => val === 0)" class="no-data">
+                  <i class="fas fa-chart-bar no-data-icon"></i>
+                  <p>No weekly data available</p>
+                </div>
+                <div v-else class="chart-container">
+                  <canvas id="barChart" height="300"></canvas>
+                </div>
               </div>
             </div>
 
@@ -207,17 +235,18 @@ export default {
     return {
       isDark: false,
       mobileSidebar: false,
-      loading: false,
+      loading: true,
+      refreshing: false,
+      error: null,
       displayStats: {},
-      initialStats: {
-        totalParticipants: 31,
-        totalQuizSets: 6,
-        totalAttempts: 32
-      },
       quizSetDistribution: [],
       weeklyParticipants: { labels: [], data: [] },
       topScorers: [],
       recentAttempts: [],
+      chartInstances: {
+        pie: null,
+        bar: null
+      },
       recentActivities: [
         {
           id: 1,
@@ -270,8 +299,8 @@ export default {
       return Math.round(sum / count)
     },
     completionRate() {
-      const participants = this.displayStats.total_participants || this.initialStats.totalParticipants || 0
-      const attempts = this.displayStats.total_attempts || this.initialStats.totalAttempts || 0
+      const participants = this.displayStats.total_participants || 0
+      const attempts = this.displayStats.total_attempts || 0
       if (participants === 0 || attempts === 0) return 0
       return Math.min(100, Math.round((attempts / participants) * 100))
     },
@@ -294,47 +323,99 @@ export default {
     }
   },
   mounted() {
-    // Initialize with server-side data
-    this.displayStats = {
-      total_participants: this.initialStats.totalParticipants,
-      total_quiz_sets: this.initialStats.totalQuizSets,
-      total_attempts: this.initialStats.totalAttempts
-    }
-
-    // Load demo data
-    this.loadDemoData()
-    
-    // Render charts after a small delay to ensure DOM is ready
-    setTimeout(this.renderCharts, 100)
+    this.fetchDashboardData();
   },
   beforeUnmount() {
-    this.cleanupCharts()
+    this.cleanupCharts();
   },
   methods: {
-    toggleTheme() {
-      this.isDark = !this.isDark
+    async fetchDashboardData() {
+      try {
+        this.loading = true;
+        this.error = null;
+        this.refreshing = true;
+
+        // Clear existing data
+        this.displayStats = {};
+        this.quizSetDistribution = [];
+        this.weeklyParticipants = { labels: [], data: [] };
+        this.topScorers = [];
+        this.recentAttempts = [];
+
+        // Use the correct API endpoint
+        const response = await axios.get('/api/admin/dashboard/data');
+        
+        if (response.data.success) {
+          const data = response.data.data;
+          
+          // Update component data with API response
+          this.displayStats = data.stats || {};
+          this.quizSetDistribution = data.quizSetDistribution || [];
+          this.weeklyParticipants = data.weeklyParticipants || { labels: [], data: [] };
+          this.topScorers = data.topScorers || [];
+          this.recentAttempts = data.recentAttempts || [];
+
+          // Render charts after data is loaded
+          this.$nextTick(() => {
+            this.renderCharts();
+          });
+
+        } else {
+          throw new Error(response.data.message || 'Failed to fetch dashboard data');
+        }
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        this.error = this.getErrorMessage(error);
+        
+        // Fallback to demo data if API fails
+        this.loadDemoData();
+      } finally {
+        this.loading = false;
+        this.refreshing = false;
+      }
     },
-    toggleMobileSidebar() {
-      this.mobileSidebar = !this.mobileSidebar
+
+    getErrorMessage(error) {
+      if (error.response) {
+        // Server responded with error status
+        switch (error.response.status) {
+          case 401:
+            return 'Unauthorized. Please login again.';
+          case 403:
+            return 'Access denied.';
+          case 404:
+            return 'Dashboard API endpoint not found. Please check your routes.';
+          case 500:
+            return 'Server error. Please try again later.';
+          default:
+            return error.response.data?.message || 'Failed to fetch data from server.';
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        return 'Network error. Please check your connection.';
+      } else {
+        // Something else happened
+        return error.message || 'An unexpected error occurred.';
+      }
     },
-    handleLogout() {
-      this.$inertia.post('/admin/logout');
-    },
+
     loadDemoData() {
-      // Demo data for charts and lists
+      console.log('Loading demo data as fallback...');
+      
       this.quizSetDistribution = [
         { quiz_set_name: 'Geography', participant_count: 40 },
         { quiz_set_name: 'Science', participant_count: 35 },
         { quiz_set_name: 'Sports', participant_count: 25 },
         { quiz_set_name: 'Movies', participant_count: 30 },
         { quiz_set_name: 'Mixed', participant_count: 20 }
-      ]
-      
+      ];
+
       this.weeklyParticipants = {
         labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         data: [12, 18, 9, 15, 22, 11, 19]
-      }
-      
+      };
+
       this.topScorers = [
         {
           quiz_set_id: 1,
@@ -346,20 +427,9 @@ export default {
             { participant_name: 'Sarah Johnson', score: 17, total_questions: 20, percentage: 85, created_at: new Date(Date.now() - 86400000) },
             { participant_name: 'Mike Davis', score: 16, total_questions: 20, percentage: 80, created_at: new Date(Date.now() - 172800000) }
           ]
-        },
-        {
-          quiz_set_id: 2,
-          quiz_set_name: 'Basic Science',
-          category: 'Science',
-          total_attempts: 12,
-          top_participants: [
-            { participant_name: 'Emily Wilson', score: 19, total_questions: 20, percentage: 95, created_at: new Date() },
-            { participant_name: 'David Brown', score: 18, total_questions: 20, percentage: 90, created_at: new Date(Date.now() - 86400000) },
-            { participant_name: 'Lisa Taylor', score: 17, total_questions: 20, percentage: 85, created_at: new Date(Date.now() - 172800000) }
-          ]
         }
-      ]
-      
+      ];
+
       this.recentAttempts = [
         {
           id: 1,
@@ -370,188 +440,156 @@ export default {
           total_questions: 20,
           percentage: 90,
           created_at: new Date()
-        },
-        {
-          id: 2,
-          participant_name: 'Emily Wilson',
-          quiz_set_name: 'Basic Science',
-          category: 'Science',
-          score: 19,
-          total_questions: 20,
-          percentage: 95,
-          created_at: new Date(Date.now() - 3600000)
-        },
-        {
-          id: 3,
-          participant_name: 'Mike Davis',
-          quiz_set_name: 'World Geography',
-          category: 'Geography',
-          score: 16,
-          total_questions: 20,
-          percentage: 80,
-          created_at: new Date(Date.now() - 7200000)
-        },
-        {
-          id: 4,
-          participant_name: 'Sarah Johnson',
-          quiz_set_name: 'Movie Trivia',
-          category: 'Entertainment',
-          score: 14,
-          total_questions: 20,
-          percentage: 70,
-          created_at: new Date(Date.now() - 10800000)
         }
-      ]
+      ];
+
+      this.displayStats = {
+        total_participants: 31,
+        total_quiz_sets: 6,
+        total_attempts: 32
+      };
+
+      // Render charts with demo data
+      this.$nextTick(() => {
+        this.renderCharts();
+      });
     },
+
+    toggleTheme() {
+      this.isDark = !this.isDark;
+      // Re-render charts when theme changes
+      this.$nextTick(() => {
+        this.renderCharts();
+      });
+    },
+
+    toggleMobileSidebar() {
+      this.mobileSidebar = !this.mobileSidebar;
+    },
+
+    handleLogout() {
+      this.$inertia.post('/admin/logout');
+    },
+
     renderCharts() {
-      this.renderPieChart()
-      this.renderBarChart()
+      this.$nextTick(() => {
+        this.renderPieChart();
+        this.renderBarChart();
+      });
     },
+
     renderPieChart() {
-      const ctx = document.getElementById('pieChart')
-      if (!ctx) {
-        console.error('Pie chart canvas not found')
-        return
+      const canvas = document.getElementById('pieChart');
+      if (!canvas) return;
+
+      // Destroy existing instance safely
+      if (this.chartInstances.pie) {
+        this.chartInstances.pie.destroy();
       }
 
-      const labels = this.quizSetDistribution.length > 0 
-        ? this.quizSetDistribution.map(set => set.quiz_set_name)
-        : ['Geography', 'Science', 'Sports', 'Movies', 'Mixed']
-      
-      const data = this.quizSetDistribution.length > 0
-        ? this.quizSetDistribution.map(set => set.participant_count)
-        : [40, 35, 25, 30, 20]
+      const labels = this.quizSetDistribution.length
+        ? this.quizSetDistribution.map(s => s.quiz_set_name)
+        : ['Geography', 'Science', 'Sports', 'Movies', 'History'];
 
-      // Destroy existing chart if it exists
-      if (ctx.chart) {
-        ctx.chart.destroy()
-      }
+      const data = this.quizSetDistribution.length
+        ? this.quizSetDistribution.map(s => s.participant_count)
+        : [45, 32, 28, 36, 22];
 
-      const textColor = this.isDark ? '#e5e7eb' : '#374151'
-
-      ctx.chart = new Chart(ctx, {
+      this.chartInstances.pie = new Chart(canvas.getContext('2d'), {
         type: 'pie',
         data: {
-          labels: labels,
-          datasets: [
-            {
-              data: data,
-              backgroundColor: ['#6366F1', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B'],
-            },
-          ],
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: ['#6366F1', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B']
+          }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
-            legend: { 
+            legend: {
               position: 'bottom',
-              labels: {
-                padding: 20,
-                usePointStyle: true,
-                color: textColor
-              }
-            },
-          },
-        },
-      })
+              labels: { usePointStyle: true }
+            }
+          }
+        }
+      });
     },
+
     renderBarChart() {
-      const ctx = document.getElementById('barChart')
-      if (!ctx) {
-        console.error('Bar chart canvas not found')
-        return
+      const canvas = document.getElementById('barChart');
+      if (!canvas) return;
+
+      if (this.chartInstances.bar) {
+        this.chartInstances.bar.destroy();
       }
 
-      const labels = this.weeklyParticipants.labels.length > 0
+      const labels = this.weeklyParticipants.labels.length
         ? this.weeklyParticipants.labels
-        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      
-      const data = this.weeklyParticipants.data.length > 0
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+      const data = this.weeklyParticipants.data.length
         ? this.weeklyParticipants.data
-        : [12, 18, 9, 15, 22, 11, 19]
+        : [15, 22, 18, 25, 30, 12, 8];
 
-      // Destroy existing chart if it exists
-      if (ctx.chart) {
-        ctx.chart.destroy()
-      }
-
-      const textColor = this.isDark ? '#e5e7eb' : '#374151'
-      const gridColor = this.isDark ? '#374151' : '#e5e7eb'
-
-      ctx.chart = new Chart(ctx, {
+      this.chartInstances.bar = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Participants',
-              data: data,
-              backgroundColor: '#4F46E5',
-              borderRadius: 6,
-            },
-          ],
+          labels,
+          datasets: [{
+            label: 'Participants',
+            data,
+            backgroundColor: '#4F46E5',
+            borderRadius: 6
+          }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
-            y: { 
-              beginAtZero: true, 
-              ticks: { 
-                stepSize: 5,
-                color: textColor
-              },
-              grid: {
-                color: gridColor
-              }
-            },
-            x: {
-              ticks: {
-                color: textColor
-              },
-              grid: {
-                color: gridColor
-              }
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 5 }
             }
           },
-          plugins: {
-            legend: { display: false },
-          },
-        },
-      })
+          plugins: { legend: { display: false } }
+        }
+      });
     },
+
     cleanupCharts() {
-      const pieCanvas = document.getElementById('pieChart')
-      const barCanvas = document.getElementById('barChart')
-      
-      if (pieCanvas && pieCanvas.chart) {
-        pieCanvas.chart.destroy()
+      if (this.chartInstances.pie) {
+        this.chartInstances.pie.destroy();
       }
-      if (barCanvas && barCanvas.chart) {
-        barCanvas.chart.destroy()
+      if (this.chartInstances.bar) {
+        this.chartInstances.bar.destroy();
       }
     },
+
     formatDate(dateString) {
-      if (!dateString) return ''
+      if (!dateString) return '';
       try {
-        const date = new Date(dateString)
-        const now = new Date()
-        const diff = now - date
-        const minutes = Math.floor(diff / 60000)
-        if (minutes < 60) return `${minutes}m ago`
-        const hours = Math.floor(minutes / 60)
-        if (hours < 24) return `${hours}h ago`
-        const days = Math.floor(hours / 24)
-        return `${days}d ago`
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
       } catch (error) {
-        return 'Invalid date'
+        return 'Invalid date';
       }
     },
+
     progressBadgeClass(percentage) {
-      const perc = Math.round(parseFloat(percentage)) || 0
+      const perc = Math.round(parseFloat(percentage)) || 0;
       
-      if (perc >= 80) return 'progress-badge-high'
-      if (perc >= 60) return 'progress-badge-medium'
-      return 'progress-badge-low'
+      if (perc >= 80) return 'progress-badge-high';
+      if (perc >= 60) return 'progress-badge-medium';
+      return 'progress-badge-low';
     }
   }
 }
@@ -624,6 +662,63 @@ export default {
 
 .loading-text {
   color: var(--text-muted);
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.error-icon {
+  font-size: 1.875rem;
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+.dark-theme .error-icon {
+  color: #f87171;
+}
+
+.error-text {
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.retry-btn {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.retry-btn:hover {
+  background-color: #1d4ed8;
+}
+.dark-theme .retry-btn {
+  background-color: #1e40af;
+}
+.dark-theme .retry-btn:hover {
+  background-color: #1e3a8a;
+}
+
+/* Refresh Button */
+.refresh-btn {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Stats Section */
@@ -704,6 +799,12 @@ export default {
 }
 
 /* Charts Section */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
 .charts-section {
   display: grid;
   grid-template-columns: 1fr;
@@ -721,6 +822,7 @@ export default {
   padding: 1.5rem;
   border-radius: 1rem;
   box-shadow: var(--shadow);
+  position: relative;
 }
 
 .chart-title {
@@ -1180,7 +1282,32 @@ export default {
 
 /* Ensure charts are responsive */
 canvas {
-  max-width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: 320px !important;
+}
+
+/* No Data State */
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.no-data-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-muted);
 }
 </style>

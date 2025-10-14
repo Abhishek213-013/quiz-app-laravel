@@ -1,8 +1,9 @@
 <template>
-  <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
+  <div class="min-h-screen" :class="themeClass">
     <AdminNavbar 
       title="Participants Management"
       :is-dark="isDark"
+      :profile="profile" 
       @toggle-theme="toggleTheme"
       @toggle-mobile-sidebar="toggleMobileSidebar"
       @logout="handleLogout"
@@ -11,6 +12,7 @@
     <div class="flex">
       <AdminSidebar 
         :mobile-sidebar="mobileSidebar"
+        :profile="profile"  
         current-page="/admin/participants"
         @close-mobile-sidebar="toggleMobileSidebar"
       />
@@ -37,22 +39,21 @@
                 </button>
               </div>
               <div class="stats-grid">
-                <div class="stat-card blue">
+                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
                   <div class="stat-number">{{ participants.length }}</div>
                   <div class="stat-label">Total Participants</div>
                 </div>
-                <div class="stat-card green">
+                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
                   <div class="stat-number">{{ totalAttempts }}</div>
                   <div class="stat-label">Total Attempts</div>
                 </div>
-                <div class="stat-card purple">
+                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
                   <div class="stat-number">{{ averageScore }}%</div>
                   <div class="stat-label">Average Score</div>
                 </div>
               </div>
             </div>
 
-            <!-- Rest of the template remains exactly the same -->
             <!-- Search and Filters Section -->
             <div class="content-card mb-8">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -86,37 +87,37 @@
                       <th class="table-header" @click="sortBy('name')">
                         <div class="flex items-center space-x-2">
                           <span>Participant</span>
-                          <i :class="sortColumn === 'name' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
+                          <i :class="sortColumn === 'name' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('best_score')">
                         <div class="flex items-center space-x-2">
                           <span>Best Score</span>
-                          <i :class="sortColumn === 'best_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
+                          <i :class="sortColumn === 'best_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('best_percentage')">
                         <div class="flex items-center space-x-2">
                           <span>Best %</span>
-                          <i :class="sortColumn === 'best_percentage' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
+                          <i :class="sortColumn === 'best_percentage' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('total_attempts')">
                         <div class="flex items-center space-x-2">
                           <span>Attempts</span>
-                          <i :class="sortColumn === 'total_attempts' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
+                          <i :class="sortColumn === 'total_attempts' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('average_score')">
                         <div class="flex items-center space-x-2">
                           <span>Avg. Score</span>
-                          <i :class="sortColumn === 'average_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
+                          <i :class="sortColumn === 'average_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('last_attempt')">
                         <div class="flex items-center space-x-2">
                           <span>Last Activity</span>
-                          <i :class="sortColumn === 'last_attempt' ? (sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600') : 'fas fa-sort text-gray-400'"></i>
+                          <i :class="sortColumn === 'last_attempt' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
                         </div>
                       </th>
                     </tr>
@@ -129,7 +130,7 @@
                     >
                       <td class="table-cell">
                         <div class="flex items-center">
-                          <div class="user-avatar-small">
+                          <div class="user-avatar-small" :class="`avatar-${theme.primaryColor}`">
                             <i class="fas fa-user"></i>
                           </div>
                           <div class="user-details">
@@ -233,7 +234,7 @@
                     :key="activity.id" 
                     class="activity-item"
                   >
-                    <div class="activity-icon" :class="activity.bgColor">
+                    <div class="activity-icon" :class="`bg-${theme.primaryColor}`">
                       <i :class="[activity.icon, 'text-white text-sm']"></i>
                     </div>
                     <div class="activity-content">
@@ -265,6 +266,24 @@ export default {
     participants: {
       type: Array,
       default: () => []
+    },
+    profile: {
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null,
+        role: 'admin'
+      })
+    },
+    theme: {
+      type: Object,
+      default: () => ({
+        colorScheme: 'light',
+        primaryColor: 'blue',
+        layout: 'sidebar'
+      })
     }
   },
   data() {
@@ -272,7 +291,7 @@ export default {
       isDark: false,
       mobileSidebar: false,
       loading: false,
-      refreshing: false, // Added refreshing state
+      refreshing: false,
       search: '',
       sortColumn: 'total_attempts',
       sortDirection: 'desc',
@@ -281,34 +300,33 @@ export default {
           id: 1,
           message: "New participant John Smith registered",
           time: "2 hours ago",
-          icon: "fas fa-user-plus",
-          bgColor: "bg-blue"
+          icon: "fas fa-user-plus"
         },
         {
           id: 2,
           message: "Emily Wilson achieved 95% in Science quiz",
           time: "5 hours ago",
-          icon: "fas fa-trophy",
-          bgColor: "bg-green"
+          icon: "fas fa-trophy"
         },
         {
           id: 3,
           message: "15 new quiz attempts recorded",
           time: "1 day ago",
-          icon: "fas fa-chart-line",
-          bgColor: "bg-purple"
+          icon: "fas fa-chart-line"
         },
         {
           id: 4,
           message: "Mike Davis completed Geography challenge",
           time: "2 days ago",
-          icon: "fas fa-globe",
-          bgColor: "bg-orange"
+          icon: "fas fa-globe"
         }
       ]
     }
   },
   computed: {
+    themeClass() {
+      return this.theme.colorScheme === 'dark' ? 'dark-theme' : 'light-theme';
+    },
     filteredParticipants() {
       let filtered = this.participants.filter(participant => 
         participant.name.toLowerCase().includes(this.search.toLowerCase())
@@ -365,7 +383,6 @@ export default {
     handleLogout() {
       this.$inertia.post('/admin/logout');
     },
-    // Added refreshData method
     async refreshData() {
       this.refreshing = true;
       
@@ -415,32 +432,77 @@ export default {
 </script>
 
 <style>
-/* All existing styles remain exactly the same */
-
-/* Only adding the refresh button styles */
-.refresh-btn {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.refresh-btn:hover:not(:disabled) {
-  background-color: var(--hover-bg);
-}
-.refresh-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+/* Dynamic Theme Variables */
+:root {
+  --primary-color: #3b82f6;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
 }
 
-/* All other existing styles remain unchanged */
-/* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+.primary-blue {
+  --primary-color: #3b82f6;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+}
+
+.primary-green {
+  --primary-color: #10b981;
+  --primary-light: #dcfce7;
+  --primary-dark: #047857;
+}
+
+.primary-purple {
+  --primary-color: #8b5cf6;
+  --primary-light: #f3e8ff;
+  --primary-dark: #6d28d9;
+}
+
+.primary-red {
+  --primary-color: #ef4444;
+  --primary-light: #fee2e2;
+  --primary-dark: #b91c1c;
+}
+
+.primary-orange {
+  --primary-color: #f59e0b;
+  --primary-light: #fef3c7;
+  --primary-dark: #d97706;
+}
+
+/* Apply primary color to elements */
+.stat-blue { background-color: var(--primary-light); }
+.stat-blue .stat-number { color: var(--primary-color); }
+
+.stat-green { background-color: var(--primary-light); }
+.stat-green .stat-number { color: var(--primary-color); }
+
+.stat-purple { background-color: var(--primary-light); }
+.stat-purple .stat-number { color: var(--primary-color); }
+
+.stat-red { background-color: var(--primary-light); }
+.stat-red .stat-number { color: var(--primary-color); }
+
+.stat-orange { background-color: var(--primary-light); }
+.stat-orange .stat-number { color: var(--primary-color); }
+
+.avatar-blue { background-color: var(--primary-light); color: var(--primary-color); }
+.avatar-green { background-color: var(--primary-light); color: var(--primary-color); }
+.avatar-purple { background-color: var(--primary-light); color: var(--primary-color); }
+.avatar-red { background-color: var(--primary-light); color: var(--primary-color); }
+.avatar-orange { background-color: var(--primary-light); color: var(--primary-color); }
+
+.bg-blue { background-color: var(--primary-color); }
+.bg-green { background-color: var(--primary-color); }
+.bg-purple { background-color: var(--primary-color); }
+.bg-red { background-color: var(--primary-color); }
+.bg-orange { background-color: var(--primary-color); }
+
+.table-header:hover { background-color: var(--primary-light); }
+.table-header i.fas.fa-arrow-up,
+.table-header i.fas.fa-arrow-down { color: var(--primary-color); }
+.highlight { color: var(--primary-color); }
+.info-icon { color: var(--primary-color); }
+.loading-icon { color: var(--primary-color); }
 
 /* Light Theme */
 .light-theme {
@@ -496,11 +558,7 @@ export default {
 
 .loading-icon {
   font-size: 1.875rem;
-  color: #2563eb;
   margin-bottom: 1rem;
-}
-.dark-theme .loading-icon {
-  color: #60a5fa;
 }
 
 .loading-text {
@@ -537,47 +595,11 @@ export default {
   padding: 1.5rem;
   text-align: center;
 }
-.stat-card.blue {
-  background-color: #dbeafe;
-}
-.dark-theme .stat-card.blue {
-  background-color: #1e3a8a;
-}
-.stat-card.green {
-  background-color: #dcfce7;
-}
-.dark-theme .stat-card.green {
-  background-color: #14532d;
-}
-.stat-card.purple {
-  background-color: #f3e8ff;
-}
-.dark-theme .stat-card.purple {
-  background-color: #581c87;
-}
 
 .stat-number {
   font-size: 1.875rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-}
-.stat-card.blue .stat-number {
-  color: #2563eb;
-}
-.dark-theme .stat-card.blue .stat-number {
-  color: #60a5fa;
-}
-.stat-card.green .stat-number {
-  color: #16a34a;
-}
-.dark-theme .stat-card.green .stat-number {
-  color: #4ade80;
-}
-.stat-card.purple .stat-number {
-  color: #7c3aed;
-}
-.dark-theme .stat-card.purple .stat-number {
-  color: #a855f7;
 }
 
 .stat-label {
@@ -622,8 +644,8 @@ export default {
 }
 .search-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 10%, transparent);
 }
 .search-input::placeholder {
   color: var(--text-muted);
@@ -647,9 +669,6 @@ export default {
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
-.table-header:hover {
-  background-color: var(--border-color);
-}
 
 .table-row {
   transition: all 0.2s ease;
@@ -669,17 +688,11 @@ export default {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background-color: #dbeafe;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
   flex-shrink: 0;
   margin-right: 1rem;
-}
-.dark-theme .user-avatar-small {
-  background-color: #1e3a8a;
-  color: #60a5fa;
 }
 
 .user-details {
@@ -795,21 +808,12 @@ export default {
   color: var(--text-secondary);
 }
 
-.highlight {
-  color: #3b82f6;
-  font-weight: 700;
-}
-
 .footer-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
   color: var(--text-muted);
-}
-
-.info-icon {
-  color: #3b82f6;
 }
 
 /* Performance Section */
@@ -962,11 +966,26 @@ export default {
   margin-top: 0.25rem;
 }
 
-/* Activity Colors */
-.bg-blue { background-color: #3b82f6; }
-.bg-green { background-color: #10b981; }
-.bg-purple { background-color: #8b5cf6; }
-.bg-orange { background-color: #f59e0b; }
+/* Refresh Button */
+.refresh-btn {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* Custom scrollbar for table */
 .overflow-x-auto::-webkit-scrollbar {

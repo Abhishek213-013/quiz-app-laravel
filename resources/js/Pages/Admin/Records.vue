@@ -3,6 +3,7 @@
     <AdminNavbar 
       title="Records & Analytics"
       :is-dark="isDark"
+      :profile="profile"
       @toggle-theme="toggleTheme"
       @toggle-mobile-sidebar="toggleMobileSidebar"
       @logout="handleLogout"
@@ -11,6 +12,7 @@
     <div class="flex">
       <AdminSidebar 
         :mobile-sidebar="mobileSidebar"
+        :profile="profile"
         current-page="/admin/records"
         @close-mobile-sidebar="toggleMobileSidebar"
       />
@@ -369,6 +371,18 @@ export default {
   components: {
     AdminNavbar,
     AdminSidebar
+  },
+  props: {
+    profile: {
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null,
+        role: 'admin'
+      })
+    }
   },
   data() {
     return {
@@ -953,7 +967,6 @@ export default {
 
 /* All other existing styles remain unchanged */
 /* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 /* Light Theme */
 .light-theme {

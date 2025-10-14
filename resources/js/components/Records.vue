@@ -1,7 +1,7 @@
 <template>
     <div class="flex-1">
         <div class="container mx-auto px-4 py-8">
-            <!-- Simplified Header -->
+            <!-- Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-800">Previous Records</h1>
                 <p class="text-gray-600 mt-2">View and filter previous quiz results</p>
@@ -20,21 +20,24 @@
                 </div>
             </div>
 
-            <!-- Filters -->
+            <!-- Filters - Horizontal Layout -->
             <div v-if="!error" class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter Results</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Participant Name</label>
+                <div class="flex flex-col md:flex-row gap-4 items-end">
+                    <!-- Search by Name -->
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Search by name</label>
                         <input 
                             v-model="filters.participant_name"
                             type="text" 
-                            placeholder="Search by name"
+                            placeholder="Enter participant name"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             @input="applyFilters"
                         >
                     </div>
-                    <div>
+                    
+                    <!-- Quiz Set -->
+                    <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Set</label>
                         <select 
                             v-model="filters.quiz_set_id"
@@ -51,7 +54,9 @@
                             </option>
                         </select>
                     </div>
-                    <div>
+                    
+                    <!-- Date -->
+                    <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
                         <input 
                             v-model="filters.date"
@@ -60,16 +65,18 @@
                             @change="applyFilters"
                         >
                     </div>
-                    <div class="flex items-end space-x-2">
+                    
+                    <!-- Buttons -->
+                    <div class="flex gap-2">
                         <button 
                             @click="clearFilters"
-                            class="w-1/2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                            class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors font-medium"
                         >
                             Clear
                         </button>
                         <button 
                             @click="applyFilters"
-                            class="w-1/2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                            class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium"
                         >
                             Apply
                         </button>
@@ -723,3 +730,28 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+/* Custom styles for smooth transitions */
+.transform {
+    transition: all 0.3s ease;
+}
+
+.hover\:scale-105:hover {
+    transform: scale(1.05);
+}
+
+.hover\:shadow-xl:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Loading animation */
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+</style>

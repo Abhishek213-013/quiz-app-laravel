@@ -3,6 +3,7 @@
     <AdminNavbar 
       title="Profile Settings"
       :is-dark="isDark"
+      :profile="profile"
       @toggle-theme="toggleTheme"
       @toggle-mobile-sidebar="toggleMobileSidebar"
       @logout="handleLogout"
@@ -11,6 +12,7 @@
     <div class="flex">
       <AdminSidebar 
         :mobile-sidebar="mobileSidebar"
+        :profile="profile"
         current-page="/admin/profile"
         @close-mobile-sidebar="toggleMobileSidebar"
       />
@@ -38,6 +40,19 @@
             </div>
           </div>
 
+          <!-- Success Message -->
+          <div v-if="$page.props.flash.message" class="content-card mb-6" :class="flashMessageClass">
+            <div class="flex items-center p-4">
+              <i class="fas fa-check-circle mr-3 text-xl" :class="flashIconClass"></i>
+              <div>
+                <h3 class="font-semibold" :class="flashTextClass">{{ $page.props.flash.message }}</h3>
+              </div>
+              <button @click="$page.props.flash.message = null" class="ml-auto" :class="flashIconClass">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column - Profile Information -->
             <div class="lg:col-span-2 space-y-8">
@@ -57,13 +72,13 @@
                         </label>
                         <input
                           type="text"
-                          v-model="form.firstName"
+                          v-model="form.first_name"
                           class="form-input"
                           placeholder="Enter your first name"
-                          :class="{ 'form-input-error': form.errors.firstName }"
+                          :class="{ 'form-input-error': form.errors.first_name }"
                         />
-                        <div v-if="form.errors.firstName" class="form-error">
-                          {{ form.errors.firstName }}
+                        <div v-if="form.errors.first_name" class="form-error">
+                          {{ form.errors.first_name }}
                         </div>
                       </div>
 
@@ -74,14 +89,31 @@
                         </label>
                         <input
                           type="text"
-                          v-model="form.lastName"
+                          v-model="form.last_name"
                           class="form-input"
                           placeholder="Enter your last name"
-                          :class="{ 'form-input-error': form.errors.lastName }"
+                          :class="{ 'form-input-error': form.errors.last_name }"
                         />
-                        <div v-if="form.errors.lastName" class="form-error">
-                          {{ form.errors.lastName }}
+                        <div v-if="form.errors.last_name" class="form-error">
+                          {{ form.errors.last_name }}
                         </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">
+                        <i class="fas fa-user-tag text-gray-400 mr-2"></i>
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        v-model="form.username"
+                        class="form-input"
+                        placeholder="Enter your username"
+                        :class="{ 'form-input-error': form.errors.username }"
+                      />
+                      <div v-if="form.errors.username" class="form-error">
+                        {{ form.errors.username }}
                       </div>
                     </div>
 
@@ -130,6 +162,7 @@
                         class="form-input"
                         placeholder="Tell us about yourself, your role, and your interests..."
                         :class="{ 'form-input-error': form.errors.bio }"
+                        maxlength="500"
                       ></textarea>
                       <div class="flex justify-between items-center mt-1">
                         <div v-if="form.errors.bio" class="form-error">
@@ -144,55 +177,78 @@
                 </div>
               </div>
 
-              <!-- Security Settings Card -->
+              <!-- Password Update Card -->
               <div class="content-card">
                 <div class="card-header">
-                  <i class="fas fa-shield-alt text-green-500 mr-3"></i>
-                  <h2 class="card-title">Security Settings</h2>
+                  <i class="fas fa-key text-green-500 mr-3"></i>
+                  <h2 class="card-title">Update Password</h2>
                 </div>
                 <div class="card-body">
-                  <div class="space-y-6">
-                    <div class="security-item">
-                      <div class="flex items-center justify-between">
-                        <div>
-                          <h3 class="security-title">Two-Factor Authentication</h3>
-                          <p class="security-description">Add an extra layer of security to your account</p>
-                        </div>
-                        <label class="toggle-switch">
-                          <input type="checkbox" v-model="security.twoFactor" />
-                          <span class="toggle-slider"></span>
+                  <form @submit.prevent="updatePassword" class="space-y-6">
+                    <div class="form-group">
+                      <label class="form-label">
+                        <i class="fas fa-lock text-gray-400 mr-2"></i>
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        v-model="passwordForm.current_password"
+                        class="form-input"
+                        placeholder="Enter your current password"
+                        :class="{ 'form-input-error': passwordForm.errors.current_password }"
+                      />
+                      <div v-if="passwordForm.errors.current_password" class="form-error">
+                        {{ passwordForm.errors.current_password }}
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div class="form-group">
+                        <label class="form-label">
+                          <i class="fas fa-lock text-gray-400 mr-2"></i>
+                          New Password
                         </label>
+                        <input
+                          type="password"
+                          v-model="passwordForm.password"
+                          class="form-input"
+                          placeholder="Enter new password"
+                          :class="{ 'form-input-error': passwordForm.errors.password }"
+                        />
+                        <div v-if="passwordForm.errors.password" class="form-error">
+                          {{ passwordForm.errors.password }}
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label">
+                          <i class="fas fa-lock text-gray-400 mr-2"></i>
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          v-model="passwordForm.password_confirmation"
+                          class="form-input"
+                          placeholder="Confirm new password"
+                          :class="{ 'form-input-error': passwordForm.errors.password_confirmation }"
+                        />
+                        <div v-if="passwordForm.errors.password_confirmation" class="form-error">
+                          {{ passwordForm.errors.password_confirmation }}
+                        </div>
                       </div>
                     </div>
 
-                    <div class="security-item">
-                      <div class="flex items-center justify-between">
-                        <div>
-                          <h3 class="security-title">Password</h3>
-                          <p class="security-description">Last changed 3 months ago</p>
-                        </div>
-                        <button class="btn-secondary">
-                          <i class="fas fa-key mr-2"></i>
-                          Change
-                        </button>
-                      </div>
+                    <div class="flex justify-end">
+                      <button 
+                        type="submit" 
+                        class="btn-primary"
+                        :disabled="passwordForm.processing"
+                      >
+                        <i class="fas fa-key mr-2"></i>
+                        {{ passwordForm.processing ? 'Updating...' : 'Update Password' }}
+                      </button>
                     </div>
-
-                    <div class="security-item">
-                      <div class="flex items-center justify-between">
-                        <div>
-                          <h3 class="security-title">Session Timeout</h3>
-                          <p class="security-description">Automatically log out after 30 minutes of inactivity</p>
-                        </div>
-                        <select class="form-input w-32">
-                          <option>30 min</option>
-                          <option>1 hour</option>
-                          <option>2 hours</option>
-                          <option>4 hours</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
+                  </form>
                 </div>
               </div>
             </div>
@@ -209,7 +265,12 @@
                   <div class="flex flex-col items-center space-y-4">
                     <div class="relative">
                       <div class="profile-avatar-large">
-                        <i class="fas fa-user text-3xl"></i>
+                        <template v-if="profile.avatar">
+                          <img :src="profile.avatar" alt="Profile" class="w-full h-full rounded-full object-cover">
+                        </template>
+                        <template v-else>
+                          <i class="fas fa-user text-3xl"></i>
+                        </template>
                       </div>
                       <button
                         @click="triggerFileInput"
@@ -228,7 +289,11 @@
                     <p class="text-sm text-center text-gray-500">
                       JPG, PNG or GIF. Max size 2MB
                     </p>
-                    <button class="btn-outline w-full">
+                    <button 
+                      @click="removeAvatar" 
+                      class="btn-outline w-full"
+                      :disabled="!profile.avatar"
+                    >
                       <i class="fas fa-sync-alt mr-2"></i>
                       Remove Photo
                     </button>
@@ -271,7 +336,7 @@
                     <div class="status-item">
                       <div class="flex justify-between items-center">
                         <span class="status-label">Role</span>
-                        <span class="badge-primary">Administrator</span>
+                        <span class="badge-primary">{{ profile.role }}</span>
                       </div>
                     </div>
 
@@ -293,19 +358,7 @@
                 </div>
                 <div class="card-body">
                   <div class="space-y-3">
-                    <button class="action-btn">
-                      <i class="fas fa-download mr-3"></i>
-                      Export Profile Data
-                    </button>
-                    <button class="action-btn">
-                      <i class="fas fa-print mr-3"></i>
-                      Print Profile
-                    </button>
-                    <button class="action-btn">
-                      <i class="fas fa-share-alt mr-3"></i>
-                      Share Profile
-                    </button>
-                    <button class="action-btn text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                    <button class="action-btn text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" @click="showDeleteConfirmation = true">
                       <i class="fas fa-trash-alt mr-3"></i>
                       Delete Account
                     </button>
@@ -315,6 +368,28 @@
             </div>
           </div>
         </main>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-exclamation-triangle text-red-500 text-xl mr-3"></i>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Delete Account</h3>
+        </div>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">
+          Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button @click="showDeleteConfirmation = false" class="btn-secondary">
+            Cancel
+          </button>
+          <button @click="deleteAccount" class="btn-danger">
+            <i class="fas fa-trash-alt mr-2"></i>
+            Delete Account
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -331,37 +406,105 @@ export default {
     AdminSidebar
   },
   props: {
-    profile: Object
+    participants: {
+      type: Array,
+      default: () => []
+    },
+    profile: {  // Add profile prop
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null,
+        role: 'admin'
+      })
+    }
   },
   setup(props) {
+    console.log('Profile props received:', props.profile);
+    
+    // Main profile form
     const form = useForm({
-      firstName: props.profile.firstName,
-      lastName: props.profile.lastName,
-      email: props.profile.email,
-      phone: props.profile.phone,
-      bio: props.profile.bio
+      first_name: props.profile.firstName || '',
+      last_name: props.profile.lastName || '',
+      username: props.profile.username || '',
+      email: props.profile.email || '',
+      phone: props.profile.phone || '',
+      bio: props.profile.bio || '',
+    })
+
+    // Password update form
+    const passwordForm = useForm({
+      current_password: '',
+      password: '',
+      password_confirmation: ''
     })
 
     const saveProfile = () => {
-      form.put(route('admin.profile.update'), {
+      console.log('Saving profile with data:', form.data());
+      console.log('Making PUT request to: /admin/profile');
+      
+      // CORRECT URL: /admin/profile (no /update)
+      form.put('/admin/profile', {
         preserveScroll: true,
         onSuccess: () => {
-          // Show success message
-          console.log('Profile updated successfully')
+          console.log('✅ Profile update successful');
+        },
+        onError: (errors) => {
+          console.log('❌ Profile update errors:', errors);
         },
       })
     }
 
-    return { form, saveProfile }
+    const updatePassword = () => {
+      console.log('Updating password with data:', passwordForm.data());
+      console.log('Making PUT request to: /admin/profile/password');
+      
+      // CORRECT URL: /admin/profile/password
+      passwordForm.put('/admin/profile/password', {
+        preserveScroll: true,
+        onSuccess: () => {
+          console.log('✅ Password update successful');
+          passwordForm.reset()
+        },
+        onError: (errors) => {
+          console.log('❌ Password update errors:', errors);
+        },
+      })
+    }
+
+    return { 
+      form, 
+      passwordForm, 
+      saveProfile, 
+      updatePassword 
+    }
   },
   data() {
     return {
       isDark: false,
       mobileSidebar: false,
-      security: {
-        twoFactor: true,
-        sessionTimeout: '30 min'
-      }
+      showDeleteConfirmation: false
+    }
+  },
+  computed: {
+    flashMessageClass() {
+      const type = this.$page.props.flash.type || 'success'
+      return type === 'success' 
+        ? 'bg-green-50 border border-green-200' 
+        : 'bg-red-50 border border-red-200'
+    },
+    flashIconClass() {
+      const type = this.$page.props.flash.type || 'success'
+      return type === 'success' ? 'text-green-500' : 'text-red-500'
+    },
+    flashTextClass() {
+      const type = this.$page.props.flash.type || 'success'
+      return type === 'success' ? 'text-green-800' : 'text-red-800'
+    },
+    fullName() {
+      return `${this.profile.firstName} ${this.profile.lastName}`.trim()
     }
   },
   methods: {
@@ -372,598 +515,86 @@ export default {
       this.mobileSidebar = !this.mobileSidebar
     },
     handleLogout() {
-      this.$inertia.post(route('admin.logout'))
+      this.$inertia.post('/admin/logout')
     },
     triggerFileInput() {
       this.$refs.fileInput.click()
     },
     handleImageUpload(event) {
-      const file = event.target.files[0]
+      const file = event.target.files[0];
+      console.log('File selected:', file);
+      console.log('Making POST request to: /admin/profile/avatar');
+      
       if (file) {
-        const formData = new FormData()
-        formData.append('avatar', file)
+        // Validate file size (2MB max)
+        if (file.size > 2 * 1024 * 1024) {
+          alert('File size must be less than 2MB');
+          return;
+        }
+
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+          alert('Please select a valid image file (JPEG, PNG, JPG, GIF)');
+          return;
+        }
+
+        console.log('File validation passed, preparing to upload...');
+
+        const formData = new FormData();
+        formData.append('avatar', file);
         
-        this.$inertia.post(route('admin.profile.avatar'), formData, {
+        // CORRECT URL: /admin/profile/avatar
+        this.$inertia.post('/admin/profile/avatar', formData, {
           preserveScroll: true,
           onSuccess: () => {
-            console.log('Avatar updated successfully')
-          }
-        })
+            console.log('✅ Avatar upload successful');
+            // Clear the file input
+            event.target.value = '';
+          },
+          onError: (errors) => {
+            console.log('❌ Avatar upload errors:', errors);
+            alert('Failed to upload avatar. Please try again.');
+          },
+        });
+      } else {
+        console.log('No file selected');
       }
+    },
+    removeAvatar() {
+      if (confirm('Are you sure you want to remove your profile picture?')) {
+        console.log('Making DELETE request to: /admin/profile/avatar');
+        
+        // CORRECT URL: /admin/profile/avatar
+        this.$inertia.delete('/admin/profile/avatar', {
+          preserveScroll: true,
+          onSuccess: () => {
+            console.log('✅ Avatar removed successfully');
+          },
+          onError: (errors) => {
+            console.log('❌ Avatar removal errors:', errors);
+            alert('Failed to remove avatar. Please try again.');
+          },
+        });
+      }
+    },
+    deleteAccount() {
+      console.log('Making DELETE request to: /admin/profile');
+      
+      // CORRECT URL: /admin/profile
+      this.$inertia.delete('/admin/profile', {
+        preserveScroll: false,
+      });
     }
+  },
+  mounted() {
+    console.log('🎯 Profile component mounted successfully!');
+    console.log('📝 Available profile routes:');
+    console.log('   PUT    /admin/profile        - Update profile');
+    console.log('   POST   /admin/profile/avatar - Upload avatar');
+    console.log('   DELETE /admin/profile/avatar - Remove avatar');
+    console.log('   PUT    /admin/profile/password - Update password');
+    console.log('   DELETE /admin/profile        - Delete account');
   }
 }
 </script>
-
-<style>
-/* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-
-/* Light Theme */
-.light-theme {
-  --bg-primary: #f9fafb;
-  --bg-secondary: #ffffff;
-  --bg-sidebar: #ffffff;
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #6b7280;
-  --border-color: #e5e7eb;
-  --hover-bg: #f3f4f6;
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Dark Theme */
-.dark-theme {
-  --bg-primary: #111827;
-  --bg-secondary: #1f2937;
-  --bg-sidebar: #1f2937;
-  --text-primary: #f9fafb;
-  --text-secondary: #e5e7eb;
-  --text-muted: #9ca3af;
-  --border-color: #374151;
-  --hover-bg: #374151;
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-}
-
-/* Base Styles */
-.min-h-screen {
-  min-height: 100vh;
-  background-color: var(--bg-primary);
-  transition: all 0.3s ease;
-}
-
-.main-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.content {
-  padding: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Content Cards */
-.content-card {
-  background-color: var(--bg-secondary);
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.content-card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.dark-theme .content-card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-}
-
-.card-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-}
-
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.card-title-large {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.card-subtitle {
-  font-size: 1rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.card-body {
-  padding: 1.5rem;
-}
-
-/* Form Styles */
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  background-color: var(--bg-secondary);
-}
-
-.form-input-error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-.form-error {
-  color: #ef4444;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-/* Buttons */
-.btn-primary {
-  background-color: #3b82f6;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-secondary {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-}
-
-.btn-secondary:hover {
-  background-color: var(--hover-bg);
-  border-color: var(--text-muted);
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: var(--text-primary);
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.btn-outline:hover {
-  background-color: var(--hover-bg);
-  border-color: var(--text-muted);
-}
-
-/* Profile Avatar */
-.profile-avatar-large {
-  width: 8rem;
-  height: 8rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 2rem;
-  box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
-  position: relative;
-}
-
-/* Badges */
-.badge-success {
-  background-color: #dcfce7;
-  color: #16a34a;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-}
-
-.dark-theme .badge-success {
-  background-color: #14532d;
-  color: #4ade80;
-}
-
-.badge-primary {
-  background-color: #dbeafe;
-  color: #2563eb;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-}
-
-.dark-theme .badge-primary {
-  background-color: #1e3a8a;
-  color: #60a5fa;
-}
-
-/* Status Items */
-.status-item {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.status-item:last-child {
-  border-bottom: none;
-}
-
-.status-label {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.status-value {
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-/* Security Items */
-.security-item {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
-}
-
-.security-item:hover {
-  background-color: var(--hover-bg);
-  border-color: var(--text-muted);
-}
-
-.security-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.25rem;
-}
-
-.security-description {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-/* Toggle Switch */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 3.5rem;
-  height: 2rem;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #d1d5db;
-  transition: .4s;
-  border-radius: 2rem;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 1.5rem;
-  width: 1.5rem;
-  left: 0.25rem;
-  bottom: 0.25rem;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
-  background-color: #10b981;
-}
-
-input:checked + .toggle-slider:before {
-  transform: translateX(1.5rem);
-}
-
-/* Action Buttons */
-.action-btn {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  background-color: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-}
-
-.action-btn:hover {
-  background-color: var(--hover-bg);
-  border-color: var(--text-muted);
-  transform: translateX(4px);
-}
-
-/* Grid Utilities */
-.grid {
-  display: grid;
-}
-
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-.gap-8 {
-  gap: 2rem;
-}
-
-.space-y-8 > * + * {
-  margin-top: 2rem;
-}
-
-.space-y-6 > * + * {
-  margin-top: 1.5rem;
-}
-
-.space-y-4 > * + * {
-  margin-top: 1rem;
-}
-
-.space-y-3 > * + * {
-  margin-top: 0.75rem;
-}
-
-/* Flex Utilities */
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-/* Spacing */
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.mr-3 {
-  margin-right: 0.75rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-/* Responsive Design */
-@media (min-width: 768px) {
-  .md\:flex-row {
-    flex-direction: row;
-  }
-  
-  .md\:items-center {
-    align-items: center;
-  }
-  
-  .md\:justify-between {
-    justify-content: space-between;
-  }
-  
-  .md\:mt-0 {
-    margin-top: 0;
-  }
-  
-  .md\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .lg\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  
-  .lg\:col-span-2 {
-    grid-column: span 2 / span 2;
-  }
-}
-
-/* Text Colors */
-.text-blue-500 {
-  color: #3b82f6;
-}
-
-.text-green-500 {
-  color: #10b981;
-}
-
-.text-purple-500 {
-  color: #8b5cf6;
-}
-
-.text-orange-500 {
-  color: #f59e0b;
-}
-
-.text-yellow-500 {
-  color: #eab308;
-}
-
-.text-gray-400 {
-  color: #9ca3af;
-}
-
-.text-red-500 {
-  color: #ef4444;
-}
-
-/* Background Colors */
-.bg-blue-600 {
-  background-color: #2563eb;
-}
-
-.hover\:bg-blue-700:hover {
-  background-color: #1d4ed8;
-}
-
-.hover\:bg-red-50:hover {
-  background-color: #fef2f2;
-}
-
-.dark .hover\:bg-red-900\/20:hover {
-  background-color: rgba(127, 29, 29, 0.2);
-}
-
-/* Transitions */
-.transition-colors {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.transition-all {
-  transition: all 0.2s ease;
-}
-
-/* Hidden */
-.hidden {
-  display: none;
-}
-
-/* Text Alignment */
-.text-center {
-  text-align: center;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.text-3xl {
-  font-size: 1.875rem;
-}
-
-/* Positioning */
-.relative {
-  position: relative;
-}
-
-.absolute {
-  position: absolute;
-}
-
-.-bottom-2 {
-  bottom: -0.5rem;
-}
-
-.-right-2 {
-  right: -0.5rem;
-}
-
-/* Width */
-.w-full {
-  width: 100%;
-}
-
-.w-32 {
-  width: 8rem;
-}
-</style>

@@ -50,17 +50,33 @@ Route::prefix('admin')->group(function () {
         Route::get('/daily-participation', [AdminController::class, 'getDailyParticipation'])->name('admin.daily-participation');
         Route::get('/all-records', [AdminController::class, 'getAllRecords'])->name('admin.all-records');
         
-        // API routes for new pages
-        Route::put('/profile/update', [ProfileController::class, 'update'])->name('admin.profile.update');
+        // Profile API routes
+        Route::put('/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
         Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('admin.profile.avatar');
+        Route::delete('/profile/avatar', [ProfileController::class, 'removeAvatar'])->name('admin.profile.avatar.remove');
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('admin.profile.password');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('admin.profile.destroy');
+        
+        // Settings API routes
         Route::put('/settings/general', [SettingsController::class, 'updateGeneral'])->name('admin.settings.general');
         Route::put('/settings/security', [SettingsController::class, 'updateSecurity'])->name('admin.settings.security');
         Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('admin.settings.notifications');
-        Route::put('/customize/update', [CustomizeController::class, 'update'])->name('admin.customize.update');
-        Route::post('/customize/logo', [CustomizeController::class, 'uploadLogo'])->name('admin.customize.logo');
-        Route::post('/customize/favicon', [CustomizeController::class, 'uploadFavicon'])->name('admin.customize.favicon');
-        Route::post('/customize/reset', [CustomizeController::class, 'reset'])->name('admin.customize.reset');
         
+        // Customize API routes - UPDATED
+        Route::put('/customize', [CustomizeController::class, 'update'])->name('admin.customize.update');
+        Route::post('/customize/reset', [CustomizeController::class, 'reset'])->name('admin.customize.reset');
+        Route::get('/customize/theme-settings', [CustomizeController::class, 'getThemeSettings'])->name('admin.customize.theme-settings');
+        Route::post('/customize/apply-theme', [CustomizeController::class, 'applyTheme'])->name('admin.customize.apply-theme');
+        
+        // Remove these routes as they're not in the updated CustomizeController
+        // Route::post('/customize/logo', [CustomizeController::class, 'uploadLogo'])->name('admin.customize.logo');
+        // Route::post('/customize/favicon', [CustomizeController::class, 'uploadFavicon'])->name('admin.customize.favicon');
+        
+        // Notification routes - FIXED (removed duplicate /admin prefix)
+        Route::get('/notifications', [AdminController::class, 'getNotifications'])->name('admin.notifications');
+        Route::post('/notifications/{id}/read', [AdminController::class, 'markNotificationAsRead'])->name('admin.notifications.read');
+        Route::post('/notifications/mark-all-read', [AdminController::class, 'markAllNotificationsAsRead'])->name('admin.notifications.mark-all-read');
+
         Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
     });
 });

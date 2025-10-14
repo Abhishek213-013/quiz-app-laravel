@@ -5,9 +5,12 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     server: {
-        host: '127.0.0.1',  // 👈 make it match your Laravel host
+        host: '127.0.0.1',
         port: 3000,
-        cors: true
+        cors: true,
+        hmr: {
+            host: '127.0.0.1',
+        },
     },
     plugins: [
         laravel({
@@ -24,9 +27,28 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
-    resolve: {
-        alias: {
-            vue: 'vue/dist/vue.esm-bundler.js',
+    // Add CSS configuration
+    css: {
+        devSourcemap: false, // Disable sourcemaps in dev to reduce FOUC
+        preprocessorOptions: {
+            css: {
+                charset: false,
+            },
+        },
+    },
+    build: {
+        // Optimize CSS loading
+        cssCodeSplit: true,
+        rollupOptions: {
+            output: {
+                // Ensure CSS is loaded properly
+                assetFileNames: (assetInfo) => {
+                    if (assetInfo.name.endsWith('.css')) {
+                        return 'assets/css/[name]-[hash][extname]';
+                    }
+                    return 'assets/[name]-[hash][extname]';
+                },
+            },
         },
     },
 });

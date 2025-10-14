@@ -3,6 +3,7 @@
     <AdminNavbar 
       title="System Settings"
       :is-dark="isDark"
+      :profile="profile"
       @toggle-theme="toggleTheme"
       @toggle-mobile-sidebar="toggleMobileSidebar"
       @logout="handleLogout"
@@ -11,6 +12,7 @@
     <div class="flex">
       <AdminSidebar 
         :mobile-sidebar="mobileSidebar"
+        :profile="profile"
         current-page="/admin/settings"
         @close-mobile-sidebar="toggleMobileSidebar"
       />
@@ -452,6 +454,22 @@ export default {
     AdminNavbar,
     AdminSidebar
   },
+  props: {
+    participants: {
+      type: Array,
+      default: () => []
+    },
+    profile: {  // Add profile prop
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null,
+        role: 'admin'
+      })
+    }
+  },
   data() {
     return {
       isDark: false,
@@ -528,7 +546,7 @@ export default {
 
 <style>
 /* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
 
 /* Light Theme */
 .light-theme {

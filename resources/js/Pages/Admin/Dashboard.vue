@@ -1,8 +1,9 @@
 <template>
-  <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
+  <div class="min-h-screen" :class="themeClass">
     <AdminNavbar 
       title="Admin Dashboard"
       :is-dark="isDark"
+      :profile="profile"  
       @toggle-theme="toggleTheme"
       @toggle-mobile-sidebar="toggleMobileSidebar"
       @logout="handleLogout"
@@ -11,6 +12,7 @@
     <div class="flex">
       <AdminSidebar 
         :mobile-sidebar="mobileSidebar"
+        :profile="profile"  
         current-page="/admin/dashboard"
         @close-mobile-sidebar="toggleMobileSidebar"
       />
@@ -47,15 +49,15 @@
                 </button>
               </div>
               <div class="stats-grid">
-                <div class="stat-card blue">
+                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
                   <div class="stat-number">{{ displayStats.total_participants || 0 }}</div>
                   <div class="stat-label">Total Participants</div>
                 </div>
-                <div class="stat-card green">
+                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
                   <div class="stat-number">{{ displayStats.total_quiz_sets || 0 }}</div>
                   <div class="stat-label">Active Quiz Sets</div>
                 </div>
-                <div class="stat-card purple">
+                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
                   <div class="stat-number">{{ displayStats.total_attempts || 0 }}</div>
                   <div class="stat-label">Total Attempts</div>
                 </div>
@@ -100,14 +102,14 @@
                       <h3 class="scorer-title">{{ scorer.quiz_set_name }}</h3>
                       <p class="scorer-category">{{ scorer.category }}</p>
                     </div>
-                    <div class="attempts-badge">
+                    <div class="attempts-badge" :class="`badge-${theme.primaryColor}`">
                       {{ scorer.total_attempts }} attempts
                     </div>
                   </div>
                   <div class="scorer-list">
                     <div v-for="(participant, index) in scorer.top_participants" :key="participant.participant_name" 
                          class="scorer-item">
-                      <div class="scorer-rank">
+                      <div class="scorer-rank" :class="`rank-${theme.primaryColor}`">
                         {{ index + 1 }}
                       </div>
                       <div class="scorer-details">
@@ -135,7 +137,7 @@
                   class="attempt-item"
                 >
                   <div class="attempt-user">
-                    <div class="user-avatar-small">
+                    <div class="user-avatar-small" :class="`avatar-${theme.primaryColor}`">
                       <i class="fas fa-user"></i>
                     </div>
                     <div class="user-details">
@@ -166,7 +168,7 @@
                     :key="activity.id" 
                     class="activity-item"
                   >
-                    <div class="activity-icon" :class="activity.bgColor">
+                    <div class="activity-icon" :class="`bg-${theme.primaryColor}`">
                       <i :class="[activity.icon, 'text-white text-sm']"></i>
                     </div>
                     <div class="activity-content">
@@ -182,7 +184,7 @@
                 <h2 class="card-title-large">Performance Overview</h2>
                 <div class="performance-content">
                   <div class="average-score">
-                    <div class="score-number">
+                    <div class="score-number" :class="`text-${theme.primaryColor}`">
                       {{ isNaN(averageScore) ? 0 : averageScore }}%
                     </div>
                     <div class="score-label">Average Score</div>
@@ -208,7 +210,7 @@
 
                   <div class="completion-rate">
                     <div class="rate-label">Completion Rate</div>
-                    <div class="rate-number">{{ completionRate }}%</div>
+                    <div class="rate-number" :class="`text-${theme.primaryColor}`">{{ completionRate }}%</div>
                   </div>
                 </div>
               </div>
@@ -230,6 +232,26 @@ export default {
   components: {
     AdminNavbar,
     AdminSidebar
+  },
+  props: {
+    profile: {
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null,
+        role: 'admin'
+      })
+    },
+    theme: {
+      type: Object,
+      default: () => ({
+        colorScheme: 'light',
+        primaryColor: 'blue',
+        layout: 'sidebar'
+      })
+    }
   },
   data() {
     return {
@@ -253,33 +275,34 @@ export default {
           message: "New Geography quiz set added",
           time: "2 hours ago",
           icon: "fas fa-globe-americas",
-          bgColor: "bg-blue"
         },
         {
           id: 2,
           message: "Science & Technology article published",
           time: "5 hours ago",
           icon: "fas fa-flask",
-          bgColor: "bg-green"
         },
         {
           id: 3,
           message: "History quiz completed by 15 participants",
           time: "1 day ago",
           icon: "fas fa-history",
-          bgColor: "bg-purple"
         },
         {
           id: 4,
           message: "New World Facts article available",
           time: "2 days ago",
           icon: "fas fa-book-open",
-          bgColor: "bg-orange"
         }
       ]
     }
   },
   computed: {
+    themeClass() {
+      // Use the theme from props, fallback to isDark for backward compatibility
+      const colorScheme = this.theme?.colorScheme || (this.isDark ? 'dark' : 'light');
+      return `${colorScheme}-theme primary-${this.theme?.primaryColor || 'blue'}`;
+    },
     averageScore() {
       const arr = this.recentAttempts
       if (!arr || arr.length === 0) return 0
@@ -322,6 +345,17 @@ export default {
       return buckets
     }
   },
+  watch: {
+    theme: {
+      handler(newTheme) {
+        // Re-render charts when theme changes
+        this.$nextTick(() => {
+          this.renderCharts();
+        });
+      },
+      deep: true
+    }
+  },
   mounted() {
     this.fetchDashboardData();
   },
@@ -342,18 +376,26 @@ export default {
         this.topScorers = [];
         this.recentAttempts = [];
 
-        // Use the correct API endpoint
-        const response = await axios.get('/api/admin/dashboard/data');
+        // Use the correct API endpoint - try multiple possible endpoints
+        let response;
+        try {
+          // First try the main dashboard data endpoint
+          response = await axios.get('/admin/dashboard-data');
+        } catch (firstError) {
+          console.log('First endpoint failed, trying alternative...');
+          // Fallback to alternative endpoint
+          response = await axios.get('/admin/dashboard/data');
+        }
         
-        if (response.data.success) {
-          const data = response.data.data;
+        if (response.data) {
+          const data = response.data;
           
           // Update component data with API response
           this.displayStats = data.stats || {};
-          this.quizSetDistribution = data.quizSetDistribution || [];
-          this.weeklyParticipants = data.weeklyParticipants || { labels: [], data: [] };
-          this.topScorers = data.topScorers || [];
-          this.recentAttempts = data.recentAttempts || [];
+          this.quizSetDistribution = data.quiz_set_distribution || [];
+          this.weeklyParticipants = data.weekly_participants || { labels: [], data: [] };
+          this.topScorers = data.top_scorers || [];
+          this.recentAttempts = data.recent_attempts || [];
 
           // Render charts after data is loaded
           this.$nextTick(() => {
@@ -361,7 +403,7 @@ export default {
           });
 
         } else {
-          throw new Error(response.data.message || 'Failed to fetch dashboard data');
+          throw new Error('Invalid response format');
         }
 
       } catch (error) {
@@ -495,13 +537,16 @@ export default {
         ? this.quizSetDistribution.map(s => s.participant_count)
         : [45, 32, 28, 36, 22];
 
+      // Use theme colors for chart
+      const themeColors = this.getThemeColors();
+
       this.chartInstances.pie = new Chart(canvas.getContext('2d'), {
         type: 'pie',
         data: {
           labels,
           datasets: [{
             data,
-            backgroundColor: ['#6366F1', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B']
+            backgroundColor: themeColors.chartColors
           }]
         },
         options: {
@@ -510,7 +555,10 @@ export default {
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { usePointStyle: true }
+              labels: { 
+                usePointStyle: true,
+                color: this.getTextColor()
+              }
             }
           }
         }
@@ -533,6 +581,8 @@ export default {
         ? this.weeklyParticipants.data
         : [15, 22, 18, 25, 30, 12, 8];
 
+      const themeColors = this.getThemeColors();
+
       this.chartInstances.bar = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
@@ -540,7 +590,7 @@ export default {
           datasets: [{
             label: 'Participants',
             data,
-            backgroundColor: '#4F46E5',
+            backgroundColor: themeColors.primary,
             borderRadius: 6
           }]
         },
@@ -550,12 +600,77 @@ export default {
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { stepSize: 5 }
+              ticks: { 
+                stepSize: 5,
+                color: this.getTextColor()
+              },
+              grid: {
+                color: this.getBorderColor()
+              }
+            },
+            x: {
+              ticks: {
+                color: this.getTextColor()
+              },
+              grid: {
+                color: this.getBorderColor()
+              }
             }
           },
-          plugins: { legend: { display: false } }
+          plugins: { 
+            legend: { 
+              display: false 
+            } 
+          }
         }
       });
+    },
+
+    getThemeColors() {
+      const primaryColor = this.theme?.primaryColor || 'blue';
+      
+      const colorMap = {
+        blue: {
+          primary: '#3b82f6',
+          light: '#dbeafe',
+          dark: '#1e40af',
+          chartColors: ['#6366F1', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B']
+        },
+        green: {
+          primary: '#10b981',
+          light: '#dcfce7',
+          dark: '#047857',
+          chartColors: ['#10b981', '#059669', '#047857', '#065f46', '#064e3b']
+        },
+        purple: {
+          primary: '#8b5cf6',
+          light: '#f3e8ff',
+          dark: '#6d28d9',
+          chartColors: ['#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95']
+        },
+        red: {
+          primary: '#ef4444',
+          light: '#fee2e2',
+          dark: '#b91c1c',
+          chartColors: ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d']
+        },
+        orange: {
+          primary: '#f59e0b',
+          light: '#fef3c7',
+          dark: '#d97706',
+          chartColors: ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f']
+        }
+      };
+
+      return colorMap[primaryColor] || colorMap.blue;
+    },
+
+    getTextColor() {
+      return this.theme?.colorScheme === 'dark' ? '#e5e7eb' : '#374151';
+    },
+
+    getBorderColor() {
+      return this.theme?.colorScheme === 'dark' ? '#374151' : '#e5e7eb';
     },
 
     cleanupCharts() {
@@ -597,9 +712,8 @@ export default {
 
 <style>
 /* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
-/* Light Theme */
+/* Theme Base Classes */
 .light-theme {
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
@@ -613,7 +727,6 @@ export default {
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark Theme */
 .dark-theme {
   --bg-primary: #111827;
   --bg-secondary: #1f2937;
@@ -625,6 +738,37 @@ export default {
   --hover-bg: #374151;
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* Primary Color Classes */
+.primary-blue {
+  --primary-color: #3b82f6;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+}
+
+.primary-green {
+  --primary-color: #10b981;
+  --primary-light: #dcfce7;
+  --primary-dark: #047857;
+}
+
+.primary-purple {
+  --primary-color: #8b5cf6;
+  --primary-light: #f3e8ff;
+  --primary-dark: #6d28d9;
+}
+
+.primary-red {
+  --primary-color: #ef4444;
+  --primary-light: #fee2e2;
+  --primary-dark: #b91c1c;
+}
+
+.primary-orange {
+  --primary-color: #f59e0b;
+  --primary-light: #fef3c7;
+  --primary-dark: #d97706;
 }
 
 /* Base Styles */
@@ -653,11 +797,8 @@ export default {
 
 .loading-icon {
   font-size: 1.875rem;
-  color: #2563eb;
+  color: var(--primary-color, #2563eb);
   margin-bottom: 1rem;
-}
-.dark-theme .loading-icon {
-  color: #60a5fa;
 }
 
 .loading-text {
@@ -675,9 +816,6 @@ export default {
   color: #dc2626;
   margin-bottom: 1rem;
 }
-.dark-theme .error-icon {
-  color: #f87171;
-}
 
 .error-text {
   color: var(--text-primary);
@@ -685,7 +823,7 @@ export default {
 }
 
 .retry-btn {
-  background-color: #2563eb;
+  background-color: var(--primary-color, #2563eb);
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 0.375rem;
@@ -694,13 +832,7 @@ export default {
   transition: background-color 0.2s;
 }
 .retry-btn:hover {
-  background-color: #1d4ed8;
-}
-.dark-theme .retry-btn {
-  background-color: #1e40af;
-}
-.dark-theme .retry-btn:hover {
-  background-color: #1e3a8a;
+  background-color: var(--primary-dark, #1d4ed8);
 }
 
 /* Refresh Button */
@@ -750,48 +882,19 @@ export default {
   border-radius: 0.5rem;
   padding: 1.5rem;
   text-align: center;
+  background-color: var(--primary-light);
+  transition: all 0.3s ease;
 }
-.stat-card.blue {
-  background-color: #dbeafe;
-}
-.dark-theme .stat-card.blue {
-  background-color: #1e3a8a;
-}
-.stat-card.green {
-  background-color: #dcfce7;
-}
-.dark-theme .stat-card.green {
-  background-color: #14532d;
-}
-.stat-card.purple {
-  background-color: #f3e8ff;
-}
-.dark-theme .stat-card.purple {
-  background-color: #581c87;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .stat-number {
   font-size: 1.875rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-}
-.stat-card.blue .stat-number {
-  color: #2563eb;
-}
-.dark-theme .stat-card.blue .stat-number {
-  color: #60a5fa;
-}
-.stat-card.green .stat-number {
-  color: #16a34a;
-}
-.dark-theme .stat-card.green .stat-number {
-  color: #4ade80;
-}
-.stat-card.purple .stat-number {
-  color: #7c3aed;
-}
-.dark-theme .stat-card.purple .stat-number {
-  color: #a855f7;
+  color: var(--primary-dark);
 }
 
 .stat-label {
@@ -910,14 +1013,10 @@ export default {
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
-  background-color: #dbeafe;
-  color: #2563eb;
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
   flex-shrink: 0;
   margin-left: 0.5rem;
-}
-.dark-theme .attempts-badge {
-  background-color: #1e3a8a;
-  color: #60a5fa;
 }
 
 .scorer-list {
@@ -941,19 +1040,15 @@ export default {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background-color: #dbeafe;
+  background-color: var(--primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
+  color: var(--primary-dark);
   font-size: 0.875rem;
   font-weight: 500;
   margin-right: 0.75rem;
   flex-shrink: 0;
-}
-.dark-theme .scorer-rank {
-  background-color: #1e3a8a;
-  color: #60a5fa;
 }
 
 .scorer-details {
@@ -984,9 +1079,6 @@ export default {
 .scorer-percentage {
   font-weight: 700;
   color: #16a34a;
-}
-.dark-theme .scorer-percentage {
-  color: #4ade80;
 }
 
 .scorer-date {
@@ -1025,17 +1117,13 @@ export default {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background-color: #dbeafe;
+  background-color: var(--primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
+  color: var(--primary-dark);
   flex-shrink: 0;
   margin-right: 1rem;
-}
-.dark-theme .user-avatar-small {
-  background-color: #1e3a8a;
-  color: #60a5fa;
 }
 
 .user-details {
@@ -1060,6 +1148,7 @@ export default {
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+
 
 .attempt-score {
   text-align: right;

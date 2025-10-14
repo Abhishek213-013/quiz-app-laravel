@@ -8,10 +8,14 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
-class SettingsController extends Controller
+class SettingsController extends BaseAdminController
 {
     public function index()
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $settings = [
             'general' => [
                 'appName' => config('app.name', 'Quiz Application'),
@@ -39,12 +43,18 @@ class SettingsController extends Controller
         ];
 
         return Inertia::render('Admin/AdminSettings', [
+            'profile' => $this->getAdminProfileData(), // Add this line
             'settings' => $settings
         ]);
     }
 
+    // Add authentication to your update methods
     public function updateGeneral(Request $request)
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $validator = Validator::make($request->all(), [
             'appName' => 'required|string|max:255',
             'adminEmail' => 'required|email',
@@ -68,6 +78,10 @@ class SettingsController extends Controller
 
     public function updateSecurity(Request $request)
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $validator = Validator::make($request->all(), [
             'twoFactorAuth' => 'boolean',
             'passwordPolicy' => 'boolean',
@@ -92,6 +106,10 @@ class SettingsController extends Controller
 
     public function updateNotifications(Request $request)
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $validator = Validator::make($request->all(), [
             'emailEnabled' => 'boolean',
             'pushEnabled' => 'boolean',

@@ -1,8 +1,9 @@
 <template>
   <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
     <AdminNavbar 
-      title="Manage Quizzes"
+      title="Admin Dashboard"
       :is-dark="isDark"
+      :profile="profile"  
       @toggle-theme="toggleTheme"
       @toggle-mobile-sidebar="toggleMobileSidebar"
       @logout="handleLogout"
@@ -11,6 +12,7 @@
     <div class="flex">
       <AdminSidebar 
         :mobile-sidebar="mobileSidebar"
+        :profile="profile"  
         current-page="/admin/quizzes"
         @close-mobile-sidebar="toggleMobileSidebar"
       />
@@ -56,7 +58,6 @@
               </div>
             </div>
 
-            <!-- Rest of the template remains exactly the same -->
             <!-- Error Alert -->
             <div v-if="errorMessage" class="content-card mb-6">
               <div class="flex items-center p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -588,12 +589,24 @@ export default {
     AdminNavbar,
     AdminSidebar
   },
+  props: {
+    profile: {
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null,
+        role: 'admin'
+      })
+    }
+  },
   data() {
     return {
       isDark: false,
       mobileSidebar: false,
       loading: false,
-      refreshing: false, // Added refreshing state
+      refreshing: false,
       errorMessage: '',
       successMessage: '',
       quizSets: [],
@@ -935,7 +948,7 @@ export default {
 
 /* All other existing styles remain unchanged */
 /* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
 
 /* Light Theme */
 .light-theme {

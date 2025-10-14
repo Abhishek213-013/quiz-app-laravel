@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-class AdminController extends Controller
+class AdminController extends BaseAdminController
 {
     private $adminCredentials = [
         'email' => 'admin@quiz.com',
@@ -34,45 +35,38 @@ class AdminController extends Controller
         return Inertia::render('Admin/Login');
     }
 
+    // Fixed authenticate method with proper error handling
     public function authenticate(Request $request)
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|email',
-                'password' => 'required|string|min:6'
-            ]);
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-            if ($validator->fails()) {
-                return redirect()->back()->withErrors($validator)->withInput();
-            }
-
-            if ($request->email === $this->adminCredentials['email'] && 
-                $request->password === $this->adminCredentials['password']) {
-                
-                Session::put('admin_authenticated', true);
-                Session::put('admin_email', $request->email);
-                Session::save();
-                
-                return redirect()->route('admin.dashboard')->with([
-                    'message' => 'Welcome to the admin panel!',
-                    'type' => 'success'
-                ]);
-            }
-
-            return back()->withErrors([
-                'email' => 'Invalid credentials. Please try again.'
-            ])->withInput();
-
-        } catch (\Exception $e) {
-            Log::error('Admin authentication error: ' . $e->getMessage());
-            return back()->withErrors([
-                'email' => 'Authentication failed. Please try again.'
-            ])->withInput();
+        // Check if using simple session authentication or Eloquent authentication
+        if ($request->email === $this->adminCredentials['email'] && 
+            $request->password === $this->adminCredentials['password']) {
+            
+            // Simple session-based authentication
+            Session::put('admin_authenticated', true);
+            Session::put('admin_email', $request->email);
+            $request->session()->regenerate();
+            
+            return redirect()->intended(route('admin.dashboard'));
         }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ]);
     }
 
     public function logout(Request $request)
     {
+        // Logout from Auth if used
+        if (Auth::check()) {
+            Auth::logout();
+        }
+        
         Session::forget('admin_authenticated');
         Session::forget('admin_email');
         $request->session()->invalidate();
@@ -117,6 +111,10 @@ class AdminController extends Controller
 
     public function dashboard()
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $stats = [
             'totalParticipants' => DB::table('quiz_results')->distinct('participant_name')->count('participant_name'),
             'totalQuizSets' => DB::table('quiz_sets')->where('is_active', 1)->count(),
@@ -124,12 +122,18 @@ class AdminController extends Controller
         ];
 
         return Inertia::render('Admin/Dashboard', [
+            'profile' => $this->getAdminProfileData(),
+            'theme' => $this->getThemeData(), // Add theme data
             'initialStats' => $stats
         ]);
     }
 
     public function participants()
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $participants = DB::table('quiz_results')
             ->select(
                 'participant_name',
@@ -154,18 +158,34 @@ class AdminController extends Controller
             });
 
         return Inertia::render('Admin/Participants', [
+            'profile' => $this->getAdminProfileData(),
+            'theme' => $this->getThemeData(), // Add theme data
             'participants' => $participants
         ]);
     }
 
     public function records()
     {
-        return Inertia::render('Admin/Records');
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
+        return Inertia::render('Admin/Records', [
+            'profile' => $this->getAdminProfileData(),
+            'theme' => $this->getThemeData() // Add theme data
+        ]);
     }
 
     public function quizzes()
     {
-        return Inertia::render('Admin/Quizzes');
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
+        return Inertia::render('Admin/Quizzes', [
+            'profile' => $this->getAdminProfileData(),
+            'theme' => $this->getThemeData() // Add theme data
+        ]);
     }
 
     /**
@@ -964,5 +984,62 @@ class AdminController extends Controller
                 'error' => 'Failed to delete question: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * =========================================================================
+     * NOTIFICATION METHODS
+     * =========================================================================
+     */
+
+    public function getNotifications()
+    {
+        try {
+            // Get recent quiz attempts for notifications
+            $recentAttempts = DB::table('quiz_results')
+                ->join('quiz_sets', 'quiz_results.quiz_set_id', '=', 'quiz_sets.id')
+                ->select(
+                    'quiz_results.id',
+                    'quiz_results.participant_name',
+                    'quiz_sets.name as quiz_set_name',
+                    'quiz_results.score',
+                    'quiz_results.total_questions',
+                    'quiz_results.percentage',
+                    'quiz_results.created_at'
+                )
+                ->where('quiz_results.created_at', '>=', now()->subHours(24))
+                ->orderBy('quiz_results.created_at', 'desc')
+                ->limit(20)
+                ->get()
+                ->map(function ($attempt) {
+                    return [
+                        'id' => $attempt->id,
+                        'type' => 'quiz_attempt',
+                        'message' => $attempt->participant_name . ' attempted ' . $attempt->quiz_set_name . ' with ' . round($attempt->percentage) . '% score',
+                        'created_at' => $attempt->created_at,
+                        'read' => false // You can implement read status in database if needed
+                    ];
+                });
+
+            return response()->json([
+                'notifications' => $recentAttempts
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching notifications: ' . $e->getMessage());
+            return response()->json(['notifications' => []]);
+        }
+    }
+
+    public function markNotificationAsRead($id)
+    {
+        // Implement marking notification as read in database if you have a notifications table
+        return response()->json(['success' => true]);
+    }
+
+    public function markAllNotificationsAsRead()
+    {
+        // Implement marking all notifications as read in database
+        return response()->json(['success' => true]);
     }
 }

@@ -35,6 +35,56 @@
             <span class="nav-text">Records</span>
           </a>
         </li>
+
+        <!-- Admin Management Dropdown -->
+        <li class="nav-dropdown">
+          <div 
+            class="nav-item dropdown-trigger" 
+            :class="{ active: isAdminManagementActive() }"
+            @click="toggleAdminManagement"
+          >
+            <i class="fas fa-cogs nav-icon"></i>
+            <span class="nav-text">Admin Management</span>
+            <i class="fas fa-chevron-down dropdown-arrow" :class="{ rotated: adminManagementOpen }"></i>
+          </div>
+          <transition name="dropdown">
+            <ul v-if="adminManagementOpen" class="dropdown-menu">
+              <li>
+                <a 
+                  :href="getLink('/admin/profile')" 
+                  class="dropdown-item" 
+                  :class="{ active: isActive('/admin/profile') }"
+                  @click="closeDropdown"
+                >
+                  <i class="fas fa-user dropdown-icon"></i>
+                  <span>Profile</span>
+                </a>
+              </li>
+              <li>
+                <a 
+                  :href="getLink('/admin/settings')" 
+                  class="dropdown-item" 
+                  :class="{ active: isActive('/admin/settings') }"
+                  @click="closeDropdown"
+                >
+                  <i class="fas fa-cog dropdown-icon"></i>
+                  <span>Settings</span>
+                </a>
+              </li>
+              <li>
+                <a 
+                  :href="getLink('/admin/customize')" 
+                  class="dropdown-item" 
+                  :class="{ active: isActive('/admin/customize') }"
+                  @click="closeDropdown"
+                >
+                  <i class="fas fa-palette dropdown-icon"></i>
+                  <span>Customize</span>
+                </a>
+              </li>
+            </ul>
+          </transition>
+        </li>
       </ul>
     </nav>
 
@@ -42,11 +92,16 @@
       <div class="logged-in-as">Logged in as</div>
       <div class="user-info">
         <div class="user-avatar">
-          <i class="fas fa-user"></i>
+          <template v-if="profile.avatar">
+            <img :src="profile.avatar" alt="Profile" class="w-full h-full rounded-full object-cover">
+          </template>
+          <template v-else>
+            <i class="fas fa-user"></i>
+          </template>
         </div>
         <div>
-          <div class="user-name">Administrator</div>
-          <div class="user-role">Super Admin</div>
+          <div class="user-name">{{ profile.firstName }} {{ profile.lastName }}</div>
+          <div class="user-role">{{ profile.role }}</div>
         </div>
       </div>
     </div>
@@ -70,6 +125,12 @@
         <a :href="getLink('/admin/participants')" class="mobile-nav-item" :class="{ active: isActive('/admin/participants') }" @click="$emit('close-mobile-sidebar')">Participants</a>
         <a :href="getLink('/admin/quizzes')" class="mobile-nav-item" :class="{ active: isActive('/admin/quizzes') }" @click="$emit('close-mobile-sidebar')">Manage Quizzes</a>
         <a :href="getLink('/admin/records')" class="mobile-nav-item" :class="{ active: isActive('/admin/records') }" @click="$emit('close-mobile-sidebar')">Records</a>
+        
+        <!-- Mobile Admin Management Section -->
+        <div class="mobile-section-divider">Admin Management</div>
+        <a :href="getLink('/admin/profile')" class="mobile-nav-item" :class="{ active: isActive('/admin/profile') }" @click="$emit('close-mobile-sidebar')">Profile</a>
+        <a :href="getLink('/admin/settings')" class="mobile-nav-item" :class="{ active: isActive('/admin/settings') }" @click="$emit('close-mobile-sidebar')">Settings</a>
+        <a :href="getLink('/admin/customize')" class="mobile-nav-item" :class="{ active: isActive('/admin/customize') }" @click="$emit('close-mobile-sidebar')">Customize</a>
       </nav>
     </aside>
   </div>
@@ -86,24 +147,59 @@ export default {
     currentPage: {
       type: String,
       default: ''
+    },
+    profile: {
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        role: 'Admin',
+        avatar: null
+      })
     }
   },
   emits: ['close-mobile-sidebar'],
+  data() {
+    return {
+      adminManagementOpen: false
+    }
+  },
   methods: {
     isActive(path) {
       return this.currentPage === path || window.location.pathname === path;
     },
+    isAdminManagementActive() {
+      return this.isActive('/admin/profile') || 
+             this.isActive('/admin/settings') || 
+             this.isActive('/admin/customize');
+    },
     getLink(path) {
-      // You can modify this based on your routing setup
       return path;
+    },
+    toggleAdminManagement() {
+      this.adminManagementOpen = !this.adminManagementOpen;
+    },
+    closeDropdown() {
+      this.adminManagementOpen = false;
+    }
+  },
+  mounted() {
+    // Auto-open dropdown if current page is in admin management
+    if (this.isAdminManagementActive()) {
+      this.adminManagementOpen = true;
     }
   }
 }
 </script>
 
 <style scoped>
-/* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+/* Add this for avatar image in sidebar */
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
 
 .sidebar {
   width: 16rem;
@@ -166,6 +262,8 @@ export default {
   border-radius: 0.375rem;
   color: var(--text-secondary);
   text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .nav-item:hover {
   background-color: var(--hover-bg);
@@ -182,10 +280,109 @@ export default {
 
 .nav-icon {
   width: 1.25rem;
+  flex-shrink: 0;
 }
 
 .nav-text {
   color: inherit;
+  flex: 1;
+}
+
+/* Dropdown Styles */
+.nav-dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.dropdown-arrow {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+}
+
+.dropdown-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  list-style: none;
+  padding: 0.25rem 0;
+  margin: 0.25rem 0 0 0;
+  background-color: var(--bg-secondary);
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 10;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.dropdown-item:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.dropdown-item.active {
+  background-color: #dbeafe;
+  color: #2563eb;
+  border-left-color: #2563eb;
+  font-weight: 500;
+}
+.dark-theme .dropdown-item.active {
+  background-color: #1e3a8a;
+  color: #60a5fa;
+  border-left-color: #60a5fa;
+}
+
+.dropdown-icon {
+  width: 1rem;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* Dropdown transition */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+  max-height: 200px;
+  overflow: hidden;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Mobile Section Divider */
+.mobile-section-divider {
+  padding: 0.75rem 0.75rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+  padding-top: 1rem;
 }
 
 .sidebar-footer {

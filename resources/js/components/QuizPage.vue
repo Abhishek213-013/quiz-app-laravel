@@ -42,6 +42,11 @@
                             <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
                                 {{ currentQuestion.points }} point{{ currentQuestion.points !== 1 ? 's' : '' }}
                             </span>
+                            <!-- Skip Status Badge -->
+                            <span v-if="answers[currentQuestionIndex] === 'skipped'" 
+                                  class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded">
+                                Skipped
+                            </span>
                         </div>
                     </div>
 
@@ -58,13 +63,17 @@
                             class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition-all duration-200"
                             :class="{
                                 'bg-blue-50 border-blue-500': selectedAnswer === option,
-                                'hover:border-blue-300': !selectedAnswer
+                                'border-gray-200': selectedAnswer !== option,
+                                'hover:border-blue-300': !selectedAnswer && answers[currentQuestionIndex] !== 'skipped'
                             }"
                             @click="selectAnswer(option)"
                         >
                             <div class="flex items-center">
-                                <div class="w-8 h-8 flex items-center justify-center rounded-full border-2 border-gray-300 mr-3"
-                                    :class="{'bg-blue-500 border-blue-500 text-white': selectedAnswer === option}">
+                                <div class="w-8 h-8 flex items-center justify-center rounded-full border-2 mr-3"
+                                    :class="{
+                                        'bg-blue-500 border-blue-500 text-white': selectedAnswer === option,
+                                        'border-gray-300': selectedAnswer !== option
+                                    }">
                                     {{ String.fromCharCode(65 + index) }}
                                 </div>
                                 <span class="text-lg">{{ option }}</span>
@@ -83,6 +92,7 @@
                                 rows="4"
                                 placeholder="Enter your answer here..."
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                :disabled="answers[currentQuestionIndex] === 'skipped'"
                                 @input="selectAnswer(briefAnswer)"
                             ></textarea>
                         </div>
@@ -95,32 +105,40 @@
                     <!-- True/False Options -->
                     <div v-else-if="currentQuestion.question_type === 'true_false'" class="grid grid-cols-2 gap-4">
                         <div 
-                            class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer text-center transition-all duration-200"
+                            class="p-6 border-2 rounded-lg cursor-pointer text-center transition-all duration-200"
                             :class="{
                                 'bg-green-50 border-green-500': selectedAnswer === 'True',
-                                'hover:border-green-300': !selectedAnswer
+                                'border-gray-200': selectedAnswer !== 'True',
+                                'hover:border-green-300': !selectedAnswer && answers[currentQuestionIndex] !== 'skipped'
                             }"
                             @click="selectAnswer('True')"
                         >
                             <div class="flex flex-col items-center">
-                                <div class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-300 mb-2"
-                                    :class="{'bg-green-500 border-green-500 text-white': selectedAnswer === 'True'}">
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full border-2 mb-2"
+                                    :class="{
+                                        'bg-green-500 border-green-500 text-white': selectedAnswer === 'True',
+                                        'border-gray-300': selectedAnswer !== 'True'
+                                    }">
                                     <i class="fas fa-check text-lg"></i>
                                 </div>
                                 <span class="text-xl font-semibold text-gray-800">True</span>
                             </div>
                         </div>
                         <div 
-                            class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer text-center transition-all duration-200"
+                            class="p-6 border-2 rounded-lg cursor-pointer text-center transition-all duration-200"
                             :class="{
                                 'bg-red-50 border-red-500': selectedAnswer === 'False',
-                                'hover:border-red-300': !selectedAnswer
+                                'border-gray-200': selectedAnswer !== 'False',
+                                'hover:border-red-300': !selectedAnswer && answers[currentQuestionIndex] !== 'skipped'
                             }"
                             @click="selectAnswer('False')"
                         >
                             <div class="flex flex-col items-center">
-                                <div class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-300 mb-2"
-                                    :class="{'bg-red-500 border-red-500 text-white': selectedAnswer === 'False'}">
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full border-2 mb-2"
+                                    :class="{
+                                        'bg-red-500 border-red-500 text-white': selectedAnswer === 'False',
+                                        'border-gray-300': selectedAnswer !== 'False'
+                                    }">
                                     <i class="fas fa-times text-lg"></i>
                                 </div>
                                 <span class="text-xl font-semibold text-gray-800">False</span>
@@ -128,20 +146,52 @@
                         </div>
                     </div>
 
+                    <!-- Skip Question Button -->
+                    <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-forward text-yellow-600 mr-2"></i>
+                                <span class="text-sm text-yellow-700">
+                                    Not sure about this question? You can skip it and come back later.
+                                </span>
+                            </div>
+                            <button 
+                                @click="skipQuestion"
+                                :disabled="answers[currentQuestionIndex] === 'skipped'"
+                                class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+                            >
+                                <i class="fas fa-forward mr-1"></i>
+                                {{ answers[currentQuestionIndex] === 'skipped' ? 'Skipped' : 'Skip Question' }}
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Navigation -->
                     <div class="flex justify-between mt-8">
-                        <button 
-                            @click="previousQuestion"
-                            :disabled="currentQuestionIndex === 0"
-                            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-                        >
-                            <i class="fas fa-arrow-left mr-2"></i>
-                            Previous
-                        </button>
+                        <div class="flex space-x-3">
+                            <button 
+                                @click="previousQuestion"
+                                :disabled="currentQuestionIndex === 0"
+                                class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                            >
+                                <i class="fas fa-arrow-left mr-2"></i>
+                                Previous
+                            </button>
+                            
+                            <!-- Unskip Button -->
+                            <button 
+                                v-if="answers[currentQuestionIndex] === 'skipped'"
+                                @click="unskipQuestion"
+                                class="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
+                            >
+                                <i class="fas fa-undo mr-2"></i>
+                                Unskip
+                            </button>
+                        </div>
                         
                         <button 
                             @click="nextQuestion"
-                            :disabled="!isAnswerSelected"
+                            :disabled="!isAnswerSelected && answers[currentQuestionIndex] !== 'skipped'"
                             class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                         >
                             {{ currentQuestionIndex === quizzes.length - 1 ? 'Finish Quiz' : 'Next Question' }}
@@ -158,6 +208,7 @@
                         <p class="text-lg text-gray-600">Great job completing the quiz!</p>
                     </div>
                     
+                    <!-- Score Summary -->
                     <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6 mb-6 border border-blue-200">
                         <div class="text-6xl font-bold text-green-600 mb-2">{{ score }}/{{ totalPossiblePoints }}</div>
                         <p class="text-xl text-gray-600 mb-1">
@@ -166,6 +217,37 @@
                         <p class="text-sm text-gray-500">
                             Total Points: {{ score }} out of {{ totalPossiblePoints }}
                         </p>
+                    </div>
+
+                    <!-- Detailed Results -->
+                    <!-- Detailed Results - Horizontal Layout -->
+                    <div class="bg-white rounded-lg p-6 mb-6 border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">Quiz Summary</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <!-- Total Points -->
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-600">{{ score }}/{{ totalPossiblePoints }}</div>
+                                <div class="text-sm font-medium text-gray-700 mt-1">Total Points</div>
+                            </div>
+                            
+                            <!-- Answered -->
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">{{ answeredCount }}</div>
+                                <div class="text-sm font-medium text-gray-700 mt-1">Answered</div>
+                            </div>
+                            
+                            <!-- Skipped -->
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-yellow-600">{{ skippedCount }}</div>
+                                <div class="text-sm font-medium text-gray-700 mt-1">Skipped</div>
+                            </div>
+                            
+                            <!-- Correct -->
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">{{ correctCount }}</div>
+                                <div class="text-sm font-medium text-gray-700 mt-1">Correct</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Time Taken -->
@@ -268,10 +350,33 @@ export default {
             return 'text-red-600';
         },
         isAnswerSelected() {
+            if (this.answers[this.currentQuestionIndex] === 'skipped') {
+                return true; // Allow navigation if question is skipped
+            }
             if (this.currentQuestion.question_type === 'brief_answer') {
                 return this.briefAnswer.trim().length > 0;
             }
             return this.selectedAnswer !== null;
+        },
+        answeredCount() {
+            return Object.values(this.answers).filter(answer => 
+                answer !== 'skipped' && answer !== null && answer !== ''
+            ).length;
+        },
+        skippedCount() {
+            return Object.values(this.answers).filter(answer => 
+                answer === 'skipped'
+            ).length;
+        },
+        correctCount() {
+            return this.quizzes.reduce((count, quiz, index) => {
+                const userAnswer = this.answers[index];
+                if (userAnswer && userAnswer !== 'skipped' && 
+                    userAnswer.toString().toLowerCase().trim() === quiz.correct_answer.toString().toLowerCase().trim()) {
+                    return count + 1;
+                }
+                return count;
+            }, 0);
         }
     },
     async mounted() {
@@ -321,7 +426,6 @@ export default {
             }
         },
 
-        // Mock data for testing
         getMockQuizzes() {
             return [
                 {
@@ -337,7 +441,7 @@ export default {
                     question: "Explain the concept of photosynthesis in your own words.",
                     question_type: "brief_answer",
                     correct_answer: "Photosynthesis is the process by which plants convert light energy into chemical energy to produce food.",
-                    points: 10
+                    points: 5
                 },
                 {
                     id: 3,
@@ -352,7 +456,7 @@ export default {
                     question_type: "multiple_choice",
                     options: ["Python", "HTML", "CSS", "JavaScript"],
                     correct_answer: "Python",
-                    points: 5
+                    points: 2
                 }
             ];
         },
@@ -380,11 +484,27 @@ export default {
         },
 
         selectAnswer(answer) {
+            if (this.answers[this.currentQuestionIndex] === 'skipped') {
+                return; // Don't allow answering if question is skipped
+            }
+            
             if (this.currentQuestion.question_type === 'brief_answer') {
                 this.briefAnswer = answer;
             }
             this.selectedAnswer = answer;
             this.answers[this.currentQuestionIndex] = answer;
+        },
+
+        skipQuestion() {
+            this.answers[this.currentQuestionIndex] = 'skipped';
+            this.selectedAnswer = null;
+            this.briefAnswer = '';
+        },
+
+        unskipQuestion() {
+            this.answers[this.currentQuestionIndex] = null;
+            this.selectedAnswer = null;
+            this.briefAnswer = '';
         },
 
         previousQuestion() {
@@ -405,10 +525,10 @@ export default {
 
         loadAnswerForCurrentQuestion() {
             const savedAnswer = this.answers[this.currentQuestionIndex];
-            this.selectedAnswer = savedAnswer || null;
+            this.selectedAnswer = savedAnswer === 'skipped' ? null : savedAnswer;
             
             if (this.currentQuestion.question_type === 'brief_answer') {
-                this.briefAnswer = savedAnswer || '';
+                this.briefAnswer = savedAnswer === 'skipped' ? '' : (savedAnswer || '');
             } else {
                 this.briefAnswer = '';
             }
@@ -424,7 +544,8 @@ export default {
         calculateScore() {
             this.score = this.quizzes.reduce((total, quiz, index) => {
                 const userAnswer = this.answers[index];
-                if (userAnswer && userAnswer.toString().toLowerCase().trim() === quiz.correct_answer.toString().toLowerCase().trim()) {
+                if (userAnswer && userAnswer !== 'skipped' && 
+                    userAnswer.toString().toLowerCase().trim() === quiz.correct_answer.toString().toLowerCase().trim()) {
                     return total + (quiz.points || 1);
                 }
                 return total;
@@ -455,7 +576,10 @@ export default {
                         total_points: this.totalPossiblePoints,
                         answers: this.answers,
                         time_taken: this.timeTaken,
-                        percentage: ((this.score / this.totalPossiblePoints) * 100).toFixed(1)
+                        percentage: ((this.score / this.totalPossiblePoints) * 100).toFixed(1),
+                        answered_count: this.answeredCount,
+                        skipped_count: this.skippedCount,
+                        correct_count: this.correctCount
                     })
                 });
 

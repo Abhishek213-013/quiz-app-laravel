@@ -1,8 +1,9 @@
 <template>
   <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
     <AdminNavbar 
-      title="Customize Appearance"
+      title="Customize Theme"
       :is-dark="isDark"
+      :profile="profile"
       @toggle-theme="toggleTheme"
       @toggle-mobile-sidebar="toggleMobileSidebar"
       @logout="handleLogout"
@@ -11,6 +12,7 @@
     <div class="flex">
       <AdminSidebar 
         :mobile-sidebar="mobileSidebar"
+        :profile="profile"
         current-page="/admin/customize"
         @close-mobile-sidebar="toggleMobileSidebar"
       />
@@ -22,19 +24,32 @@
           <div class="content-card mb-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 class="card-title-large">Customize Appearance</h1>
-                <p class="card-subtitle">Personalize the look and feel of your application</p>
+                <h1 class="card-title-large">Customize Theme</h1>
+                <p class="card-subtitle">Change the appearance of your admin dashboard</p>
               </div>
               <div class="mt-4 md:mt-0">
                 <button 
                   @click="saveCustomization" 
                   class="btn-primary"
-                  :disabled="loading"
+                  :disabled="form.processing"
                 >
                   <i class="fas fa-palette mr-2"></i>
-                  {{ loading ? 'Applying Changes...' : 'Apply Customization' }}
+                  {{ form.processing ? 'Saving...' : 'Save Changes' }}
                 </button>
               </div>
+            </div>
+          </div>
+
+          <!-- Success Message -->
+          <div v-if="$page.props.flash.message" class="content-card mb-6" :class="flashMessageClass">
+            <div class="flex items-center p-4">
+              <i class="fas fa-check-circle mr-3 text-xl" :class="flashIconClass"></i>
+              <div>
+                <h3 class="font-semibold" :class="flashTextClass">{{ $page.props.flash.message }}</h3>
+              </div>
+              <button @click="$page.props.flash.message = null" class="ml-auto" :class="flashIconClass">
+                <i class="fas fa-times"></i>
+              </button>
             </div>
           </div>
 
@@ -60,13 +75,13 @@
                         <div
                           v-for="scheme in colorSchemes"
                           :key="scheme.id"
-                          @click="selectColorScheme(scheme)"
+                          @click="form.colorScheme = scheme.id"
                           class="color-scheme-card group"
-                          :class="{ 'color-scheme-card-active': customization.colorScheme === scheme.id }"
+                          :class="{ 'color-scheme-card-active': form.colorScheme === scheme.id }"
                         >
                           <div class="color-preview" :style="scheme.previewStyle">
                             <div class="color-preview-content">
-                              <i class="fas fa-check color-check-icon" v-if="customization.colorScheme === scheme.id"></i>
+                              <i class="fas fa-check color-check-icon" v-if="form.colorScheme === scheme.id"></i>
                               <div class="color-preview-dots">
                                 <div class="dot dot-1" :style="scheme.dot1Style"></div>
                                 <div class="dot dot-2" :style="scheme.dot2Style"></div>
@@ -93,12 +108,12 @@
                         <div
                           v-for="color in primaryColors"
                           :key="color.id"
-                          @click="customization.primaryColor = color.id"
+                          @click="form.primaryColor = color.id"
                           class="primary-color-card group"
-                          :class="{ 'primary-color-card-active': customization.primaryColor === color.id }"
+                          :class="{ 'primary-color-card-active': form.primaryColor === color.id }"
                         >
                           <div class="color-circle" :style="{ backgroundColor: color.value }">
-                            <i class="fas fa-check text-white" v-if="customization.primaryColor === color.id"></i>
+                            <i class="fas fa-check text-white" v-if="form.primaryColor === color.id"></i>
                           </div>
                           <span class="color-name">{{ color.name }}</span>
                           <div class="color-palette">
@@ -118,10 +133,10 @@
                       </h3>
                       <p class="section-description">Choose how your application navigation is organized</p>
                       <div class="layout-options-grid">
-                        <label class="layout-option-card" :class="{ 'layout-option-card-active': customization.layout === 'sidebar' }">
+                        <label class="layout-option-card" :class="{ 'layout-option-card-active': form.layout === 'sidebar' }">
                           <input
                             type="radio"
-                            v-model="customization.layout"
+                            v-model="form.layout"
                             value="sidebar"
                             class="hidden"
                           />
@@ -142,10 +157,10 @@
                           </div>
                         </label>
 
-                        <label class="layout-option-card" :class="{ 'layout-option-card-active': customization.layout === 'topbar' }">
+                        <label class="layout-option-card" :class="{ 'layout-option-card-active': form.layout === 'topbar' }">
                           <input
                             type="radio"
-                            v-model="customization.layout"
+                            v-model="form.layout"
                             value="topbar"
                             class="hidden"
                           />
@@ -164,151 +179,6 @@
                             <p class="layout-description">Modern navigation with top bar</p>
                           </div>
                         </label>
-                      </div>
-                    </div>
-
-                    <!-- Custom CSS -->
-                    <div class="customization-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-code text-orange-500 mr-2"></i>
-                        Custom CSS
-                      </h3>
-                      <p class="section-description">Add your own CSS to customize the appearance further</p>
-                      <div class="form-group">
-                        <label class="form-label">
-                          <i class="fas fa-paint-brush text-gray-400 mr-2"></i>
-                          Custom CSS Code
-                        </label>
-                        <div class="code-editor-container">
-                          <textarea
-                            v-model="customization.customCSS"
-                            rows="8"
-                            class="code-editor"
-                            placeholder="/* Enter your custom CSS here */
-.body {
-  /* Your styles */
-}"
-                            spellcheck="false"
-                          ></textarea>
-                          <div class="code-editor-footer">
-                            <span class="code-info">CSS will be applied to the entire application</span>
-                            <span class="code-length">{{ customization.customCSS.length }}/5000 characters</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Branding Settings -->
-              <div class="content-card">
-                <div class="card-header">
-                  <i class="fas fa-star text-yellow-500 mr-3"></i>
-                  <h2 class="card-title">Branding</h2>
-                </div>
-                <div class="card-body">
-                  <div class="space-y-8">
-                    <!-- Logo & Favicon -->
-                    <div class="customization-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-images text-blue-500 mr-2"></i>
-                        Brand Assets
-                      </h3>
-                      <div class="brand-assets-grid">
-                        <div class="brand-asset-card">
-                          <div class="brand-asset-header">
-                            <h4 class="brand-asset-title">
-                              <i class="fas fa-image text-purple-500 mr-2"></i>
-                              Application Logo
-                            </h4>
-                            <button @click="triggerLogoUpload" class="btn-secondary btn-small">
-                              <i class="fas fa-upload mr-2"></i>
-                              Upload
-                            </button>
-                          </div>
-                          <input
-                            type="file"
-                            ref="logoInput"
-                            @change="handleLogoUpload"
-                            accept="image/*"
-                            class="hidden"
-                          />
-                          <div class="brand-asset-preview">
-                            <div class="logo-preview" :class="{ 'has-logo': customization.logo }">
-                              <img v-if="customization.logo" :src="customization.logo" alt="Logo" class="logo-image">
-                              <i v-else class="fas fa-image logo-placeholder"></i>
-                            </div>
-                            <div class="brand-asset-info">
-                              <p class="brand-asset-description">Recommended: 200x60px PNG or SVG</p>
-                              <p class="brand-asset-size">Max file size: 2MB</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="brand-asset-card">
-                          <div class="brand-asset-header">
-                            <h4 class="brand-asset-title">
-                              <i class="fas fa-flag text-green-500 mr-2"></i>
-                              Favicon
-                            </h4>
-                            <button @click="triggerFaviconUpload" class="btn-secondary btn-small">
-                              <i class="fas fa-upload mr-2"></i>
-                              Upload
-                            </button>
-                          </div>
-                          <input
-                            type="file"
-                            ref="faviconInput"
-                            @change="handleFaviconUpload"
-                            accept="image/*"
-                            class="hidden"
-                          />
-                          <div class="brand-asset-preview">
-                            <div class="favicon-preview" :class="{ 'has-favicon': customization.favicon }">
-                              <img v-if="customization.favicon" :src="customization.favicon" alt="Favicon" class="favicon-image">
-                              <i v-else class="fas fa-flag favicon-placeholder"></i>
-                            </div>
-                            <div class="brand-asset-info">
-                              <p class="brand-asset-description">Recommended: 32x32px ICO or PNG</p>
-                              <p class="brand-asset-size">Max file size: 500KB</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Brand Text -->
-                    <div class="customization-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-font text-purple-500 mr-2"></i>
-                        Brand Text
-                      </h3>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-group">
-                          <label class="form-label">
-                            <i class="fas fa-heading text-gray-400 mr-2"></i>
-                            Application Name
-                          </label>
-                          <input
-                            type="text"
-                            v-model="customization.appName"
-                            class="form-input"
-                            placeholder="Enter your application name"
-                          />
-                        </div>
-                        <div class="form-group">
-                          <label class="form-label">
-                            <i class="fas fa-comment text-gray-400 mr-2"></i>
-                            Welcome Message
-                          </label>
-                          <textarea
-                            v-model="customization.welcomeMessage"
-                            rows="3"
-                            class="form-input"
-                            placeholder="Enter a welcome message for your users"
-                          ></textarea>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -332,7 +202,7 @@
                           <div class="preview-logo" :style="{ backgroundColor: getPrimaryColorValue() }">
                             <span class="preview-logo-text">Q</span>
                           </div>
-                          <span class="preview-app-name">{{ customization.appName || 'Quiz App' }}</span>
+                          <span class="preview-app-name">Quiz Admin</span>
                         </div>
                         <div class="preview-actions">
                           <div class="preview-dot"></div>
@@ -341,7 +211,7 @@
                         </div>
                       </div>
                       <div class="preview-content">
-                        <div class="preview-sidebar" v-if="customization.layout === 'sidebar'">
+                        <div class="preview-sidebar" v-if="form.layout === 'sidebar'">
                           <div class="sidebar-item active">
                             <i class="fas fa-home sidebar-icon"></i>
                             <span>Dashboard</span>
@@ -358,7 +228,7 @@
                         <div class="preview-main">
                           <div class="preview-welcome">
                             <h3 class="preview-welcome-title">Welcome!</h3>
-                            <p class="preview-welcome-message">{{ customization.welcomeMessage || 'Welcome to our platform!' }}</p>
+                            <p class="preview-welcome-message">Preview of your selected theme</p>
                           </div>
                           <div class="preview-stats">
                             <div class="preview-stat">
@@ -393,21 +263,13 @@
                 </div>
                 <div class="card-body">
                   <div class="space-y-4">
-                    <button @click="saveCustomization" class="action-btn btn-primary" :disabled="loading">
+                    <button @click="saveCustomization" class="action-btn btn-primary" :disabled="form.processing">
                       <i class="fas fa-save mr-3"></i>
-                      {{ loading ? 'Applying...' : 'Apply Changes' }}
+                      {{ form.processing ? 'Saving...' : 'Save Changes' }}
                     </button>
                     <button @click="resetToDefault" class="action-btn btn-outline">
                       <i class="fas fa-undo mr-3"></i>
                       Reset to Default
-                    </button>
-                    <button @click="exportTheme" class="action-btn btn-outline">
-                      <i class="fas fa-download mr-3"></i>
-                      Export Theme
-                    </button>
-                    <button @click="importTheme" class="action-btn btn-outline">
-                      <i class="fas fa-upload mr-3"></i>
-                      Import Theme
                     </button>
                   </div>
                 </div>
@@ -424,36 +286,20 @@
                     <div class="setting-item">
                       <div class="setting-label">Color Scheme</div>
                       <div class="setting-value">
-                        <div class="setting-color" :style="getColorSchemePreview(customization.colorScheme)"></div>
-                        {{ getColorSchemeName(customization.colorScheme) }}
+                        <div class="setting-color" :style="getColorSchemePreview(form.colorScheme)"></div>
+                        {{ getColorSchemeName(form.colorScheme) }}
                       </div>
                     </div>
                     <div class="setting-item">
                       <div class="setting-label">Primary Color</div>
                       <div class="setting-value">
                         <div class="setting-color" :style="{ backgroundColor: getPrimaryColorValue() }"></div>
-                        {{ getPrimaryColorName(customization.primaryColor) }}
+                        {{ getPrimaryColorName(form.primaryColor) }}
                       </div>
                     </div>
                     <div class="setting-item">
                       <div class="setting-label">Layout</div>
-                      <div class="setting-value capitalize">{{ customization.layout }}</div>
-                    </div>
-                    <div class="setting-item">
-                      <div class="setting-label">Custom CSS</div>
-                      <div class="setting-value">
-                        <span :class="customization.customCSS ? 'text-green-500' : 'text-gray-500'">
-                          {{ customization.customCSS ? 'Enabled' : 'Disabled' }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="setting-item">
-                      <div class="setting-label">Brand Assets</div>
-                      <div class="setting-value">
-                        <span :class="(customization.logo || customization.favicon) ? 'text-green-500' : 'text-gray-500'">
-                          {{ (customization.logo || customization.favicon) ? 'Uploaded' : 'Not Set' }}
-                        </span>
-                      </div>
+                      <div class="setting-value capitalize">{{ form.layout }}</div>
                     </div>
                   </div>
                 </div>
@@ -469,17 +315,59 @@
 <script>
 import AdminNavbar from './AdminNavbar.vue'
 import AdminSidebar from './AdminSidebar.vue'
+import { useForm } from '@inertiajs/vue3'
 
 export default {
   components: {
     AdminNavbar,
     AdminSidebar
   },
+  props: {
+    customization: {
+      type: Object,
+      default: () => ({
+        colorScheme: 'light',
+        primaryColor: 'blue',
+        layout: 'sidebar'
+      })
+    },
+    profile: {
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null,
+        role: 'admin'
+      })
+    }
+  },
+  setup(props) {
+    const form = useForm({
+      colorScheme: props.customization.colorScheme,
+      primaryColor: props.customization.primaryColor,
+      layout: props.customization.layout
+    })
+
+    const saveCustomization = () => {
+      // FIX: Use the correct URL - /admin/customize (without /update)
+      form.put('/admin/customize', {
+        preserveScroll: true,
+        onSuccess: () => {
+          console.log('Theme updated successfully')
+        },
+        onError: (errors) => {
+          console.log('Theme update errors:', errors)
+        }
+      })
+    }
+
+    return { form, saveCustomization }
+  },
   data() {
     return {
       isDark: false,
       mobileSidebar: false,
-      loading: false,
       colorSchemes: [
         {
           id: 'light',
@@ -507,15 +395,6 @@ export default {
           dot1Style: 'background: linear-gradient(45deg, #3b82f6 50%, #60a5fa 50%);',
           dot2Style: 'background: linear-gradient(45deg, #10b981 50%, #34d399 50%);',
           dot3Style: 'background: linear-gradient(45deg, #f59e0b 50%, #fbbf24 50%);'
-        },
-        {
-          id: 'blue',
-          name: 'Ocean',
-          description: 'Calming blue tones',
-          previewStyle: 'background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);',
-          dot1Style: 'background-color: #1e40af;',
-          dot2Style: 'background-color: #1d4ed8;',
-          dot3Style: 'background-color: #3b82f6;'
         }
       ],
       primaryColors: [
@@ -524,17 +403,23 @@ export default {
         { id: 'purple', value: '#8b5cf6', light: '#f3e8ff', dark: '#6d28d9', name: 'Purple' },
         { id: 'red', value: '#ef4444', light: '#fee2e2', dark: '#b91c1c', name: 'Red' },
         { id: 'orange', value: '#f59e0b', light: '#fef3c7', dark: '#d97706', name: 'Orange' }
-      ],
-      customization: {
-        colorScheme: 'light',
-        primaryColor: 'blue',
-        layout: 'sidebar',
-        customCSS: '',
-        logo: '',
-        favicon: '',
-        appName: 'Quiz Application',
-        welcomeMessage: 'Welcome to our Quiz Platform!'
-      }
+      ]
+    }
+  },
+  computed: {
+    flashMessageClass() {
+      const type = this.$page.props.flash.type || 'success'
+      return type === 'success' 
+        ? 'bg-green-50 border border-green-200' 
+        : 'bg-red-50 border border-red-200'
+    },
+    flashIconClass() {
+      const type = this.$page.props.flash.type || 'success'
+      return type === 'success' ? 'text-green-500' : 'text-red-500'
+    },
+    flashTextClass() {
+      const type = this.$page.props.flash.type || 'success'
+      return type === 'success' ? 'text-green-800' : 'text-red-800'
     }
   },
   methods: {
@@ -545,97 +430,23 @@ export default {
       this.mobileSidebar = !this.mobileSidebar
     },
     handleLogout() {
-      this.$inertia.post(route('admin.logout'))
-    },
-    selectColorScheme(scheme) {
-      this.customization.colorScheme = scheme.id
-    },
-    triggerLogoUpload() {
-      this.$refs.logoInput.click()
-    },
-    triggerFaviconUpload() {
-      this.$refs.faviconInput.click()
-    },
-    handleLogoUpload(event) {
-      const file = event.target.files[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          this.customization.logo = e.target.result
-        }
-        reader.readAsDataURL(file)
-      }
-    },
-    handleFaviconUpload(event) {
-      const file = event.target.files[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          this.customization.favicon = e.target.result
-        }
-        reader.readAsDataURL(file)
-      }
-    },
-    async saveCustomization() {
-      this.loading = true
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        this.showSuccess('Customization applied successfully!')
-      } catch (error) {
-        this.showError('Failed to apply customization. Please try again.')
-      } finally {
-        this.loading = false
-      }
+      this.$inertia.post('/admin/logout')
     },
     resetToDefault() {
       if (confirm('Are you sure you want to reset all customization to default?')) {
-        this.customization = {
-          colorScheme: 'light',
-          primaryColor: 'blue',
-          layout: 'sidebar',
-          customCSS: '',
-          logo: '',
-          favicon: '',
-          appName: 'Quiz Application',
-          welcomeMessage: 'Welcome to our Quiz Platform!'
-        }
-        this.showSuccess('Customization reset to default!')
-      }
-    },
-    exportTheme() {
-      const themeConfig = JSON.stringify(this.customization, null, 2)
-      const blob = new Blob([themeConfig], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'quiz-app-theme.json'
-      a.click()
-      URL.revokeObjectURL(url)
-      this.showSuccess('Theme exported successfully!')
-    },
-    importTheme() {
-      // This would typically open a file input for importing
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = '.json'
-      input.onchange = (e) => {
-        const file = e.target.files[0]
-        if (file) {
-          const reader = new FileReader()
-          reader.onload = (e) => {
-            try {
-              const imported = JSON.parse(e.target.result)
-              this.customization = { ...this.customization, ...imported }
-              this.showSuccess('Theme imported successfully!')
-            } catch (error) {
-              this.showError('Invalid theme file. Please check the format.')
-            }
+        // FIX: Use the correct URL - /admin/customize/reset
+        this.$inertia.post('/admin/customize/reset', {
+          preserveScroll: true,
+          onSuccess: () => {
+            this.form.colorScheme = 'light'
+            this.form.primaryColor = 'blue'
+            this.form.layout = 'sidebar'
+          },
+          onError: (errors) => {
+            console.log('Reset errors:', errors)
           }
-          reader.readAsText(file)
-        }
+        })
       }
-      input.click()
     },
     getColorSchemeName(schemeId) {
       const scheme = this.colorSchemes.find(s => s.id === schemeId)
@@ -646,29 +457,20 @@ export default {
       return color ? color.name : 'Unknown'
     },
     getPrimaryColorValue() {
-      const color = this.primaryColors.find(c => c.id === this.customization.primaryColor)
+      const color = this.primaryColors.find(c => c.id === this.form.primaryColor)
       return color ? color.value : '#3b82f6'
     },
     getColorSchemePreview(schemeId) {
       const scheme = this.colorSchemes.find(s => s.id === schemeId)
       return scheme ? scheme.previewStyle : ''
-    },
-    showSuccess(message) {
-      // You can integrate with a notification system here
-      alert(message)
-    },
-    showError(message) {
-      // You can integrate with a notification system here
-      alert(message)
     }
   }
 }
 </script>
 
+
 <style>
 /* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-
 /* Light Theme */
 .light-theme {
   --bg-primary: #f9fafb;

@@ -1,5 +1,6 @@
 <template>
     <div id="app" class="min-h-screen bg-gray-100 flex flex-col">
+        
         <!-- Navbar -->
         <Navbar :current-view="currentView" @navigate="handleNavigation" />
 
@@ -7,7 +8,7 @@
         <main class="flex-1">
             <Dashboard 
                 v-if="currentView === 'dashboard'" 
-                @navigate="changeView" 
+                @navigate="handleNavigation" 
             />
             <QuizSets 
                 v-else-if="currentView === 'quiz-sets'" 
@@ -16,7 +17,7 @@
             <QuizPage 
                 v-else-if="currentView === 'quiz-page'" 
                 :quiz-set-id="selectedQuizSetId"
-                @completed="changeView('dashboard')"
+                @completed="handleNavigation('dashboard')"
             />
             <GkBlog 
                 v-else-if="currentView === 'gk-blog'" 
@@ -24,6 +25,14 @@
             <Records 
                 v-else-if="currentView === 'records'" 
             />
+            
+            <!-- Fallback if no view matches -->
+            <div v-else class="container mx-auto p-8 text-center">
+                <h2 class="text-2xl font-bold text-red-600">Unknown View: {{ currentView }}</h2>
+                <button @click="handleNavigation('dashboard')" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+                    Go to Dashboard
+                </button>
+            </div>
         </main>
 
         <!-- Footer -->
@@ -54,22 +63,26 @@ export default {
     data() {
         return {
             currentView: 'dashboard',
-            selectedQuizSetId: null
+            selectedQuizSetId: null,
+            debug: true
         }
     },
     methods: {
-        changeView(view) {
-            this.currentView = view;
-        },
-        
         handleNavigation(route) {
+            console.log('🔄 App.vue: handleNavigation called with route:', route);
             this.currentView = route;
         },
         
         selectQuizSet(quizSetId) {
+            console.log('🔄 App.vue: selectQuizSet called with id:', quizSetId);
             this.selectedQuizSetId = quizSetId;
             this.currentView = 'quiz-page';
         }
+    },
+    mounted() {
+        console.log('🚀 App.vue mounted successfully');
+        console.log('📍 Current view:', this.currentView);
+        console.log('🔧 Registered components:', Object.keys(this.$options.components));
     }
 }
 </script>

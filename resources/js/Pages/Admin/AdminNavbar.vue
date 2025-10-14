@@ -20,8 +20,8 @@
           <div class="relative">
             <button @click="toggleNotifications" class="notification-btn">
               <i class="fas fa-bell"></i>
-              <span v-if="unreadNotifications > 0" class="notification-badge">
-                {{ unreadNotifications }}
+              <span v-if="unreadNotificationsCount > 0" class="notification-badge">
+                {{ unreadNotificationsCount }}
               </span>
             </button>
             
@@ -32,21 +32,27 @@
                 <span @click="markAllAsRead" class="mark-read">Mark all as read</span>
               </div>
               <div class="notification-list">
-                <div v-for="notification in notifications" :key="notification.id" 
-                     class="notification-item">
+                <div v-if="notifications.length === 0" class="notification-empty">
+                  <i class="fas fa-bell-slash text-gray-400 text-2xl mb-2"></i>
+                  <p class="text-gray-500">No notifications yet</p>
+                </div>
+                <div v-else v-for="notification in notifications" :key="notification.id" 
+                     class="notification-item" :class="{ 'unread': !notification.read }"
+                     @click="markAsRead(notification.id)">
                   <div class="flex items-start">
-                    <div class="notification-icon" :class="notification.bgColor">
-                      <i :class="notification.icon + ' text-white text-sm'"></i>
+                    <div class="notification-icon" :class="getNotificationIcon(notification.type).bgColor">
+                      <i :class="getNotificationIcon(notification.type).icon + ' text-white text-sm'"></i>
                     </div>
                     <div class="flex-1">
                       <p class="notification-message">{{ notification.message }}</p>
-                      <p class="notification-time">{{ notification.time }}</p>
+                      <p class="notification-time">{{ formatTime(notification.created_at) }}</p>
                     </div>
+                    <div v-if="!notification.read" class="unread-dot"></div>
                   </div>
                 </div>
               </div>
               <div class="notification-footer">
-                <a href="#" class="view-all" @click="showNotifications = false">
+                <a href="#" class="view-all" @click.prevent="viewAllNotifications">
                   View all notifications
                 </a>
               </div>
@@ -57,17 +63,22 @@
           <div class="relative">
             <button @click="toggleProfile" class="profile-btn">
               <div class="profile-avatar">
-                <i class="fas fa-user"></i>
+                <template v-if="profile.avatar">
+                  <img :src="profile.avatar" alt="Profile" class="w-full h-full rounded-full object-cover">
+                </template>
+                <template v-else>
+                  <i class="fas fa-user"></i>
+                </template>
               </div>
-              <span class="profile-name">Administrator</span>
+              <span class="profile-name">{{ profile.firstName }} {{ profile.lastName }}</span>
               <i class="fas fa-chevron-down profile-arrow"></i>
             </button>
             
             <!-- Profile Dropdown Menu -->
             <div v-if="showProfile" class="profile-dropdown">
               <div class="profile-info">
-                <div class="profile-name-main">Administrator</div>
-                <div class="profile-email">admin@quiz.com</div>
+                <div class="profile-name-main">{{ profile.firstName }} {{ profile.lastName }}</div>
+                <div class="profile-email">{{ profile.email }}</div>
               </div>
               <div class="profile-menu">
                 <a href="/admin/profile" class="profile-menu-item" @click.prevent="navigateTo('/admin/profile')">
@@ -95,6 +106,8 @@
 </template>
 
 <script>
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+
 export default {
   name: 'AdminNavbar',
   props: {
@@ -105,82 +118,305 @@ export default {
     isDark: {
       type: Boolean,
       default: false
-    }
-  },
-  data() {
-    return {
-      showNotifications: false,
-      showProfile: false,
-      unreadNotifications: 3,
-      notifications: [
-        {
-          id: 1,
-          message: "New participant registered for Geography quiz",
-          time: "10 minutes ago",
-          icon: "fas fa-user-plus",
-          bgColor: "bg-blue"
-        },
-        {
-          id: 2,
-          message: "Quiz attempt scored 95% in Science category",
-          time: "1 hour ago",
-          icon: "fas fa-trophy",
-          bgColor: "bg-green"
-        },
-        {
-          id: 3,
-          message: "New quiz set 'World Capitals' has been published",
-          time: "2 hours ago",
-          icon: "fas fa-globe",
-          bgColor: "bg-purple"
-        }
-      ]
+    },
+    profile: {
+      type: Object,
+      default: () => ({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@quiz.com',
+        avatar: null
+      })
     }
   },
   emits: ['toggle-theme', 'toggle-mobile-sidebar', 'logout'],
-  mounted() {
-    document.addEventListener('click', this.handleClickOutside)
-  },
-  beforeUnmount() {
-    document.removeEventListener('click', this.handleClickOutside)
-  },
-  methods: {
-    toggleNotifications() {
-      this.showNotifications = !this.showNotifications
-      this.showProfile = false
-    },
-    toggleProfile() {
-      this.showProfile = !this.showProfile
-      this.showNotifications = false
-    },
-    markAllAsRead() {
-      this.unreadNotifications = 0
-      this.showNotifications = false
-    },
-    handleClickOutside(event) {
-      if (!event.target.closest('.relative')) {
-        this.showNotifications = false
-        this.showProfile = false
+  setup(props, { emit }) {
+    const showNotifications = ref(false)
+    const showProfile = ref(false)
+    const notifications = ref([])
+    let notificationInterval = null
+    let echo = null
+
+    // Computed property for unread notifications count
+    const unreadNotificationsCount = computed(() => {
+      return notifications.value.filter(notification => !notification.read).length
+    })
+
+    // Initialize notifications
+    const initializeNotifications = async () => {
+      try {
+        // Load existing notifications
+        await loadNotifications()
+        
+        // Start polling for new notifications (fallback if Pusher/Echo is not available)
+        startNotificationPolling()
+        
+        // Initialize real-time notifications (if using Laravel Echo/Pusher)
+        initializeRealtimeNotifications()
+      } catch (error) {
+        console.error('Error initializing notifications:', error)
       }
-    },
-    navigateTo(url) {
-      // Close the dropdown
-      this.showProfile = false
+    }
+
+    // Load notifications from API
+    const loadNotifications = async () => {
+      try {
+        const response = await fetch('/admin/notifications')
+        if (response.ok) {
+          const data = await response.json()
+          notifications.value = data.notifications || []
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+        // Fallback to empty array
+        notifications.value = []
+      }
+    }
+
+    // Poll for new notifications every 30 seconds
+    const startNotificationPolling = () => {
+      notificationInterval = setInterval(loadNotifications, 30000)
+    }
+
+    // Initialize real-time notifications with Laravel Echo
+    const initializeRealtimeNotifications = () => {
+      // Check if Echo is available (if you're using Laravel Echo with Pusher/Socket.io)
+      if (window.Echo) {
+        echo = window.Echo
+        
+        // Listen for new quiz attempts
+        echo.channel('quiz-attempts')
+          .listen('QuizAttemptCreated', (event) => {
+            addNewNotification({
+              id: Date.now(), // Temporary ID
+              type: 'quiz_attempt',
+              message: `${event.participantName} attempted ${event.quizSetName} with ${event.score}% score`,
+              created_at: new Date().toISOString(),
+              read: false
+            })
+          })
+        
+        // Listen for new participants
+        echo.channel('participants')
+          .listen('NewParticipantRegistered', (event) => {
+            addNewNotification({
+              id: Date.now(),
+              type: 'new_participant',
+              message: `New participant registered: ${event.participantName}`,
+              created_at: new Date().toISOString(),
+              read: false
+            })
+          })
+      }
+    }
+
+    // Add new notification to the list
+    const addNewNotification = (notification) => {
+      notifications.value.unshift(notification)
       
-      // Use window.location for navigation since $inertia is not available
+      // Keep only the latest 50 notifications
+      if (notifications.value.length > 50) {
+        notifications.value = notifications.value.slice(0, 50)
+      }
+      
+      // Play notification sound (optional)
+      playNotificationSound()
+    }
+
+    // Play notification sound
+    const playNotificationSound = () => {
+      // You can add a notification sound here
+      // const audio = new Audio('/notification-sound.mp3')
+      // audio.play().catch(e => console.log('Audio play failed:', e))
+    }
+
+    // Get notification icon based on type
+    const getNotificationIcon = (type) => {
+      const icons = {
+        quiz_attempt: { icon: 'fas fa-clipboard-check', bgColor: 'bg-blue' },
+        new_participant: { icon: 'fas fa-user-plus', bgColor: 'bg-green' },
+        high_score: { icon: 'fas fa-trophy', bgColor: 'bg-yellow' },
+        system: { icon: 'fas fa-cog', bgColor: 'bg-purple' }
+      }
+      return icons[type] || { icon: 'fas fa-bell', bgColor: 'bg-gray' }
+    }
+
+    // Format time for display
+    const formatTime = (timestamp) => {
+      const now = new Date()
+      const time = new Date(timestamp)
+      const diffInSeconds = Math.floor((now - time) / 1000)
+      
+      if (diffInSeconds < 60) return 'Just now'
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+      return `${Math.floor(diffInSeconds / 86400)}d ago`
+    }
+
+    // Toggle notifications dropdown
+    const toggleNotifications = () => {
+      showNotifications.value = !showNotifications.value
+      showProfile.value = false
+      
+      // Mark all as read when opening notifications
+      if (showNotifications.value && unreadNotificationsCount.value > 0) {
+        markAllAsRead()
+      }
+    }
+
+    // Toggle profile dropdown
+    const toggleProfile = () => {
+      showProfile.value = !showProfile.value
+      showNotifications.value = false
+    }
+
+    // Mark a single notification as read
+    const markAsRead = async (notificationId) => {
+      const notification = notifications.value.find(n => n.id === notificationId)
+      if (notification && !notification.read) {
+        notification.read = true
+        
+        // Send API request to mark as read
+        try {
+          await fetch(`/admin/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            }
+          })
+        } catch (error) {
+          console.error('Error marking notification as read:', error)
+        }
+      }
+    }
+
+    // Mark all notifications as read
+    const markAllAsRead = async () => {
+      const unreadNotifications = notifications.value.filter(n => !n.read)
+      
+      if (unreadNotifications.length > 0) {
+        unreadNotifications.forEach(notification => {
+          notification.read = true
+        })
+        
+        // Send API request to mark all as read
+        try {
+          await fetch('/admin/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            }
+          })
+        } catch (error) {
+          console.error('Error marking all notifications as read:', error)
+        }
+      }
+    }
+
+    // View all notifications (navigate to notifications page)
+    const viewAllNotifications = () => {
+      showNotifications.value = false
+      // Navigate to notifications page if you have one
+      // window.location.href = '/admin/notifications'
+    }
+
+    // Handle click outside dropdowns
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.relative')) {
+        showNotifications.value = false
+        showProfile.value = false
+      }
+    }
+
+    // Navigate to URL
+    const navigateTo = (url) => {
+      showProfile.value = false
       if (window.location.pathname !== url) {
         window.location.href = url
       }
-    },
-    handleLogout() {
-      this.showProfile = false
-      this.$emit('logout')
+    }
+
+    // Handle logout
+    const handleLogout = () => {
+      showProfile.value = false
+      emit('logout')
+    }
+
+    // Lifecycle hooks
+    onMounted(() => {
+      initializeNotifications()
+      document.addEventListener('click', handleClickOutside)
+    })
+
+    onUnmounted(() => {
+      if (notificationInterval) {
+        clearInterval(notificationInterval)
+      }
+      if (echo) {
+        echo.leaveChannel('quiz-attempts')
+        echo.leaveChannel('participants')
+      }
+      document.removeEventListener('click', handleClickOutside)
+    })
+
+    return {
+      showNotifications,
+      showProfile,
+      notifications,
+      unreadNotificationsCount,
+      toggleNotifications,
+      toggleProfile,
+      markAsRead,
+      markAllAsRead,
+      viewAllNotifications,
+      getNotificationIcon,
+      formatTime,
+      navigateTo,
+      handleLogout
     }
   }
 }
 </script>
 
 <style scoped>
+/* Add this style for the avatar image */
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Notification styles */
+.notification-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.notification-item.unread {
+  background-color: var(--hover-bg);
+  border-left: 3px solid #3b82f6;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  margin-left: 0.5rem;
+}
+
+.bg-yellow {
+  background-color: #f59e0b;
+}
+
+.bg-gray {
+  background-color: #6b7280;
+}
+
 /* Your existing styles remain the same */
 .profile-menu-item {
   display: block;
@@ -200,9 +436,6 @@ export default {
   color: #3b82f6;
   text-decoration: none;
 }
-
-/* Import Font Awesome */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 .header {
   background-color: var(--bg-secondary);
@@ -305,6 +538,7 @@ export default {
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 .notification-item:hover {
   background-color: var(--hover-bg);

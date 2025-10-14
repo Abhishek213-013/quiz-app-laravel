@@ -6,115 +6,98 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-class CustomizeController extends Controller
+class CustomizeController extends BaseAdminController
 {
     public function index()
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $customization = [
             'colorScheme' => Cache::get('customization.color_scheme', 'light'),
             'primaryColor' => Cache::get('customization.primary_color', 'blue'),
             'layout' => Cache::get('customization.layout', 'sidebar'),
-            'customCSS' => Cache::get('customization.css', ''),
-            'logo' => Cache::get('customization.logo'),
-            'favicon' => Cache::get('customization.favicon'),
-            'appName' => Cache::get('customization.app_name', config('app.name')),
-            'welcomeMessage' => Cache::get('customization.welcome_message', 'Welcome to our Quiz Platform!'),
         ];
 
         return Inertia::render('Admin/AdminCustomize', [
+            'profile' => $this->getAdminProfileData(),
             'customization' => $customization
         ]);
     }
 
     public function update(Request $request)
     {
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
+        }
+
         $validator = Validator::make($request->all(), [
-            'colorScheme' => 'required|in:light,dark,auto,blue',
+            'colorScheme' => 'required|in:light,dark,auto',
             'primaryColor' => 'required|in:blue,green,purple,red,orange',
             'layout' => 'required|in:sidebar,topbar',
-            'customCSS' => 'nullable|string',
-            'appName' => 'required|string|max:255',
-            'welcomeMessage' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
+        // Store in cache for persistence
         Cache::put('customization.color_scheme', $request->colorScheme);
         Cache::put('customization.primary_color', $request->primaryColor);
         Cache::put('customization.layout', $request->layout);
-        Cache::put('customization.css', $request->customCSS);
-        Cache::put('customization.app_name', $request->appName);
-        Cache::put('customization.welcome_message', $request->welcomeMessage);
 
         return back()->with([
-            'message' => 'Customization updated successfully!',
+            'message' => 'Theme updated successfully!',
             'type' => 'success'
         ]);
     }
 
-    public function uploadLogo(Request $request)
+    public function reset(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'logo' => 'required|image|mimes:jpeg,png,jpg,svg|max:1024',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator);
+        if ($redirect = $this->checkAdminAuth()) {
+            return $redirect;
         }
 
-        if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('branding', 'public');
-            $logoUrl = asset('storage/' . $path);
-            Cache::put('customization.logo', $logoUrl);
-        }
-
-        return back()->with([
-            'message' => 'Logo uploaded successfully!',
-            'type' => 'success'
-        ]);
-    }
-
-    public function uploadFavicon(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'favicon' => 'required|image|mimes:ico,png|max:512',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator);
-        }
-
-        if ($request->hasFile('favicon')) {
-            $path = $request->file('favicon')->store('branding', 'public');
-            $faviconUrl = asset('storage/' . $path);
-            Cache::put('customization.favicon', $faviconUrl);
-        }
-
-        return back()->with([
-            'message' => 'Favicon uploaded successfully!',
-            'type' => 'success'
-        ]);
-    }
-
-    public function reset()
-    {
         Cache::forget('customization.color_scheme');
         Cache::forget('customization.primary_color');
         Cache::forget('customization.layout');
-        Cache::forget('customization.css');
-        Cache::forget('customization.logo');
-        Cache::forget('customization.favicon');
-        Cache::forget('customization.app_name');
-        Cache::forget('customization.welcome_message');
 
         return back()->with([
-            'message' => 'Customization reset to default successfully!',
+            'message' => 'Theme reset to default successfully!',
             'type' => 'success'
         ]);
+    }
+
+    // Optional: If you want to use these methods
+    public function getThemeSettings()
+    {
+        return response()->json([
+            'colorScheme' => Cache::get('customization.color_scheme', 'light'),
+            'primaryColor' => Cache::get('customization.primary_color', 'blue'),
+            'layout' => Cache::get('customization.layout', 'sidebar'),
+        ]);
+    }
+
+    public function applyTheme(Request $request)
+    {
+        // Alternative method if you want a separate apply endpoint
+        $validator = Validator::make($request->all(), [
+            'colorScheme' => 'required|in:light,dark,auto',
+            'primaryColor' => 'required|in:blue,green,purple,red,orange',
+            'layout' => 'required|in:sidebar,topbar',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+
+        Cache::put('customization.color_scheme', $request->colorScheme);
+        Cache::put('customization.primary_color', $request->primaryColor);
+        Cache::put('customization.layout', $request->layout);
+
+        return response()->json(['message' => 'Theme applied successfully!']);
     }
 }

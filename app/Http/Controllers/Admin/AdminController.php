@@ -992,7 +992,13 @@ class AdminController extends BaseAdminController
      * =========================================================================
      */
 
-    public function getNotifications()
+    /**
+ * =========================================================================
+ * NOTIFICATION METHODS - UPDATED
+ * =========================================================================
+ */
+
+    public function getNotifications(Request $request)
     {
         try {
             // Get recent quiz attempts for notifications
@@ -1011,18 +1017,27 @@ class AdminController extends BaseAdminController
                 ->orderBy('quiz_results.created_at', 'desc')
                 ->limit(20)
                 ->get()
-                ->map(function ($attempt) {
+                ->map(function ($attempt) use ($request) {
+                    // Check if this notification has been marked as read in session
+                    $readNotifications = $request->session()->get('read_notifications', []);
+                    $isRead = in_array($attempt->id, $readNotifications);
+                    
                     return [
                         'id' => $attempt->id,
                         'type' => 'quiz_attempt',
                         'message' => $attempt->participant_name . ' attempted ' . $attempt->quiz_set_name . ' with ' . round($attempt->percentage) . '% score',
                         'created_at' => $attempt->created_at,
-                        'read' => false // You can implement read status in database if needed
+                        'read' => $isRead
                     ];
                 });
 
+            // Filter out read notifications if you want to hide them completely
+            $unreadNotifications = $recentAttempts->filter(function ($notification) {
+                return !$notification['read'];
+            });
+
             return response()->json([
-                'notifications' => $recentAttempts
+                'notifications' => $unreadNotifications->values()
             ]);
 
         } catch (\Exception $e) {
@@ -1031,15 +1046,45 @@ class AdminController extends BaseAdminController
         }
     }
 
-    public function markNotificationAsRead($id)
+    public function markNotificationAsRead(Request $request, $id)
     {
-        // Implement marking notification as read in database if you have a notifications table
-        return response()->json(['success' => true]);
+        try {
+            // Get current read notifications from session
+            $readNotifications = $request->session()->get('read_notifications', []);
+            
+            // Add this notification ID to read list
+            if (!in_array($id, $readNotifications)) {
+                $readNotifications[] = $id;
+                $request->session()->put('read_notifications', $readNotifications);
+            }
+
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            Log::error('Error marking notification as read: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Failed to mark notification as read'], 500);
+        }
     }
 
-    public function markAllNotificationsAsRead()
+    public function markAllNotificationsAsRead(Request $request)
     {
-        // Implement marking all notifications as read in database
-        return response()->json(['success' => true]);
+        try {
+            // Get all recent notification IDs
+            $recentAttempts = DB::table('quiz_results')
+                ->where('created_at', '>=', now()->subHours(24))
+                ->orderBy('created_at', 'desc')
+                ->limit(20)
+                ->pluck('id')
+                ->toArray();
+
+            // Store all recent notification IDs as read in session
+            $request->session()->put('read_notifications', $recentAttempts);
+
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            Log::error('Error marking all notifications as read: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Failed to mark all notifications as read'], 500);
+        }
     }
 }

@@ -43,10 +43,14 @@ class SettingsController extends BaseAdminController
         ];
 
         return Inertia::render('Admin/AdminSettings', [
-            'profile' => $this->getAdminProfileData(), // Add this line
-            'settings' => $settings
+            'profile' => $this->getAdminProfileData(),
+            'settings' => $settings,
+            // FIXED: Add theme data like other pages
+            'theme' => $this->getThemeData()
         ]);
     }
+
+
 
     // Add authentication to your update methods
     public function updateGeneral(Request $request)

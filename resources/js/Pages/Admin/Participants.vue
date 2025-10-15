@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen" :class="themeClass">
+  <div 
+    class="min-h-screen" 
+    :class="themeClass"
+    :style="themeStyles"
+  >
     <AdminNavbar 
       title="Participants Management"
       :is-dark="isDark"
@@ -23,7 +27,7 @@
         <main class="content">
           <!-- Loading State -->
           <div v-if="loading" class="loading-state">
-            <i class="fas fa-spinner fa-spin loading-icon"></i>
+            <span class="loading-icon animate-spin">⏳</span>
             <p class="loading-text">Loading participants data...</p>
           </div>
 
@@ -34,21 +38,45 @@
               <div class="flex justify-between items-center mb-8">
                 <h2 class="section-title">Participants Overview</h2>
                 <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
-                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
+                  <span class="mr-2" :class="{ 'animate-spin': refreshing }">🔄</span>
                   {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
                 </button>
               </div>
               <div class="stats-grid">
-                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
-                  <div class="stat-number">{{ participants.length }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ participants.length }}
+                  </div>
                   <div class="stat-label">Total Participants</div>
                 </div>
-                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
-                  <div class="stat-number">{{ totalAttempts }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ totalAttempts }}
+                  </div>
                   <div class="stat-label">Total Attempts</div>
                 </div>
-                <div class="stat-card" :class="`stat-${theme.primaryColor}`">
-                  <div class="stat-number">{{ averageScore }}%</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ averageScore }}%
+                  </div>
                   <div class="stat-label">Average Score</div>
                 </div>
               </div>
@@ -69,7 +97,7 @@
                       placeholder="Search participants..."
                       class="search-input"
                     >
-                    <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
+                    <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500">🔍</span>
                   </div>
                 </div>
               </div>
@@ -87,37 +115,49 @@
                       <th class="table-header" @click="sortBy('name')">
                         <div class="flex items-center space-x-2">
                           <span>Participant</span>
-                          <i :class="sortColumn === 'name' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
+                          <span :class="sortColumn === 'name' ? (sortDirection === 'asc' ? 'text-gray-700' : 'text-gray-700') : 'text-gray-400'">
+                            {{ sortColumn === 'name' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}
+                          </span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('best_score')">
                         <div class="flex items-center space-x-2">
                           <span>Best Score</span>
-                          <i :class="sortColumn === 'best_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
+                          <span :class="sortColumn === 'best_score' ? (sortDirection === 'asc' ? 'text-gray-700' : 'text-gray-700') : 'text-gray-400'">
+                            {{ sortColumn === 'best_score' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}
+                          </span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('best_percentage')">
                         <div class="flex items-center space-x-2">
                           <span>Best %</span>
-                          <i :class="sortColumn === 'best_percentage' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
+                          <span :class="sortColumn === 'best_percentage' ? (sortDirection === 'asc' ? 'text-gray-700' : 'text-gray-700') : 'text-gray-400'">
+                            {{ sortColumn === 'best_percentage' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}
+                          </span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('total_attempts')">
                         <div class="flex items-center space-x-2">
                           <span>Attempts</span>
-                          <i :class="sortColumn === 'total_attempts' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
+                          <span :class="sortColumn === 'total_attempts' ? (sortDirection === 'asc' ? 'text-gray-700' : 'text-gray-700') : 'text-gray-400'">
+                            {{ sortColumn === 'total_attempts' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}
+                          </span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('average_score')">
                         <div class="flex items-center space-x-2">
                           <span>Avg. Score</span>
-                          <i :class="sortColumn === 'average_score' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
+                          <span :class="sortColumn === 'average_score' ? (sortDirection === 'asc' ? 'text-gray-700' : 'text-gray-700') : 'text-gray-400'">
+                            {{ sortColumn === 'average_score' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}
+                          </span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortBy('last_attempt')">
                         <div class="flex items-center space-x-2">
                           <span>Last Activity</span>
-                          <i :class="sortColumn === 'last_attempt' ? (sortDirection === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down') : 'fas fa-sort text-gray-400'"></i>
+                          <span :class="sortColumn === 'last_attempt' ? (sortDirection === 'asc' ? 'text-gray-700' : 'text-gray-700') : 'text-gray-400'">
+                            {{ sortColumn === 'last_attempt' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}
+                          </span>
                         </div>
                       </th>
                     </tr>
@@ -130,8 +170,14 @@
                     >
                       <td class="table-cell">
                         <div class="flex items-center">
-                          <div class="user-avatar-small" :class="`avatar-${theme.primaryColor}`">
-                            <i class="fas fa-user"></i>
+                          <div 
+                            class="user-avatar-small" 
+                            :style="{ 
+                              backgroundColor: getPrimaryColorLight(),
+                              color: primaryColorValue 
+                            }"
+                          >
+                            <span>👤</span>
                           </div>
                           <div class="user-details">
                             <div class="user-name">{{ participant.name }}</div>
@@ -169,7 +215,7 @@
                     <tr v-if="filteredParticipants.length === 0">
                       <td colspan="6" class="empty-state">
                         <div class="empty-content">
-                          <i class="fas fa-users empty-icon"></i>
+                          <span class="empty-icon">👥</span>
                           <p class="empty-title">No participants found</p>
                           <p class="empty-subtitle">Try adjusting your search criteria</p>
                         </div>
@@ -183,11 +229,11 @@
               <div class="table-footer">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
                   <div class="footer-text">
-                    Showing <span class="highlight">{{ filteredParticipants.length }}</span> of 
-                    <span class="highlight">{{ participants.length }}</span> participants
+                    Showing <span class="highlight" :style="{ color: primaryColorValue }">{{ filteredParticipants.length }}</span> of 
+                    <span class="highlight" :style="{ color: primaryColorValue }">{{ participants.length }}</span> participants
                   </div>
                   <div class="footer-info">
-                    <i class="fas fa-info-circle info-icon"></i>
+                    <span class="info-icon" :style="{ color: primaryColorValue }">ℹ️</span>
                     <span>Sorted by {{ sortColumn.replace('_', ' ') }} ({{ sortDirection }})</span>
                   </div>
                 </div>
@@ -220,7 +266,7 @@
 
                   <div class="completion-rate">
                     <div class="rate-label">Active Participation Rate</div>
-                    <div class="rate-number">{{ participationRate }}%</div>
+                    <div class="rate-number" :style="{ color: primaryColorValue }">{{ participationRate }}%</div>
                   </div>
                 </div>
               </div>
@@ -234,8 +280,11 @@
                     :key="activity.id" 
                     class="activity-item"
                   >
-                    <div class="activity-icon" :class="`bg-${theme.primaryColor}`">
-                      <i :class="[activity.icon, 'text-white text-sm']"></i>
+                    <div 
+                      class="activity-icon" 
+                      :style="{ backgroundColor: primaryColorValue }"
+                    >
+                      <span class="text-white text-sm">{{ activity.icon }}</span>
                     </div>
                     <div class="activity-content">
                       <p class="activity-message">{{ activity.message }}</p>
@@ -295,38 +344,65 @@ export default {
       search: '',
       sortColumn: 'total_attempts',
       sortDirection: 'desc',
+      _isMounted: false,
+      resizeTimeout: null,
+      componentId: Math.random().toString(36).substr(2, 9),
       recentActivities: [
         {
           id: 1,
           message: "New participant John Smith registered",
           time: "2 hours ago",
-          icon: "fas fa-user-plus"
+          icon: "👤"
         },
         {
           id: 2,
           message: "Emily Wilson achieved 95% in Science quiz",
           time: "5 hours ago",
-          icon: "fas fa-trophy"
+          icon: "🏆"
         },
         {
           id: 3,
           message: "15 new quiz attempts recorded",
           time: "1 day ago",
-          icon: "fas fa-chart-line"
+          icon: "📈"
         },
         {
           id: 4,
           message: "Mike Davis completed Geography challenge",
           time: "2 days ago",
-          icon: "fas fa-globe"
+          icon: "🌎"
         }
       ]
     }
   },
   computed: {
     themeClass() {
-      return this.theme.colorScheme === 'dark' ? 'dark-theme' : 'light-theme';
+      const colorScheme = this.theme?.colorScheme || (this.isDark ? 'dark' : 'light');
+      const primaryColor = this.theme?.primaryColor || 'blue';
+      const layout = this.theme?.layout || 'sidebar';
+      
+      return `${colorScheme}-theme primary-${primaryColor} layout-${layout}`;
     },
+    
+    themeStyles() {
+      return {
+        '--primary-color': this.primaryColorValue,
+        '--primary-light': this.getPrimaryColorLight(),
+        '--primary-dark': this.getPrimaryColorDark()
+      };
+    },
+    
+    primaryColorValue() {
+      const colorMap = {
+        blue: '#3b82f6',
+        green: '#10b981', 
+        purple: '#8b5cf6',
+        red: '#ef4444',
+        orange: '#f59e0b'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+    
     filteredParticipants() {
       let filtered = this.participants.filter(participant => 
         participant.name.toLowerCase().includes(this.search.toLowerCase())
@@ -373,9 +449,34 @@ export default {
       return Math.round((activeParticipants / this.participants.length) * 100)
     }
   },
+  watch: {
+    theme: {
+      handler(newTheme, oldTheme) {
+        if (JSON.stringify(newTheme) !== JSON.stringify(oldTheme)) {
+          console.log('Theme changed, updating components...');
+          this.handleThemeChange();
+        }
+      },
+      deep: true,
+      immediate: true
+    }
+  },
+  mounted() {
+    this._isMounted = true;
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeUnmount() {
+    this._isMounted = false;
+    
+    // Clear any pending timeouts
+    clearTimeout(this.resizeTimeout);
+    
+    window.removeEventListener('resize', this.handleResize);
+  },
   methods: {
     toggleTheme() {
       this.isDark = !this.isDark
+      this.handleThemeChange();
     },
     toggleMobileSidebar() {
       this.mobileSidebar = !this.mobileSidebar
@@ -383,6 +484,23 @@ export default {
     handleLogout() {
       this.$inertia.post('/admin/logout');
     },
+    
+    handleThemeChange() {
+      if (!this._isMounted) return;
+      // Theme change handling for future chart implementations
+    },
+    
+    handleResize() {
+      if (!this._isMounted) return;
+      
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = setTimeout(() => {
+        if (this._isMounted) {
+          // Handle resize for future chart implementations
+        }
+      }, 250);
+    },
+    
     async refreshData() {
       this.refreshing = true;
       
@@ -393,6 +511,7 @@ export default {
       // For now, we'll just reset the refreshing state
       this.refreshing = false;
     },
+    
     sortBy(column) {
       if (this.sortColumn === column) {
         this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
@@ -401,6 +520,29 @@ export default {
         this.sortDirection = 'desc'
       }
     },
+    
+    getPrimaryColorLight() {
+      const colorMap = {
+        blue: '#dbeafe',
+        green: '#dcfce7',
+        purple: '#f3e8ff',
+        red: '#fee2e2',
+        orange: '#fef3c7'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+
+    getPrimaryColorDark() {
+      const colorMap = {
+        blue: '#1e40af',
+        green: '#047857',
+        purple: '#6d28d9',
+        red: '#b91c1c',
+        orange: '#d97706'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+    
     progressBadgeClass(percentage) {
       const perc = Math.round(parseFloat(percentage)) || 0
       
@@ -408,28 +550,48 @@ export default {
       if (perc >= 60) return 'progress-badge-medium'
       return 'progress-badge-low'
     },
+    
     formatDate(dateString) {
       if (!dateString) return 'N/A'
-      const date = new Date(dateString)
-      const now = new Date()
-      const diff = now - date
-      const minutes = Math.floor(diff / 60000)
-      
-      if (minutes < 60) return `${minutes}m ago`
-      const hours = Math.floor(minutes / 60)
-      if (hours < 24) return `${hours}h ago`
-      const days = Math.floor(hours / 24)
-      if (days < 7) return `${days}d ago`
-      
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
+      try {
+        const date = new Date(dateString)
+        const now = new Date()
+        const diff = now - date
+        const minutes = Math.floor(diff / 60000)
+        
+        if (minutes < 60) return `${minutes}m ago`
+        const hours = Math.floor(minutes / 60)
+        if (hours < 24) return `${hours}h ago`
+        const days = Math.floor(hours / 24)
+        if (days < 7) return `${days}d ago`
+        
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        })
+      } catch (error) {
+        return 'Invalid date'
+      }
     }
   }
 }
 </script>
+
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
 
 <style>
 /* Dynamic Theme Variables */
@@ -469,41 +631,6 @@ export default {
   --primary-dark: #d97706;
 }
 
-/* Apply primary color to elements */
-.stat-blue { background-color: var(--primary-light); }
-.stat-blue .stat-number { color: var(--primary-color); }
-
-.stat-green { background-color: var(--primary-light); }
-.stat-green .stat-number { color: var(--primary-color); }
-
-.stat-purple { background-color: var(--primary-light); }
-.stat-purple .stat-number { color: var(--primary-color); }
-
-.stat-red { background-color: var(--primary-light); }
-.stat-red .stat-number { color: var(--primary-color); }
-
-.stat-orange { background-color: var(--primary-light); }
-.stat-orange .stat-number { color: var(--primary-color); }
-
-.avatar-blue { background-color: var(--primary-light); color: var(--primary-color); }
-.avatar-green { background-color: var(--primary-light); color: var(--primary-color); }
-.avatar-purple { background-color: var(--primary-light); color: var(--primary-color); }
-.avatar-red { background-color: var(--primary-light); color: var(--primary-color); }
-.avatar-orange { background-color: var(--primary-light); color: var(--primary-color); }
-
-.bg-blue { background-color: var(--primary-color); }
-.bg-green { background-color: var(--primary-color); }
-.bg-purple { background-color: var(--primary-color); }
-.bg-red { background-color: var(--primary-color); }
-.bg-orange { background-color: var(--primary-color); }
-
-.table-header:hover { background-color: var(--primary-light); }
-.table-header i.fas.fa-arrow-up,
-.table-header i.fas.fa-arrow-down { color: var(--primary-color); }
-.highlight { color: var(--primary-color); }
-.info-icon { color: var(--primary-color); }
-.loading-icon { color: var(--primary-color); }
-
 /* Light Theme */
 .light-theme {
   --bg-primary: #f9fafb;
@@ -530,6 +657,15 @@ export default {
   --hover-bg: #374151;
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* Theme transition for smooth changes */
+.min-h-screen,
+.content-card,
+.stat-card,
+.table-row,
+.activity-item {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Base Styles */
@@ -591,28 +727,51 @@ export default {
 }
 
 .stat-card {
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 1.5rem;
   text-align: center;
+  background-color: var(--bg-secondary);
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+  border-left: 4px solid;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark-theme .stat-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
 .stat-number {
-  font-size: 1.875rem;
+  font-size: 2.25rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
 .stat-label {
   color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 /* Content Cards */
 .content-card {
   background-color: var(--bg-secondary);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   box-shadow: var(--shadow-lg);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark-theme .content-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
 .card-title-large {
@@ -670,6 +829,10 @@ export default {
   transition: background-color 0.2s ease;
 }
 
+.table-header:hover {
+  background-color: var(--primary-light);
+}
+
 .table-row {
   transition: all 0.2s ease;
   border-bottom: 1px solid var(--border-color);
@@ -693,6 +856,7 @@ export default {
   justify-content: center;
   flex-shrink: 0;
   margin-right: 1rem;
+  font-size: 1rem;
 }
 
 .user-details {
@@ -730,11 +894,13 @@ export default {
 
 /* Progress Badges */
 .progress-badge {
-  padding: 0.25rem 0.75rem;
+  padding: 0.5rem 1rem;
   border-radius: 9999px;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   flex-shrink: 0;
+  min-width: 4rem;
+  text-align: center;
 }
 
 .progress-badge-high {
@@ -799,7 +965,7 @@ export default {
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--border-color);
   background-color: var(--hover-bg);
-  border-radius: 0 0 0.5rem 0.5rem;
+  border-radius: 0 0 0.75rem 0.75rem;
 }
 
 .footer-text {
@@ -814,6 +980,10 @@ export default {
   gap: 0.5rem;
   font-size: 0.875rem;
   color: var(--text-muted);
+}
+
+.highlight {
+  font-weight: 600;
 }
 
 /* Performance Section */
@@ -854,9 +1024,15 @@ export default {
 
 .distribution-item {
   text-align: center;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  padding: 1rem 0.5rem;
+  border-radius: 0.75rem;
+  transition: transform 0.2s;
 }
+
+.distribution-item:hover {
+  transform: scale(1.05);
+}
+
 .distribution-item.high {
   background-color: #dcfce7;
 }
@@ -877,8 +1053,9 @@ export default {
 }
 
 .distribution-count {
-  font-weight: 600;
-  font-size: 1.125rem;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
 }
 .distribution-item.high .distribution-count {
   color: #16a34a;
@@ -906,21 +1083,20 @@ export default {
 
 .completion-rate {
   text-align: center;
-  padding-top: 1rem;
+  padding: 1.5rem;
+  background-color: var(--bg-primary);
+  border-radius: 0.75rem;
 }
 
 .rate-label {
   font-size: 0.875rem;
   color: var(--text-muted);
+  margin-bottom: 0.5rem;
 }
 
 .rate-number {
-  font-size: 1.5rem;
+  font-size: 1.875rem;
   font-weight: 700;
-  color: #16a34a;
-}
-.dark-theme .rate-number {
-  color: #4ade80;
 }
 
 /* Activity List */
@@ -934,11 +1110,14 @@ export default {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
 }
+
 .activity-item:hover {
   background-color: var(--hover-bg);
+  transform: translateX(4px);
 }
 
 .activity-icon {
@@ -958,10 +1137,11 @@ export default {
 .activity-message {
   font-weight: 500;
   color: var(--text-primary);
+  font-size: 0.875rem;
 }
 
 .activity-time {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 0.25rem;
 }
@@ -1021,6 +1201,10 @@ export default {
   }
   
   .table-cell {
+    padding: 0.75rem 1rem;
+  }
+  
+  .table-header {
     padding: 0.75rem 1rem;
   }
 }

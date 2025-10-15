@@ -14,8 +14,8 @@
                 @click="toggleMobileMenu"
                 aria-label="Toggle navigation menu"
             >
-                <i class="fas fa-bars" v-if="!mobileMenuOpen"></i>
-                <i class="fas fa-times" v-else></i>
+                <span v-if="!mobileMenuOpen">☰</span>
+                <span v-else>✕</span>
             </button>
 
             <!-- Navigation Links -->
@@ -33,6 +33,7 @@
                     }"
                     :aria-current="currentView === item.route ? 'page' : null"
                 >
+                    <span class="nav-icon">{{ getIconForRoute(item.route) }}</span>
                     {{ item.label }}
                 </button>
             </div>
@@ -58,14 +59,14 @@ export default {
         }
     },
     methods: {
-        includeFontAwesome() {
-            // Check if Font Awesome is already loaded
-            if (!document.querySelector('link[href*="font-awesome"]')) {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-                document.head.appendChild(link);
-            }
+        getIconForRoute(route) {
+            const icons = {
+                'dashboard': '🏠',
+                'quiz-sets': '📝',
+                'gk-blog': '📚',
+                'records': '📊'
+            };
+            return icons[route] || '🔗';
         },
         handleNavigation(route) {
             console.log('🔼 Navbar: Emitting navigate event with route:', route);
@@ -90,9 +91,6 @@ export default {
     },
     mounted() {
         console.log('🧭 Responsive Navbar mounted');
-        
-        // Add Font Awesome dynamically if not already included
-        this.includeFontAwesome();
         
         // Add event listeners
         window.addEventListener('resize', this.handleResize);
@@ -132,6 +130,9 @@ export default {
 
 /* Navigation Button */
 .nav-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 16px;
     background: transparent;
     color: black;
@@ -150,6 +151,12 @@ export default {
 .nav-button.active {
     background: #3498db;
     color: white;
+}
+
+/* Navigation Icon */
+.nav-icon {
+    font-size: 16px;
+    display: inline-block;
 }
 
 /* Hamburger Menu - Hidden on desktop by default */
@@ -194,7 +201,7 @@ export default {
     }
     
     .nav-links.active {
-        max-height: 300px;
+        max-height: 400px;
         padding: 10px 0;
     }
     
@@ -205,6 +212,7 @@ export default {
         border-radius: 0;
         border: none;
         border-bottom: 1px solid #f0f0f0;
+        justify-content: flex-start;
     }
     
     .nav-button:last-child {
@@ -213,6 +221,11 @@ export default {
     
     .nav-button:hover {
         background: #f8f9fa;
+    }
+    
+    .nav-icon {
+        min-width: 20px;
+        text-align: center;
     }
 }
 
@@ -228,6 +241,7 @@ export default {
     
     .nav-button {
         padding: 14px 20px;
+        font-size: 14px;
     }
     
     .hamburger {
@@ -235,10 +249,33 @@ export default {
         height: 36px;
         font-size: 18px;
     }
+    
+    .nav-icon {
+        font-size: 14px;
+    }
 }
 
-/* Ensure icons are properly sized */
-.hamburger i {
-    font-size: inherit;
+/* Focus styles for accessibility */
+.nav-button:focus,
+.hamburger:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Active state improvements */
+.nav-button.active {
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+/* Smooth transitions for all interactive elements */
+.nav-button,
+.hamburger {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Logo hover effect */
+.logo-section:hover {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
 }
 </style>

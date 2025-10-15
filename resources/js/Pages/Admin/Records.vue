@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
+  <div 
+    class="min-h-screen" 
+    :class="themeClass"
+    :style="themeStyles"
+  >
     <AdminNavbar 
       title="Records & Analytics"
       :is-dark="isDark"
@@ -23,16 +27,16 @@
         <main class="content">
           <!-- Loading State -->
           <div v-if="loading" class="loading-state">
-            <i class="fas fa-spinner fa-spin loading-icon"></i>
+            <span class="loading-icon">⏳</span>
             <p class="loading-text">Loading records data...</p>
           </div>
 
           <!-- Error State -->
           <div v-else-if="error" class="error-state">
-            <i class="fas fa-exclamation-triangle error-icon"></i>
+            <span class="error-icon">⚠️</span>
             <p class="error-text">{{ error }}</p>
             <button @click="fetchRecordsData" class="retry-button">
-              <i class="fas fa-redo"></i>
+              <span class="mr-2">🔄</span>
               Try Again
             </button>
           </div>
@@ -43,32 +47,70 @@
             <div class="stats-section">
               <div class="flex justify-between items-center mb-8">
                 <h2 class="section-title">Performance Records</h2>
-                <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
-                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
-                  {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
-                </button>
+                <div class="flex items-center gap-4">
+                  <!-- Theme Debug Button (remove in production) -->
+                  <button v-if="showDebug" @click="debugTheme" class="debug-btn">
+                    <span class="mr-2">🐛</span>
+                    Debug Theme
+                  </button>
+                  <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
+                    <span class="mr-2" :class="{ 'animate-spin': refreshing }">🔄</span>
+                    {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
+                  </button>
+                </div>
               </div>
               <div class="stats-grid">
-                <div class="stat-card blue">
-                  <div class="stat-number">{{ overallStats.highestScore }}%</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ overallStats.highestScore }}%
+                  </div>
                   <div class="stat-label">Highest Score</div>
                 </div>
-                <div class="stat-card green">
-                  <div class="stat-number">{{ overallStats.averageScore }}%</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ overallStats.averageScore }}%
+                  </div>
                   <div class="stat-label">Average Score</div>
                 </div>
-                <div class="stat-card purple">
-                  <div class="stat-number">{{ overallStats.totalParticipants }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ overallStats.totalParticipants }}
+                  </div>
                   <div class="stat-label">Total Participants</div>
                 </div>
-                <div class="stat-card orange">
-                  <div class="stat-number">{{ overallStats.totalAttempts }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ overallStats.totalAttempts }}
+                  </div>
                   <div class="stat-label">Total Attempts</div>
                 </div>
               </div>
             </div>
 
-            <!-- Rest of the template remains exactly the same -->
             <!-- Charts Section -->
             <div class="charts-section">
               <!-- Score Distribution Chart -->
@@ -97,10 +139,16 @@
                     v-for="(performer, index) in topPerformers.allTime" 
                     :key="performer.id"
                     class="scorer-card"
+                    :style="{ borderLeft: `3px solid ${primaryColorValue}` }"
                   >
                     <div class="scorer-header">
                       <div class="scorer-info">
-                        <div class="scorer-rank">
+                        <div 
+                          class="scorer-rank"
+                          :style="{ 
+                            background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+                          }"
+                        >
                           {{ index + 1 }}
                         </div>
                         <div>
@@ -144,7 +192,11 @@
                         class="table-row"
                       >
                         <td class="table-cell">
-                          <div :class="getRankClass(index + 1)" class="rank-badge">
+                          <div 
+                            :class="getRankClass(index + 1)" 
+                            class="rank-badge"
+                            :style="getRankStyle(index + 1)"
+                          >
                             {{ index + 1 }}
                           </div>
                         </td>
@@ -172,7 +224,7 @@
                       <tr v-if="weeklyLeaderboard.length === 0">
                         <td colspan="7" class="empty-state">
                           <div class="empty-content">
-                            <i class="fas fa-trophy empty-icon"></i>
+                            <span class="empty-icon">🏆</span>
                             <p class="empty-title">No weekly records found</p>
                             <p class="empty-subtitle">No quiz attempts this week</p>
                           </div>
@@ -251,7 +303,7 @@
                     placeholder="Search participant..."
                     class="search-input"
                   >
-                  <i class="fas fa-search search-icon"></i>
+                  <span class="search-icon">🔍</span>
                 </div>
                 <select 
                   v-model="selectedQuizSet"
@@ -270,37 +322,37 @@
                       <th class="table-header" @click="sortRecords('participant_name')">
                         <div class="flex items-center space-x-2">
                           <span>Participant</span>
-                          <i :class="getSortIcon('participant_name')"></i>
+                          <span :class="getSortIcon('participant_name')"></span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortRecords('quiz_set_name')">
                         <div class="flex items-center space-x-2">
                           <span>Quiz Set</span>
-                          <i :class="getSortIcon('quiz_set_name')"></i>
+                          <span :class="getSortIcon('quiz_set_name')"></span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortRecords('score')">
                         <div class="flex items-center space-x-2">
                           <span>Score</span>
-                          <i :class="getSortIcon('score')"></i>
+                          <span :class="getSortIcon('score')"></span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortRecords('percentage')">
                         <div class="flex items-center space-x-2">
                           <span>Percentage</span>
-                          <i :class="getSortIcon('percentage')"></i>
+                          <span :class="getSortIcon('percentage')"></span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortRecords('time_taken')">
                         <div class="flex items-center space-x-2">
                           <span>Time Taken</span>
-                          <i :class="getSortIcon('time_taken')"></i>
+                          <span :class="getSortIcon('time_taken')"></span>
                         </div>
                       </th>
                       <th class="table-header" @click="sortRecords('created_at')">
                         <div class="flex items-center space-x-2">
                           <span>Date</span>
-                          <i :class="getSortIcon('created_at')"></i>
+                          <span :class="getSortIcon('created_at')"></span>
                         </div>
                       </th>
                     </tr>
@@ -336,7 +388,7 @@
                     <tr v-if="filteredRecords.length === 0">
                       <td colspan="6" class="empty-state">
                         <div class="empty-content">
-                          <i class="fas fa-chart-bar empty-icon"></i>
+                          <span class="empty-icon">📊</span>
                           <p class="empty-title">No records found</p>
                           <p class="empty-subtitle">Try adjusting your search criteria</p>
                         </div>
@@ -382,6 +434,14 @@ export default {
         avatar: null,
         role: 'admin'
       })
+    },
+    theme: {
+      type: Object,
+      default: () => ({
+        colorScheme: 'light',
+        primaryColor: 'blue',
+        layout: 'sidebar'
+      })
     }
   },
   data() {
@@ -389,7 +449,7 @@ export default {
       isDark: false,
       mobileSidebar: false,
       loading: true,
-      refreshing: false, // Added refreshing state
+      refreshing: false,
       error: null,
       searchParticipant: '',
       selectedQuizSet: '',
@@ -405,10 +465,39 @@ export default {
       weeklyLeaderboard: [],
       quizSetPerformance: { highest: [], lowest: [] },
       allRecords: [],
-      quizSets: []
+      quizSets: [],
+      showDebug: process.env.NODE_ENV === 'development',
+      isInitialized: false
     }
   },
   computed: {
+    themeClass() {
+      const colorScheme = this.theme?.colorScheme || (this.isDark ? 'dark' : 'light');
+      const primaryColor = this.theme?.primaryColor || 'blue';
+      const layout = this.theme?.layout || 'sidebar';
+      
+      return `${colorScheme}-theme primary-${primaryColor} layout-${layout}`;
+    },
+    
+    themeStyles() {
+      return {
+        '--primary-color': this.primaryColorValue,
+        '--primary-light': this.getPrimaryColorLight(),
+        '--primary-dark': this.getPrimaryColorDark()
+      };
+    },
+    
+    primaryColorValue() {
+      const colorMap = {
+        blue: '#3b82f6',
+        green: '#10b981', 
+        purple: '#8b5cf6',
+        red: '#ef4444',
+        orange: '#f59e0b'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+    
     filteredRecords() {
       let filtered = this.allRecords
       
@@ -442,23 +531,108 @@ export default {
       return filtered
     }
   },
+  watch: {
+    theme: {
+      handler(newTheme, oldTheme) {
+        // Only process theme changes after component is initialized
+        if (!this.isInitialized) return;
+        
+        // Only re-render if theme actually changed
+        if (JSON.stringify(newTheme) !== JSON.stringify(oldTheme)) {
+          console.log('Theme changed, re-rendering components...');
+          this.handleThemeChange();
+        }
+      },
+      deep: true,
+      immediate: false // Don't run immediately on component creation
+    }
+  },
   mounted() {
-    this.fetchRecordsData()
+    // Mark component as initialized
+    this.isInitialized = true;
+    this.fetchRecordsData();
   },
   beforeUnmount() {
-    this.cleanupCharts()
+    this.cleanupCharts();
   },
   methods: {
     toggleTheme() {
-      this.isDark = !this.isDark
+      this.isDark = !this.isDark;
+      this.handleThemeChange();
     },
     toggleMobileSidebar() {
-      this.mobileSidebar = !this.mobileSidebar
+      this.mobileSidebar = !this.mobileSidebar;
     },
     handleLogout() {
       this.$inertia.post('/admin/logout');
     },
-    // Added refreshData method
+    handleThemeChange() {
+      // Use nextTick to ensure DOM is ready
+      this.$nextTick(() => {
+        // Force update to ensure CSS variables are applied
+        this.$forceUpdate();
+      });
+    },
+    debugTheme() {
+      console.log('=== THEME DEBUG INFO ===');
+      console.log('Theme Props:', this.theme);
+      console.log('Computed Theme Class:', this.themeClass);
+      console.log('Primary Color Value:', this.primaryColorValue);
+      console.log('Is Dark Mode:', this.theme?.colorScheme === 'dark');
+      console.log('Current Layout:', this.theme?.layout);
+      console.log('Theme Styles:', this.themeStyles);
+      console.log('========================');
+      
+      alert(`Current Theme:
+Color Scheme: ${this.theme?.colorScheme}
+Primary Color: ${this.theme?.primaryColor}
+Layout: ${this.theme?.layout}
+Primary Color Value: ${this.primaryColorValue}`);
+    },
+    getPrimaryColorLight() {
+      const colorMap = {
+        blue: '#dbeafe',
+        green: '#dcfce7',
+        purple: '#f3e8ff',
+        red: '#fee2e2',
+        orange: '#fef3c7'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+    getPrimaryColorDark() {
+      const colorMap = {
+        blue: '#1e40af',
+        green: '#047857',
+        purple: '#6d28d9',
+        red: '#b91c1c',
+        orange: '#d97706'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+    getRankStyle(rank) {
+      if (rank === 1) {
+        return {
+          background: `linear-gradient(135deg, ${this.primaryColorValue} 0%, ${this.getPrimaryColorDark()} 100%)`,
+          color: 'white'
+        };
+      }
+      if (rank === 2) {
+        return {
+          background: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+          color: 'white'
+        };
+      }
+      if (rank === 3) {
+        return {
+          background: 'linear-gradient(135deg, #b45309 0%, #92400e 100%)',
+          color: 'white'
+        };
+      }
+      return {
+        backgroundColor: this.getPrimaryColorLight(),
+        color: this.primaryColorValue
+      };
+    },
     async refreshData() {
       this.refreshing = true;
       
@@ -836,8 +1010,8 @@ export default {
             {
               label: 'Average Score (%)',
               data: averageScores,
-              borderColor: '#3B82F6',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderColor: this.primaryColorValue,
+              backgroundColor: this.hexToRgba(this.primaryColorValue, 0.1),
               fill: true,
               tension: 0.4,
               yAxisID: 'y'
@@ -888,6 +1062,13 @@ export default {
       });
     },
 
+    hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    },
+
     cleanupCharts() {
       const charts = ['scoreDistributionChart', 'weeklyTrendChart'];
       charts.forEach(chartId => {
@@ -925,8 +1106,8 @@ export default {
     },
 
     getSortIcon(field) {
-      if (this.sortField !== field) return 'fas fa-sort text-gray-400';
-      return this.sortDirection === 'asc' ? 'fas fa-arrow-up text-blue-600' : 'fas fa-arrow-down text-blue-600';
+      if (this.sortField !== field) return 'text-gray-400';
+      return this.sortDirection === 'asc' ? 'text-blue-600' : 'text-blue-600';
     },
 
     sortRecords(field) {
@@ -944,7 +1125,7 @@ export default {
 <style scoped>
 /* All existing styles remain exactly the same */
 
-/* Only adding the refresh button styles */
+/* Only adding the refresh button and debug button styles */
 .refresh-btn {
   background-color: var(--bg-secondary);
   color: var(--text-primary);
@@ -965,9 +1146,50 @@ export default {
   cursor: not-allowed;
 }
 
-/* All other existing styles remain unchanged */
-/* Import Font Awesome */
+.debug-btn {
+  background-color: #6b7280;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
 
+.debug-btn:hover {
+  background-color: #4b5563;
+}
+
+/* Add spin animation for refresh */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Theme transition for smooth changes */
+.min-h-screen,
+.content-card,
+.stat-card,
+.chart-card,
+.scorer-card,
+.table-row,
+.distribution-item {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* All other existing styles remain unchanged */
 /* Light Theme */
 .light-theme {
   --bg-primary: #f9fafb;
@@ -996,6 +1218,16 @@ export default {
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
+
+
+.layout-topbar .main-content {
+  margin-left: 0;
+}
+
+.layout-topbar .content {
+  padding-top: 5rem;
+}
+
 /* Base Styles */
 .min-h-screen {
   min-height: 100vh;
@@ -1022,11 +1254,8 @@ export default {
 
 .loading-icon {
   font-size: 1.875rem;
-  color: #2563eb;
+  color: var(--primary-color, #2563eb);
   margin-bottom: 1rem;
-}
-.dark-theme .loading-icon {
-  color: #60a5fa;
 }
 
 .loading-text {
@@ -1052,7 +1281,7 @@ export default {
 }
 
 .retry-button {
-  background-color: #3b82f6;
+  background-color: var(--primary-color, #3b82f6);
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
@@ -1060,10 +1289,13 @@ export default {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .retry-button:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-dark, #2563eb);
 }
 
 /* Stats Section */
@@ -1092,67 +1324,33 @@ export default {
 }
 
 .stat-card {
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 1.5rem;
   text-align: center;
+  background-color: var(--bg-secondary);
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+  border-left: 4px solid;
 }
-.stat-card.blue {
-  background-color: #dbeafe;
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
-.dark-theme .stat-card.blue {
-  background-color: #1e3a8a;
-}
-.stat-card.green {
-  background-color: #dcfce7;
-}
-.dark-theme .stat-card.green {
-  background-color: #14532d;
-}
-.stat-card.purple {
-  background-color: #f3e8ff;
-}
-.dark-theme .stat-card.purple {
-  background-color: #581c87;
-}
-.stat-card.orange {
-  background-color: #ffedd5;
-}
-.dark-theme .stat-card.orange {
-  background-color: #7c2d12;
+
+.dark-theme .stat-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
 .stat-number {
-  font-size: 1.875rem;
+  font-size: 2.25rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-}
-.stat-card.blue .stat-number {
-  color: #2563eb;
-}
-.dark-theme .stat-card.blue .stat-number {
-  color: #60a5fa;
-}
-.stat-card.green .stat-number {
-  color: #16a34a;
-}
-.dark-theme .stat-card.green .stat-number {
-  color: #4ade80;
-}
-.stat-card.purple .stat-number {
-  color: #7c3aed;
-}
-.dark-theme .stat-card.purple .stat-number {
-  color: #a855f7;
-}
-.stat-card.orange .stat-number {
-  color: #ea580c;
-}
-.dark-theme .stat-card.orange .stat-number {
-  color: #fdba74;
 }
 
 .stat-label {
   color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 /* Charts Section */
@@ -1185,10 +1383,19 @@ export default {
 /* Content Cards */
 .content-card {
   background-color: var(--bg-secondary);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   box-shadow: var(--shadow-lg);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark-theme .content-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
 .card-title-large {
@@ -1223,9 +1430,11 @@ export default {
 
 .scorer-card {
   border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 1rem;
   transition: all 0.2s ease;
+  background-color: var(--bg-primary);
+  border-left: 3px solid;
 }
 .scorer-card:hover {
   background-color: var(--hover-bg);
@@ -1249,7 +1458,6 @@ export default {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1359,7 +1567,7 @@ export default {
 }
 .search-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--primary-color, #3b82f6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -1529,7 +1737,7 @@ export default {
 }
 
 .highlight {
-  color: #3b82f6;
+  color: var(--primary-color, #3b82f6);
   font-weight: 700;
 }
 
@@ -1681,7 +1889,39 @@ export default {
   align-items: center;
 }
 
+.justify-between {
+  justify-content: space-between;
+}
+
 .space-x-2 > * + * {
   margin-left: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+/* Text Colors */
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.text-blue-600 {
+  color: #2563eb;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .md\:flex-row {
+    flex-direction: row;
+  }
+  
+  .md\:items-center {
+    align-items: center;
+  }
+  
+  .md\:justify-between {
+    justify-content: space-between;
+  }
 }
 </style>

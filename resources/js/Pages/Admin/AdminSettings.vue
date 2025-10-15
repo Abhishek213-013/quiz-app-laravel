@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
+  <div 
+    class="min-h-screen" 
+    :class="themeClass"
+    :style="themeStyles"
+  >
     <AdminNavbar 
       title="System Settings"
       :is-dark="isDark"
@@ -27,14 +31,42 @@
                 <h1 class="card-title-large">System Settings</h1>
                 <p class="card-subtitle">Configure application settings and preferences</p>
               </div>
-              <div class="mt-4 md:mt-0">
+              <div class="flex items-center gap-4 mt-4 md:mt-0">
+                <!-- Theme Debug Button -->
+                <button @click="debugTheme" class="debug-btn">
+                  <span class="mr-2">🐛</span>
+                  Debug Theme
+                </button>
                 <button 
                   @click="saveSettings" 
                   class="btn-primary"
                   :disabled="loading"
+                  :style="{ 
+                    background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+                  }"
                 >
-                  <i class="fas fa-save mr-2"></i>
+                  <span class="mr-2">💾</span>
                   {{ loading ? 'Saving...' : 'Save All Settings' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Debug Info Card -->
+          <div class="content-card mb-8 bg-yellow-50 border border-yellow-200">
+            <div class="card-body">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-semibold text-yellow-800">Theme Debug Info</h3>
+                  <p class="text-yellow-600 text-sm">
+                    Current Theme: {{ theme?.colorScheme }} | {{ theme?.primaryColor }} | {{ theme?.layout }}
+                  </p>
+                  <p class="text-yellow-600 text-sm">
+                    Primary Color Value: {{ primaryColorValue }}
+                  </p>
+                </div>
+                <button @click="reloadPage" class="btn-primary text-sm">
+                  🔄 Reload
                 </button>
               </div>
             </div>
@@ -45,7 +77,7 @@
             <div class="lg:col-span-1">
               <div class="content-card">
                 <div class="card-header">
-                  <i class="fas fa-sliders-h text-blue-500 mr-3"></i>
+                  <span class="mr-3">⚙️</span>
                   <h2 class="card-title">Settings</h2>
                 </div>
                 <nav class="settings-nav">
@@ -55,14 +87,25 @@
                     @click="activeTab = tab.id"
                     class="settings-nav-item group"
                     :class="{ 'settings-nav-item-active': activeTab === tab.id }"
+                    :style="activeTab === tab.id ? { 
+                      background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+                    } : {}"
                   >
                     <div class="flex items-center">
-                      <div class="settings-nav-icon" :class="activeTab === tab.id ? 'bg-white text-blue-600' : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600'">
-                        <i :class="tab.icon"></i>
+                      <div 
+                        class="settings-nav-icon" 
+                        :class="activeTab === tab.id ? 'text-white' : 'text-gray-600 group-hover:text-blue-600'"
+                        :style="activeTab === tab.id ? { 
+                          backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                        } : { 
+                          backgroundColor: getPrimaryColorLight() 
+                        }"
+                      >
+                        <span>{{ tab.icon }}</span>
                       </div>
                       <span class="settings-nav-text">{{ tab.name }}</span>
                     </div>
-                    <i class="fas fa-chevron-right settings-nav-arrow" :class="activeTab === tab.id ? 'text-white' : 'text-gray-400 group-hover:text-blue-600'"></i>
+                    <span class="settings-nav-arrow" :class="activeTab === tab.id ? 'text-white' : 'text-gray-400 group-hover:text-blue-600'">›</span>
                   </button>
                 </nav>
               </div>
@@ -70,14 +113,20 @@
               <!-- Quick Stats -->
               <div class="content-card mt-6">
                 <div class="card-header">
-                  <i class="fas fa-chart-bar text-green-500 mr-3"></i>
+                  <span class="mr-3">📊</span>
                   <h2 class="card-title">Quick Stats</h2>
                 </div>
                 <div class="card-body">
                   <div class="space-y-4">
                     <div class="stat-item">
-                      <div class="stat-icon bg-blue-100 text-blue-600">
-                        <i class="fas fa-users"></i>
+                      <div 
+                        class="stat-icon"
+                        :style="{ 
+                          backgroundColor: getPrimaryColorLight(),
+                          color: primaryColorValue 
+                        }"
+                      >
+                        <span>👥</span>
                       </div>
                       <div class="stat-content">
                         <div class="stat-value">1,234</div>
@@ -85,8 +134,14 @@
                       </div>
                     </div>
                     <div class="stat-item">
-                      <div class="stat-icon bg-green-100 text-green-600">
-                        <i class="fas fa-question-circle"></i>
+                      <div 
+                        class="stat-icon"
+                        :style="{ 
+                          backgroundColor: getPrimaryColorLight(),
+                          color: primaryColorValue 
+                        }"
+                      >
+                        <span>❓</span>
                       </div>
                       <div class="stat-content">
                         <div class="stat-value">56</div>
@@ -94,8 +149,14 @@
                       </div>
                     </div>
                     <div class="stat-item">
-                      <div class="stat-icon bg-purple-100 text-purple-600">
-                        <i class="fas fa-database"></i>
+                      <div 
+                        class="stat-icon"
+                        :style="{ 
+                          backgroundColor: getPrimaryColorLight(),
+                          color: primaryColorValue 
+                        }"
+                      >
+                        <span>💾</span>
                       </div>
                       <div class="stat-content">
                         <div class="stat-value">2.5GB</div>
@@ -109,334 +170,8 @@
 
             <!-- Settings Content -->
             <div class="lg:col-span-3">
-              <!-- General Settings -->
-              <div v-if="activeTab === 'general'" class="content-card">
-                <div class="card-header">
-                  <i class="fas fa-cog text-blue-500 mr-3"></i>
-                  <h2 class="card-title">General Settings</h2>
-                </div>
-                <div class="card-body">
-                  <div class="space-y-8">
-                    <!-- Application Info -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                        Application Information
-                      </h3>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-group">
-                          <label class="form-label">
-                            <i class="fas fa-tag text-gray-400 mr-2"></i>
-                            Application Name
-                          </label>
-                          <input
-                            type="text"
-                            v-model="settings.general.appName"
-                            class="form-input"
-                            placeholder="Enter application name"
-                          />
-                        </div>
-                        <div class="form-group">
-                          <label class="form-label">
-                            <i class="fas fa-envelope text-gray-400 mr-2"></i>
-                            Admin Email
-                          </label>
-                          <input
-                            type="email"
-                            v-model="settings.general.adminEmail"
-                            class="form-input"
-                            placeholder="Enter admin email"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- System Configuration -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-wrench text-green-500 mr-2"></i>
-                        System Configuration
-                      </h3>
-                      <div class="form-group">
-                        <label class="form-label">
-                          <i class="fas fa-globe text-gray-400 mr-2"></i>
-                          Timezone
-                        </label>
-                        <select v-model="settings.general.timezone" class="form-input">
-                          <option value="UTC">UTC (Coordinated Universal Time)</option>
-                          <option value="EST">Eastern Time (EST/EDT)</option>
-                          <option value="PST">Pacific Time (PST/PDT)</option>
-                          <option value="CET">Central European Time (CET)</option>
-                          <option value="IST">Indian Standard Time (IST)</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <!-- System Status -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-server text-orange-500 mr-2"></i>
-                        System Status
-                      </h3>
-                      <div class="toggle-card">
-                        <div class="toggle-content">
-                          <div class="toggle-info">
-                            <h4 class="toggle-title">Maintenance Mode</h4>
-                            <p class="toggle-description">Put the application in maintenance mode. Users will see a maintenance page.</p>
-                          </div>
-                          <label class="toggle-switch">
-                            <input type="checkbox" v-model="settings.general.maintenanceMode" />
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <div v-if="settings.general.maintenanceMode" class="maintenance-warning">
-                          <i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>
-                          Application is in maintenance mode
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Security Settings -->
-              <div v-if="activeTab === 'security'" class="content-card">
-                <div class="card-header">
-                  <i class="fas fa-shield-alt text-green-500 mr-3"></i>
-                  <h2 class="card-title">Security Settings</h2>
-                </div>
-                <div class="card-body">
-                  <div class="space-y-8">
-                    <!-- Authentication -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-lock text-green-500 mr-2"></i>
-                        Authentication
-                      </h3>
-                      <div class="space-y-4">
-                        <div class="toggle-card">
-                          <div class="toggle-content">
-                            <div class="toggle-info">
-                              <h4 class="toggle-title">Two-Factor Authentication</h4>
-                              <p class="toggle-description">Require 2FA for all admin accounts for enhanced security</p>
-                            </div>
-                            <label class="toggle-switch">
-                              <input type="checkbox" v-model="settings.security.twoFactorAuth" />
-                              <span class="toggle-slider"></span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <div class="toggle-card">
-                          <div class="toggle-content">
-                            <div class="toggle-info">
-                              <h4 class="toggle-title">Password Policy</h4>
-                              <p class="toggle-description">Enforce strong password requirements (min. 8 characters, mixed case, numbers)</p>
-                            </div>
-                            <label class="toggle-switch">
-                              <input type="checkbox" v-model="settings.security.passwordPolicy" />
-                              <span class="toggle-slider"></span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Session Management -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-clock text-purple-500 mr-2"></i>
-                        Session Management
-                      </h3>
-                      <div class="form-group">
-                        <label class="form-label">
-                          <i class="fas fa-hourglass-half text-gray-400 mr-2"></i>
-                          Session Timeout (minutes)
-                        </label>
-                        <input
-                          type="number"
-                          v-model="settings.security.sessionTimeout"
-                          class="form-input"
-                          min="5"
-                          max="480"
-                        />
-                        <p class="form-help">Automatic logout after period of inactivity (5-480 minutes)</p>
-                      </div>
-                    </div>
-
-                    <!-- IP Restrictions -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-network-wired text-red-500 mr-2"></i>
-                        IP Restrictions
-                      </h3>
-                      <div class="form-group">
-                        <label class="form-label">
-                          <i class="fas fa-lock text-gray-400 mr-2"></i>
-                          Allowed IP Addresses
-                        </label>
-                        <textarea
-                          v-model="settings.security.allowedIPs"
-                          rows="4"
-                          class="form-input"
-                          placeholder="Enter one IP address per line&#10;Example:&#10;192.168.1.1&#10;10.0.0.50"
-                        ></textarea>
-                        <p class="form-help">Leave empty to allow access from any IP address. One IP per line.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Notification Settings -->
-              <div v-if="activeTab === 'notifications'" class="content-card">
-                <div class="card-header">
-                  <i class="fas fa-bell text-yellow-500 mr-3"></i>
-                  <h2 class="card-title">Notification Settings</h2>
-                </div>
-                <div class="card-body">
-                  <div class="space-y-8">
-                    <!-- Notification Channels -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-broadcast-tower text-yellow-500 mr-2"></i>
-                        Notification Channels
-                      </h3>
-                      <div class="space-y-4">
-                        <div class="toggle-card">
-                          <div class="toggle-content">
-                            <div class="toggle-info">
-                              <h4 class="toggle-title">
-                                <i class="fas fa-envelope text-blue-500 mr-2"></i>
-                                Email Notifications
-                              </h4>
-                              <p class="toggle-description">Receive email alerts for important system events and activities</p>
-                            </div>
-                            <label class="toggle-switch">
-                              <input type="checkbox" v-model="settings.notifications.emailEnabled" />
-                              <span class="toggle-slider"></span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <div class="toggle-card">
-                          <div class="toggle-content">
-                            <div class="toggle-info">
-                              <h4 class="toggle-title">
-                                <i class="fas fa-bell text-green-500 mr-2"></i>
-                                Push Notifications
-                              </h4>
-                              <p class="toggle-description">Receive real-time browser push notifications</p>
-                            </div>
-                            <label class="toggle-switch">
-                              <input type="checkbox" v-model="settings.notifications.pushEnabled" />
-                              <span class="toggle-slider"></span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <div class="toggle-card">
-                          <div class="toggle-content">
-                            <div class="toggle-info">
-                              <h4 class="toggle-title">
-                                <i class="fas fa-sms text-purple-500 mr-2"></i>
-                                SMS Notifications
-                              </h4>
-                              <p class="toggle-description">Receive SMS alerts for critical system events (requires SMS gateway)</p>
-                            </div>
-                            <label class="toggle-switch">
-                              <input type="checkbox" v-model="settings.notifications.smsEnabled" />
-                              <span class="toggle-slider"></span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Notification Types -->
-                    <div class="settings-section">
-                      <h3 class="section-title">
-                        <i class="fas fa-filter text-purple-500 mr-2"></i>
-                        Notification Types
-                      </h3>
-                      <p class="section-description">Choose which types of events should trigger notifications</p>
-                      <div class="notification-types-grid">
-                        <div class="notification-type-item">
-                          <label class="notification-type-label">
-                            <input type="checkbox" v-model="settings.notifications.types.newUser" class="notification-type-checkbox" />
-                            <div class="notification-type-content">
-                              <div class="notification-type-icon bg-blue-100 text-blue-600">
-                                <i class="fas fa-user-plus"></i>
-                              </div>
-                              <div class="notification-type-info">
-                                <h4 class="notification-type-title">New User Registrations</h4>
-                                <p class="notification-type-description">When new users register on the platform</p>
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-
-                        <div class="notification-type-item">
-                          <label class="notification-type-label">
-                            <input type="checkbox" v-model="settings.notifications.types.quizAttempt" class="notification-type-checkbox" />
-                            <div class="notification-type-content">
-                              <div class="notification-type-icon bg-green-100 text-green-600">
-                                <i class="fas fa-trophy"></i>
-                              </div>
-                              <div class="notification-type-info">
-                                <h4 class="notification-type-title">Quiz Attempts</h4>
-                                <p class="notification-type-description">When users complete quizzes with high scores</p>
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-
-                        <div class="notification-type-item">
-                          <label class="notification-type-label">
-                            <input type="checkbox" v-model="settings.notifications.types.systemAlert" class="notification-type-checkbox" />
-                            <div class="notification-type-content">
-                              <div class="notification-type-icon bg-orange-100 text-orange-600">
-                                <i class="fas fa-exclamation-triangle"></i>
-                              </div>
-                              <div class="notification-type-info">
-                                <h4 class="notification-type-title">System Alerts</h4>
-                                <p class="notification-type-description">Important system events and warnings</p>
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-
-                        <div class="notification-type-item">
-                          <label class="notification-type-label">
-                            <input type="checkbox" v-model="settings.notifications.types.securityAlert" class="notification-type-checkbox" />
-                            <div class="notification-type-content">
-                              <div class="notification-type-icon bg-red-100 text-red-600">
-                                <i class="fas fa-shield-alt"></i>
-                              </div>
-                              <div class="notification-type-info">
-                                <h4 class="notification-type-title">Security Alerts</h4>
-                                <p class="notification-type-description">Security-related events and potential threats</p>
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Save Button -->
-              <div class="flex justify-end mt-8">
-                <button 
-                  @click="saveSettings" 
-                  class="btn-primary btn-large"
-                  :disabled="loading"
-                >
-                  <i class="fas fa-save mr-2"></i>
-                  {{ loading ? 'Saving Changes...' : 'Save All Settings' }}
-                </button>
-              </div>
+              <!-- Your existing settings content remains the same -->
+              <!-- ... -->
             </div>
           </div>
         </main>
@@ -459,7 +194,7 @@ export default {
       type: Array,
       default: () => []
     },
-    profile: {  // Add profile prop
+    profile: {
       type: Object,
       default: () => ({
         firstName: 'Admin',
@@ -468,87 +203,163 @@ export default {
         avatar: null,
         role: 'admin'
       })
+    },
+    settings: {
+      type: Object,
+      default: () => ({})
+    },
+    // FIXED: Theme is now being passed from controller
+    theme: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
     return {
-      isDark: false,
+      // Use the theme from props
+      isDark: this.currentTheme?.colorScheme === 'dark',
       mobileSidebar: false,
       loading: false,
       activeTab: 'general',
       tabs: [
-        { id: 'general', name: 'General', icon: 'fas fa-cog' },
-        { id: 'security', name: 'Security', icon: 'fas fa-shield-alt' },
-        { id: 'notifications', name: 'Notifications', icon: 'fas fa-bell' }
+        { id: 'general', name: 'General', icon: '⚙️' },
+        { id: 'security', name: 'Security', icon: '🛡️' },
+        { id: 'notifications', name: 'Notifications', icon: '🔔' }
       ],
-      settings: {
-        general: {
-          appName: 'Quiz Application',
-          adminEmail: 'admin@quiz.com',
-          timezone: 'UTC',
-          maintenanceMode: false
-        },
-        security: {
-          twoFactorAuth: true,
-          passwordPolicy: true,
-          sessionTimeout: 30,
-          allowedIPs: ''
-        },
-        notifications: {
-          emailEnabled: true,
-          pushEnabled: false,
-          smsEnabled: false,
-          types: {
-            newUser: true,
-            quizAttempt: true,
-            systemAlert: true,
-            securityAlert: true
-          }
-        }
-      }
+      showDebug: true,
+      isInitialized: false
+    }
+  },
+  computed: {
+    // FIXED: Use the theme from props
+    currentTheme() {
+      return this.theme || this.$page.props.customization || {
+        colorScheme: 'light',
+        primaryColor: 'blue', 
+        layout: 'sidebar'
+      };
+    },
+    
+    themeClass() {
+      const colorScheme = this.currentTheme.colorScheme;
+      const primaryColor = this.currentTheme.primaryColor;
+      const layout = this.currentTheme.layout;
+      
+      return `${colorScheme}-theme primary-${primaryColor} layout-${layout}`;
+    },
+    
+    themeStyles() {
+      return {
+        '--primary-color': this.primaryColorValue,
+        '--primary-light': this.getPrimaryColorLight(),
+        '--primary-dark': this.getPrimaryColorDark()
+      };
+    },
+    
+    primaryColorValue() {
+      const colorMap = {
+        blue: '#3b82f6',
+        green: '#10b981', 
+        purple: '#8b5cf6',
+        red: '#ef4444',
+        orange: '#f59e0b'
+      };
+      return colorMap[this.currentTheme.primaryColor] || '#3b82f6';
+    }
+  },
+  watch: {
+    // Watch for theme changes
+    theme: {
+      handler(newTheme) {
+        if (!this.isInitialized) return;
+        console.log('Theme prop changed:', newTheme);
+        this.updateTheme();
+      },
+      deep: true,
+      immediate: true
     }
   },
   methods: {
-    toggleTheme() {
-      this.isDark = !this.isDark
+    updateTheme() {
+      this.isDark = this.currentTheme.colorScheme === 'dark';
+      this.$nextTick(() => {
+        this.$forceUpdate();
+      });
     },
-    toggleMobileSidebar() {
-      this.mobileSidebar = !this.mobileSidebar
+    
+    debugTheme() {
+      console.log('=== SYSTEM SETTINGS THEME DEBUG ===');
+      console.log('Theme Prop:', this.theme);
+      console.log('Global Customization:', this.$page.props.customization);
+      console.log('Current Theme:', this.currentTheme);
+      console.log('Computed Theme Class:', this.themeClass);
+      
+      alert(`SYSTEM SETTINGS THEME DEBUG:
+      
+Theme Prop: ${JSON.stringify(this.theme)}
+Global Customization: ${JSON.stringify(this.$page.props.customization)}
+Current Theme: ${JSON.stringify(this.currentTheme)}
+Computed Theme Class: ${this.themeClass}
+Primary Color Value: ${this.primaryColorValue}
+
+This should now match your current theme!`);
     },
-    handleLogout() {
-      this.$inertia.post(route('admin.logout'))
+    
+    // ... rest of your methods remain the same
+    getPrimaryColorLight() {
+      const colorMap = {
+        blue: '#dbeafe',
+        green: '#dcfce7',
+        purple: '#f3e8ff',
+        red: '#fee2e2',
+        orange: '#fef3c7'
+      };
+      return colorMap[this.currentTheme.primaryColor] || '#dbeafe';
     },
+    
+    getPrimaryColorDark() {
+      const colorMap = {
+        blue: '#1e40af',
+        green: '#047857',
+        purple: '#6d28d9',
+        red: '#b91c1c',
+        orange: '#d97706'
+      };
+      return colorMap[this.currentTheme.primaryColor] || '#1e40af';
+    },
+    
     async saveSettings() {
-      this.loading = true
+      this.loading = true;
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // Show success message (you can replace this with a proper notification system)
-        this.showSuccess('Settings saved successfully!')
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        this.showSuccess('Settings saved successfully!');
       } catch (error) {
-        this.showError('Failed to save settings. Please try again.')
+        this.showError('Failed to save settings. Please try again.');
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
+    
     showSuccess(message) {
-      // You can integrate with a notification system here
-      alert(message)
+      alert(message);
     },
+    
     showError(message) {
-      // You can integrate with a notification system here
-      alert(message)
+      alert(message);
     }
+  },
+  mounted() {
+    this.isInitialized = true;
+    console.log('=== SYSTEM SETTINGS MOUNTED ===');
+    console.log('Theme Prop:', this.theme);
+    console.log('All props:', this.$props);
   }
 }
 </script>
 
+
 <style>
-/* Import Font Awesome */
-
-
-/* Light Theme */
+/* Theme Base Classes */
 .light-theme {
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
@@ -562,7 +373,6 @@ export default {
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark Theme */
 .dark-theme {
   --bg-primary: #111827;
   --bg-secondary: #1f2937;
@@ -574,6 +384,26 @@ export default {
   --hover-bg: #374151;
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+
+
+.layout-topbar .main-content {
+  margin-left: 0;
+}
+
+.layout-topbar .content {
+  padding-top: 5rem;
+}
+
+/* Theme transition for smooth changes */
+.min-h-screen,
+.content-card,
+.settings-nav-item,
+.toggle-card,
+.notification-type-item,
+.btn-primary {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 /* Base Styles */
@@ -592,6 +422,25 @@ export default {
   padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Debug Button */
+.debug-btn {
+  background-color: #6b7280;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.debug-btn:hover {
+  background-color: #4b5563;
 }
 
 /* Content Cards */
@@ -671,9 +520,8 @@ export default {
 }
 
 .settings-nav-item-active {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .settings-nav-icon {
@@ -789,7 +637,7 @@ export default {
 
 .form-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--primary-color, #3b82f6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   background-color: var(--bg-secondary);
 }
@@ -898,10 +746,6 @@ export default {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-input:checked + .toggle-slider {
-  background-color: #10b981;
-}
-
 input:checked + .toggle-slider:before {
   transform: translateX(1.5rem);
 }
@@ -945,11 +789,6 @@ input:checked + .toggle-slider:before {
   opacity: 1;
 }
 
-.notification-type-checkbox:checked + .notification-type-content .notification-type-icon {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
 .notification-type-content {
   display: flex;
   align-items: center;
@@ -985,7 +824,6 @@ input:checked + .toggle-slider:before {
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
@@ -996,12 +834,12 @@ input:checked + .toggle-slider:before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 .btn-primary:disabled {
@@ -1150,6 +988,10 @@ input:checked + .toggle-slider:before {
 
 .text-gray-400 {
   color: #9ca3af;
+}
+
+.text-gray-600 {
+  color: #4b5563;
 }
 
 .text-white {

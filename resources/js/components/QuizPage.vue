@@ -45,7 +45,7 @@
                             <!-- Skip Status Badge -->
                             <span v-if="answers[currentQuestionIndex] === 'skipped'" 
                                   class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded">
-                                Skipped
+                                ⏭️ Skipped
                             </span>
                         </div>
                     </div>
@@ -85,7 +85,7 @@
                     <div v-else-if="currentQuestion.question_type === 'brief_answer'" class="space-y-4">
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <label class="block text-sm font-medium text-blue-800 mb-2">
-                                Type your answer below:
+                                ✏️ Type your answer below:
                             </label>
                             <textarea
                                 v-model="briefAnswer"
@@ -97,8 +97,7 @@
                             ></textarea>
                         </div>
                         <div class="text-sm text-gray-500">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Your answer will be automatically saved as you type.
+                            💡 Your answer will be automatically saved as you type.
                         </div>
                     </div>
 
@@ -119,7 +118,7 @@
                                         'bg-green-500 border-green-500 text-white': selectedAnswer === 'True',
                                         'border-gray-300': selectedAnswer !== 'True'
                                     }">
-                                    <i class="fas fa-check text-lg"></i>
+                                    ✓
                                 </div>
                                 <span class="text-xl font-semibold text-gray-800">True</span>
                             </div>
@@ -139,7 +138,7 @@
                                         'bg-red-500 border-red-500 text-white': selectedAnswer === 'False',
                                         'border-gray-300': selectedAnswer !== 'False'
                                     }">
-                                    <i class="fas fa-times text-lg"></i>
+                                    ✗
                                 </div>
                                 <span class="text-xl font-semibold text-gray-800">False</span>
                             </div>
@@ -150,7 +149,7 @@
                     <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <i class="fas fa-forward text-yellow-600 mr-2"></i>
+                                <span class="text-yellow-600 mr-2">⏭️</span>
                                 <span class="text-sm text-yellow-700">
                                     Not sure about this question? You can skip it and come back later.
                                 </span>
@@ -160,8 +159,7 @@
                                 :disabled="answers[currentQuestionIndex] === 'skipped'"
                                 class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
                             >
-                                <i class="fas fa-forward mr-1"></i>
-                                {{ answers[currentQuestionIndex] === 'skipped' ? 'Skipped' : 'Skip Question' }}
+                                ⏭️ {{ answers[currentQuestionIndex] === 'skipped' ? 'Skipped' : 'Skip Question' }}
                             </button>
                         </div>
                     </div>
@@ -174,8 +172,7 @@
                                 :disabled="currentQuestionIndex === 0"
                                 class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                             >
-                                <i class="fas fa-arrow-left mr-2"></i>
-                                Previous
+                                ← Previous
                             </button>
                             
                             <!-- Unskip Button -->
@@ -184,8 +181,7 @@
                                 @click="unskipQuestion"
                                 class="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
                             >
-                                <i class="fas fa-undo mr-2"></i>
-                                Unskip
+                                ↩️ Unskip
                             </button>
                         </div>
                         
@@ -194,8 +190,7 @@
                             :disabled="!isAnswerSelected && answers[currentQuestionIndex] !== 'skipped'"
                             class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                         >
-                            {{ currentQuestionIndex === quizzes.length - 1 ? 'Finish Quiz' : 'Next Question' }}
-                            <i class="fas fa-arrow-right ml-2"></i>
+                            {{ currentQuestionIndex === quizzes.length - 1 ? 'Finish Quiz' : 'Next Question' }} →
                         </button>
                     </div>
                 </div>
@@ -203,7 +198,7 @@
                 <!-- Results -->
                 <div v-if="quizCompleted" class="bg-white rounded-lg shadow-lg p-8 text-center">
                     <div class="mb-6">
-                        <i class="fas fa-trophy text-6xl text-yellow-500 mb-4"></i>
+                        <span class="text-6xl mb-4">🏆</span>
                         <h2 class="text-3xl font-bold text-gray-800 mb-2">Quiz Completed!</h2>
                         <p class="text-lg text-gray-600">Great job completing the quiz!</p>
                     </div>
@@ -220,7 +215,6 @@
                     </div>
 
                     <!-- Detailed Results -->
-                    <!-- Detailed Results - Horizontal Layout -->
                     <div class="bg-white rounded-lg p-6 mb-6 border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">Quiz Summary</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -254,11 +248,11 @@
                     <div class="bg-gray-50 rounded-lg p-4 mb-6">
                         <div class="flex justify-center items-center gap-4 text-sm text-gray-600">
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-clock text-blue-500"></i>
+                                <span>⏱️</span>
                                 <span>Time Taken: {{ formatTime(timeTaken) }}</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-list-ol text-green-500"></i>
+                                <span>📝</span>
                                 <span>Questions: {{ quizzes.length }}</span>
                             </div>
                         </div>
@@ -267,7 +261,7 @@
                     <!-- Participant Name Form -->
                     <div class="max-w-md mx-auto mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2 text-left">
-                            Enter your name to save your results:
+                            👤 Enter your name to save your results:
                         </label>
                         <input 
                             v-model="participantName"
@@ -282,16 +276,14 @@
                             @click="goToDashboard"
                             class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium transition-colors"
                         >
-                            <i class="fas fa-home mr-2"></i>
-                            Back to Dashboard
+                            🏠 Back to Dashboard
                         </button>
                         <button 
                             @click="submitResults"
                             :disabled="!participantName.trim()"
                             class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                         >
-                            <i class="fas fa-paper-plane mr-2"></i>
-                            Submit Results
+                            📤 Submit Results
                         </button>
                     </div>
                 </div>
@@ -304,7 +296,7 @@
 
                 <!-- Error State -->
                 <div v-if="!loading && quizzes.length === 0 && !quizCompleted" class="text-center py-12">
-                    <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
+                    <span class="text-4xl mb-4">⚠️</span>
                     <h3 class="text-xl font-semibold text-gray-800 mb-2">No Questions Available</h3>
                     <p class="text-gray-600">This quiz set doesn't have any questions yet.</p>
                 </div>
@@ -380,6 +372,8 @@ export default {
         }
     },
     async mounted() {
+        // Initialize browser ID at the start of the quiz
+        await this.initializeBrowserId();
         await this.fetchQuizzes();
         this.startTimer();
         this.startTime = Date.now();
@@ -388,6 +382,29 @@ export default {
         this.clearTimer();
     },
     methods: {
+        // Initialize browser ID
+        async initializeBrowserId() {
+            try {
+                let browserId = localStorage.getItem('quiz_browser_id');
+                if (!browserId) {
+                    browserId = this.generateBrowserId();
+                    localStorage.setItem('quiz_browser_id', browserId);
+                    console.log('🆕 Generated browser ID at quiz start:', browserId);
+                } else {
+                    console.log('🔑 Existing browser ID found:', browserId);
+                }
+            } catch (error) {
+                console.error('Error initializing browser ID:', error);
+            }
+        },
+
+        // Generate a unique browser ID
+        generateBrowserId() {
+            const timestamp = Date.now().toString(36);
+            const random = Math.random().toString(36).substr(2, 9);
+            return `browser_${timestamp}_${random}`;
+        },
+
         getCurrentQuestionTypeLabel() {
             const labels = {
                 'multiple_choice': 'Multiple Choice',
@@ -400,15 +417,11 @@ export default {
         async fetchQuizzes() {
             this.loading = true;
             try {
-                // Mock API call - replace with your actual API endpoint
                 const response = await fetch(`/api/quiz-sets/${this.quizSetId}/quizzes`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch quizzes');
                 }
                 this.quizzes = await response.json();
-                
-                // If you want to test locally without an API, use this mock data:
-                // this.quizzes = this.getMockQuizzes();
                 
                 // Calculate total possible points
                 this.totalPossiblePoints = this.quizzes.reduce((total, quiz) => total + (quiz.points || 1), 0);
@@ -557,47 +570,145 @@ export default {
         },
 
         async submitResults() {
-            if (!this.participantName.trim()) {
-                alert('Please enter your name');
-                return;
-            }
+    if (!this.participantName.trim()) {
+        alert('Please enter your name');
+        return;
+    }
 
-            try {
-                const response = await fetch('/api/quiz-results', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        quiz_set_id: this.quizSetId,
-                        participant_name: this.participantName,
-                        score: this.score,
-                        total_questions: this.quizzes.length,
-                        total_points: this.totalPossiblePoints,
-                        answers: this.answers,
-                        time_taken: this.timeTaken,
-                        percentage: ((this.score / this.totalPossiblePoints) * 100).toFixed(1),
-                        answered_count: this.answeredCount,
-                        skipped_count: this.skippedCount,
-                        correct_count: this.correctCount
-                    })
-                });
+    try {
+        // Get or create browser ID
+        let browserId = localStorage.getItem('quiz_browser_id');
+        if (!browserId) {
+            // Generate a new browser ID
+            browserId = this.generateBrowserId();
+            localStorage.setItem('quiz_browser_id', browserId);
+            console.log('🆕 Generated new browser ID for quiz submission:', browserId);
+        } else {
+            console.log('🔑 Using existing browser ID for submission:', browserId);
+        }
 
-                if (!response.ok) {
-                    throw new Error('Failed to submit results');
-                }
+        const resultData = {
+            quiz_set_id: this.quizSetId,
+            participant_name: this.participantName,
+            score: this.score,
+            total_questions: this.quizzes.length,
+            total_points: this.totalPossiblePoints,
+            answers: this.answers,
+            time_taken: this.timeTaken,
+            percentage: ((this.score / this.totalPossiblePoints) * 100).toFixed(1),
+            answered_count: this.answeredCount,
+            skipped_count: this.skippedCount,
+            correct_count: this.correctCount,
+            browser_id: browserId
+        };
 
-                alert('Results submitted successfully!');
-                this.$emit('completed');
-            } catch (error) {
-                console.error('Error submitting results:', error);
-                alert('Failed to submit results. Please try again.');
-            }
+        console.log('📤 Submitting quiz results with data:', resultData);
+
+        // Try different ways to get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                         document.querySelector('input[name="_token"]')?.value ||
+                         '';
+
+        console.log('🔐 CSRF Token found:', csrfToken ? 'Yes' : 'No');
+
+        const response = await fetch('/api/quiz-results', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(resultData)
+        });
+
+        console.log('📡 Response status:', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Server response error:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+            });
+            throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Results submitted successfully:', result);
+        
+        alert('Results submitted successfully!');
+        this.$emit('completed');
+    } catch (error) {
+        console.error('❌ Error submitting results:', error);
+        
+        // More specific error messages
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            alert('Network error: Cannot connect to server. Please check your internet connection.');
+        } else {
+            alert('Failed to submit results. Please try again. Error: ' + error.message);
+        }
+    }
         }
     }
 }
 </script>
 
 <style scoped>
-/* Custom styles if needed */
+/* Custom styles for better visual hierarchy */
+.min-h-screen {
+    min-height: 100vh;
+}
+
+.sticky {
+    position: sticky;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Smooth transitions */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+/* Hover effects */
+.hover\:bg-gray-600:hover {
+    background-color: #4b5563;
+}
+
+.hover\:bg-blue-600:hover {
+    background-color: #2563eb;
+}
+
+.hover\:bg-green-600:hover {
+    background-color: #059669;
+}
+
+.hover\:bg-yellow-600:hover {
+    background-color: #d97706;
+}
+
+/* Focus states */
+.focus\:outline-none:focus {
+    outline: none;
+}
+
+.focus\:ring-2:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.focus\:ring-blue-500:focus {
+    --tw-ring-color: #3b82f6;
+}
+
+.focus\:border-transparent:focus {
+    border-color: transparent;
+}
 </style>

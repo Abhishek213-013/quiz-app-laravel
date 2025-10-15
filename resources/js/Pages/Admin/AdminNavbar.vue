@@ -5,21 +5,17 @@
         <div class="flex items-center gap-4">
           <!-- Mobile menu button -->
           <button @click="$emit('toggle-mobile-sidebar')" class="mobile-menu-btn">
-            <i class="fas fa-bars"></i>
+            <span>☰</span>
           </button>
           <h1 class="header-title">{{ title }}</h1>
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Theme Toggle -->
-          <button @click="$emit('toggle-theme')" class="theme-btn">
-            <i class="fas" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
-          </button>
 
           <!-- Notifications -->
           <div class="relative">
             <button @click="toggleNotifications" class="notification-btn">
-              <i class="fas fa-bell"></i>
+              <span>🔔</span>
               <span v-if="unreadNotificationsCount > 0" class="notification-badge">
                 {{ unreadNotificationsCount }}
               </span>
@@ -33,7 +29,7 @@
               </div>
               <div class="notification-list">
                 <div v-if="notifications.length === 0" class="notification-empty">
-                  <i class="fas fa-bell-slash text-gray-400 text-2xl mb-2"></i>
+                  <span class="text-gray-400 text-2xl mb-2">🔕</span>
                   <p class="text-gray-500">No notifications yet</p>
                 </div>
                 <div v-else v-for="notification in notifications" :key="notification.id" 
@@ -41,7 +37,7 @@
                      @click="markAsRead(notification.id)">
                   <div class="flex items-start">
                     <div class="notification-icon" :class="getNotificationIcon(notification.type).bgColor">
-                      <i :class="getNotificationIcon(notification.type).icon + ' text-white text-sm'"></i>
+                      <span class="text-white text-sm">{{ getNotificationIcon(notification.type).icon }}</span>
                     </div>
                     <div class="flex-1">
                       <p class="notification-message">{{ notification.message }}</p>
@@ -67,11 +63,11 @@
                   <img :src="profile.avatar" alt="Profile" class="w-full h-full rounded-full object-cover">
                 </template>
                 <template v-else>
-                  <i class="fas fa-user"></i>
+                  <span>👤</span>
                 </template>
               </div>
               <span class="profile-name">{{ profile.firstName }} {{ profile.lastName }}</span>
-              <i class="fas fa-chevron-down profile-arrow"></i>
+              <span class="profile-arrow">▼</span>
             </button>
             
             <!-- Profile Dropdown Menu -->
@@ -93,7 +89,7 @@
               </div>
               <div class="profile-footer">
                 <button @click="handleLogout" class="logout-btn">
-                  <i class="fas fa-sign-out-alt"></i>
+                  <span>🚪</span>
                   <span>Logout</span>
                 </button>
               </div>
@@ -107,6 +103,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { router } from '@inertiajs/vue3'
 
 export default {
   name: 'AdminNavbar',
@@ -142,16 +139,41 @@ export default {
       return notifications.value.filter(notification => !notification.read).length
     })
 
+    // Helper function to get CSRF token - FIXED for all pages
+    const getCsrfToken = () => {
+      // Try multiple methods to get CSRF token
+      const tokenFromMeta = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      const tokenFromCookie = getCookie('XSRF-TOKEN')
+      
+      console.log('🔍 CSRF Token Debug:')
+      console.log('  - From meta tag:', tokenFromMeta ? 'Found' : 'Not found')
+      console.log('  - From XSRF-TOKEN cookie:', tokenFromCookie ? 'Found' : 'Not found')
+      
+      // Use meta tag first, then cookie (Laravel stores encoded token in cookie)
+      const token = tokenFromMeta || (tokenFromCookie ? decodeURIComponent(tokenFromCookie) : '')
+      
+      if (!token) {
+        console.warn('⚠️ No CSRF token found!')
+      } else {
+        console.log('✅ Using CSRF token')
+      }
+      
+      return token
+    }
+
+    // Helper function to get cookie value
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop().split(';').shift()
+      return ''
+    }
+
     // Initialize notifications
     const initializeNotifications = async () => {
       try {
-        // Load existing notifications
         await loadNotifications()
-        
-        // Start polling for new notifications (fallback if Pusher/Echo is not available)
         startNotificationPolling()
-        
-        // Initialize real-time notifications (if using Laravel Echo/Pusher)
         initializeRealtimeNotifications()
       } catch (error) {
         console.error('Error initializing notifications:', error)
@@ -161,14 +183,23 @@ export default {
     // Load notifications from API
     const loadNotifications = async () => {
       try {
-        const response = await fetch('/admin/notifications')
+        const response = await fetch('/admin/notifications', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          credentials: 'include'
+        })
+        
         if (response.ok) {
           const data = await response.json()
           notifications.value = data.notifications || []
+        } else {
+          console.error('Failed to load notifications:', response.status)
         }
       } catch (error) {
         console.error('Error loading notifications:', error)
-        // Fallback to empty array
         notifications.value = []
       }
     }
@@ -180,15 +211,13 @@ export default {
 
     // Initialize real-time notifications with Laravel Echo
     const initializeRealtimeNotifications = () => {
-      // Check if Echo is available (if you're using Laravel Echo with Pusher/Socket.io)
       if (window.Echo) {
         echo = window.Echo
         
-        // Listen for new quiz attempts
         echo.channel('quiz-attempts')
           .listen('QuizAttemptCreated', (event) => {
             addNewNotification({
-              id: Date.now(), // Temporary ID
+              id: Date.now(),
               type: 'quiz_attempt',
               message: `${event.participantName} attempted ${event.quizSetName} with ${event.score}% score`,
               created_at: new Date().toISOString(),
@@ -196,7 +225,6 @@ export default {
             })
           })
         
-        // Listen for new participants
         echo.channel('participants')
           .listen('NewParticipantRegistered', (event) => {
             addNewNotification({
@@ -214,31 +242,27 @@ export default {
     const addNewNotification = (notification) => {
       notifications.value.unshift(notification)
       
-      // Keep only the latest 50 notifications
       if (notifications.value.length > 50) {
         notifications.value = notifications.value.slice(0, 50)
       }
       
-      // Play notification sound (optional)
       playNotificationSound()
     }
 
     // Play notification sound
     const playNotificationSound = () => {
-      // You can add a notification sound here
-      // const audio = new Audio('/notification-sound.mp3')
-      // audio.play().catch(e => console.log('Audio play failed:', e))
+      // Optional: Add notification sound
     }
 
     // Get notification icon based on type
     const getNotificationIcon = (type) => {
       const icons = {
-        quiz_attempt: { icon: 'fas fa-clipboard-check', bgColor: 'bg-blue' },
-        new_participant: { icon: 'fas fa-user-plus', bgColor: 'bg-green' },
-        high_score: { icon: 'fas fa-trophy', bgColor: 'bg-yellow' },
-        system: { icon: 'fas fa-cog', bgColor: 'bg-purple' }
+        quiz_attempt: { icon: '📝', bgColor: 'bg-blue' },
+        new_participant: { icon: '👤', bgColor: 'bg-green' },
+        high_score: { icon: '🏆', bgColor: 'bg-yellow' },
+        system: { icon: '⚙️', bgColor: 'bg-purple' }
       }
-      return icons[type] || { icon: 'fas fa-bell', bgColor: 'bg-gray' }
+      return icons[type] || { icon: '🔔', bgColor: 'bg-gray' }
     }
 
     // Format time for display
@@ -257,11 +281,6 @@ export default {
     const toggleNotifications = () => {
       showNotifications.value = !showNotifications.value
       showProfile.value = false
-      
-      // Mark all as read when opening notifications
-      if (showNotifications.value && unreadNotificationsCount.value > 0) {
-        markAllAsRead()
-      }
     }
 
     // Toggle profile dropdown
@@ -274,19 +293,30 @@ export default {
     const markAsRead = async (notificationId) => {
       const notification = notifications.value.find(n => n.id === notificationId)
       if (notification && !notification.read) {
+        const previousReadState = notification.read
         notification.read = true
         
-        // Send API request to mark as read
         try {
-          await fetch(`/admin/notifications/${notificationId}/read`, {
+          const csrfToken = getCsrfToken()
+          const response = await fetch(`/admin/notifications/${notificationId}/read`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            }
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': csrfToken,
+            },
+            credentials: 'include'
           })
+          
+          if (response.ok) {
+            // Remove the notification from the list after marking as read
+            notifications.value = notifications.value.filter(n => n.id !== notificationId)
+          } else {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
         } catch (error) {
           console.error('Error marking notification as read:', error)
+          notification.read = previousReadState
         }
       }
     }
@@ -296,30 +326,45 @@ export default {
       const unreadNotifications = notifications.value.filter(n => !n.read)
       
       if (unreadNotifications.length > 0) {
-        unreadNotifications.forEach(notification => {
-          notification.read = true
-        })
-        
-        // Send API request to mark all as read
         try {
-          await fetch('/admin/notifications/mark-all-read', {
+          const csrfToken = getCsrfToken()
+          const response = await fetch('/admin/notifications/mark-all-read', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            }
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': csrfToken,
+            },
+            credentials: 'include'
           })
+          
+          if (response.ok) {
+            // SUCCESS: Clear all notifications from the list
+            notifications.value = []
+            console.log('✅ All notifications marked as read and cleared')
+          } else {
+            // Try to get error details
+            let errorDetails = ''
+            try {
+              const errorData = await response.json()
+              errorDetails = JSON.stringify(errorData)
+            } catch (e) {
+              errorDetails = await response.text()
+            }
+            console.error('❌ Server response:', errorDetails)
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
         } catch (error) {
-          console.error('Error marking all notifications as read:', error)
+          console.error('❌ Error marking all notifications as read:', error)
         }
+      } else {
+        console.log('ℹ️ No unread notifications to mark')
       }
     }
 
-    // View all notifications (navigate to notifications page)
+    // View all notifications
     const viewAllNotifications = () => {
       showNotifications.value = false
-      // Navigate to notifications page if you have one
-      // window.location.href = '/admin/notifications'
     }
 
     // Handle click outside dropdowns
@@ -330,22 +375,21 @@ export default {
       }
     }
 
-    // Navigate to URL
+    // Navigate to URL using Inertia
     const navigateTo = (url) => {
       showProfile.value = false
-      if (window.location.pathname !== url) {
-        window.location.href = url
-      }
+      router.visit(url)
     }
 
-    // Handle logout
+    // Handle logout using Inertia
     const handleLogout = () => {
       showProfile.value = false
-      emit('logout')
+      router.post('/admin/logout')
     }
 
     // Lifecycle hooks
     onMounted(() => {
+      console.log('🔧 AdminNavbar mounted - initializing notifications...')
       initializeNotifications()
       document.addEventListener('click', handleClickOutside)
     })
@@ -380,6 +424,10 @@ export default {
 }
 </script>
 
+<style scoped>
+/* Your existing styles remain exactly the same */
+/* ... */
+</style>
 <style scoped>
 /* Add this style for the avatar image */
 .profile-avatar img {

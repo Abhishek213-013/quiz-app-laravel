@@ -16,7 +16,8 @@ class QuizResultController extends Controller
             'score' => 'required|integer',
             'total_questions' => 'required|integer',
             'answers' => 'required|array',
-            'time_taken' => 'required|integer'
+            'time_taken' => 'required|integer',
+            'browser_id' => 'nullable|string|max:255' // ← ADD THIS VALIDATION
         ]);
 
         $percentage = ($request->score / $request->total_questions) * 100;
@@ -28,7 +29,8 @@ class QuizResultController extends Controller
             'total_questions' => $request->total_questions,
             'answers' => $request->answers,
             'percentage' => round($percentage, 2),
-            'time_taken' => $request->time_taken
+            'time_taken' => $request->time_taken,
+            'browser_id' => $request->browser_id // ← ADD THIS LINE
         ]);
 
         return response()->json($quizResult, 201);

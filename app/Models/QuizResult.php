@@ -16,7 +16,8 @@ class QuizResult extends Model
         'total_questions',
         'answers',
         'percentage',
-        'time_taken'
+        'time_taken',
+        'browser_id' // ← ADD THIS LINE
     ];
 
     protected $casts = [

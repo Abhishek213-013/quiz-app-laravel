@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
-import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     server: {
@@ -10,6 +9,7 @@ export default defineConfig({
         cors: true,
         hmr: {
             host: '127.0.0.1',
+            overlay: false // Disable the error overlay
         },
     },
     plugins: [
@@ -25,23 +25,17 @@ export default defineConfig({
                 },
             },
         }),
-        tailwindcss(),
+        // REMOVED: tailwindcss() - Using PostCSS instead
     ],
-    // Add CSS configuration
+    // Add CSS configuration with PostCSS
     css: {
-        devSourcemap: false, // Disable sourcemaps in dev to reduce FOUC
-        preprocessorOptions: {
-            css: {
-                charset: false,
-            },
-        },
+        devSourcemap: false,
+        postcss: './postcss.config.js', // Point to your PostCSS config
     },
     build: {
-        // Optimize CSS loading
         cssCodeSplit: true,
         rollupOptions: {
             output: {
-                // Ensure CSS is loaded properly
                 assetFileNames: (assetInfo) => {
                     if (assetInfo.name.endsWith('.css')) {
                         return 'assets/css/[name]-[hash][extname]';

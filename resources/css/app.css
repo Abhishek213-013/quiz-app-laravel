@@ -1,15 +1,76 @@
-@import 'tailwindcss';
+/* Remove Font Awesome import - we're using CDN */
+/* @import './fontawesome.css'; */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* Tailwind CSS */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* Your theme styles */
+.light-theme {
+    --bg-primary: #f9fafb;
+    --bg-secondary: #ffffff;
+    --bg-sidebar: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --hover-bg: #f3f4f6;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
+
+.dark-theme {
+    --bg-primary: #111827;
+    --bg-secondary: #1f2937;
+    --bg-sidebar: #1f2937;
+    --text-primary: #f9fafb;
+    --text-secondary: #e5e7eb;
+    --text-muted: #9ca3af;
+    --border-color: #374151;
+    --hover-bg: #374151;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.min-h-screen {
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+}
+
 /* Ensure Inertia routes are hidden */
 [id="routes"] {
     display: none !important;
+}
+
+/* Make sure Font Awesome icons display properly */
+.fas, .far, .fab, .fa {
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+}
+
+/* Add some spacing for icons */
+.fa-mr {
+    margin-right: 0.5rem;
+}
+
+.fa-ml {
+    margin-left: 0.5rem;
 }

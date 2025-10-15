@@ -3,7 +3,7 @@
         <div class="max-w-md w-full space-y-8">
             <div>
                 <div class="flex justify-center">
-                    <i class="fas fa-brain text-4xl text-indigo-600"></i>
+                    <span class="text-4xl text-indigo-600">🧠</span>
                 </div>
                 <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
                     Admin Login
@@ -50,8 +50,8 @@
                         :disabled="processing"
                         class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                     >
-                        <span v-if="processing">
-                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                        <span v-if="processing" class="flex items-center">
+                            <span class="mr-2 animate-spin">⏳</span>
                             Signing in...
                         </span>
                         <span v-else>
@@ -94,3 +94,18 @@ const login = () => {
     })
 }
 </script>
+
+<style scoped>
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+</style>

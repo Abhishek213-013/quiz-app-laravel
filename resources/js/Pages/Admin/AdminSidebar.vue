@@ -2,7 +2,7 @@
   <!-- Desktop Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <i class="fas fa-brain sidebar-logo"></i>
+      <span class="sidebar-logo">🧠</span>
       <span class="sidebar-title">MindSpark Admin</span>
     </div>
 
@@ -10,28 +10,28 @@
       <ul class="nav-list">
         <li>
           <a :href="getLink('/admin/dashboard')" class="nav-item" :class="{ active: isActive('/admin/dashboard') }">
-            <i class="fas fa-home nav-icon"></i>
+            <span class="nav-icon">🏠</span>
             <span class="nav-text">Dashboard</span>
           </a>
         </li>
 
         <li>
           <a :href="getLink('/admin/participants')" class="nav-item" :class="{ active: isActive('/admin/participants') }">
-            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-icon">👥</span>
             <span class="nav-text">Participants</span>
           </a>
         </li>
 
         <li>
           <a :href="getLink('/admin/quizzes')" class="nav-item" :class="{ active: isActive('/admin/quizzes') }">
-            <i class="fas fa-clipboard-list nav-icon"></i>
+            <span class="nav-icon">📝</span>
             <span class="nav-text">Manage Quizzes</span>
           </a>
         </li>
 
         <li>
           <a :href="getLink('/admin/records')" class="nav-item" :class="{ active: isActive('/admin/records') }">
-            <i class="fas fa-chart-bar nav-icon"></i>
+            <span class="nav-icon">📊</span>
             <span class="nav-text">Records</span>
           </a>
         </li>
@@ -43,9 +43,9 @@
             :class="{ active: isAdminManagementActive() }"
             @click="toggleAdminManagement"
           >
-            <i class="fas fa-cogs nav-icon"></i>
+            <span class="nav-icon">⚙️</span>
             <span class="nav-text">Admin Management</span>
-            <i class="fas fa-chevron-down dropdown-arrow" :class="{ rotated: adminManagementOpen }"></i>
+            <span class="dropdown-arrow" :class="{ rotated: adminManagementOpen }">▼</span>
           </div>
           <transition name="dropdown">
             <ul v-if="adminManagementOpen" class="dropdown-menu">
@@ -56,7 +56,7 @@
                   :class="{ active: isActive('/admin/profile') }"
                   @click="closeDropdown"
                 >
-                  <i class="fas fa-user dropdown-icon"></i>
+                  <span class="dropdown-icon">👤</span>
                   <span>Profile</span>
                 </a>
               </li>
@@ -67,7 +67,7 @@
                   :class="{ active: isActive('/admin/settings') }"
                   @click="closeDropdown"
                 >
-                  <i class="fas fa-cog dropdown-icon"></i>
+                  <span class="dropdown-icon">⚙️</span>
                   <span>Settings</span>
                 </a>
               </li>
@@ -78,7 +78,7 @@
                   :class="{ active: isActive('/admin/customize') }"
                   @click="closeDropdown"
                 >
-                  <i class="fas fa-palette dropdown-icon"></i>
+                  <span class="dropdown-icon">🎨</span>
                   <span>Customize</span>
                 </a>
               </li>
@@ -96,7 +96,7 @@
             <img :src="profile.avatar" alt="Profile" class="w-full h-full rounded-full object-cover">
           </template>
           <template v-else>
-            <i class="fas fa-user"></i>
+            <span>👤</span>
           </template>
         </div>
         <div>
@@ -113,24 +113,45 @@
     <aside class="mobile-sidebar">
       <div class="mobile-sidebar-header">
         <div class="flex items-center gap-2">
-          <i class="fas fa-brain"></i>
+          <span>🧠</span>
           <span class="font-semibold">Quiz Admin</span>
         </div>
         <button @click="$emit('close-mobile-sidebar')" class="close-btn">
-          <i class="fas fa-times"></i>
+          <span>✕</span>
         </button>
       </div>
       <nav class="mobile-nav">
-        <a :href="getLink('/admin/dashboard')" class="mobile-nav-item" :class="{ active: isActive('/admin/dashboard') }" @click="$emit('close-mobile-sidebar')">Dashboard</a>
-        <a :href="getLink('/admin/participants')" class="mobile-nav-item" :class="{ active: isActive('/admin/participants') }" @click="$emit('close-mobile-sidebar')">Participants</a>
-        <a :href="getLink('/admin/quizzes')" class="mobile-nav-item" :class="{ active: isActive('/admin/quizzes') }" @click="$emit('close-mobile-sidebar')">Manage Quizzes</a>
-        <a :href="getLink('/admin/records')" class="mobile-nav-item" :class="{ active: isActive('/admin/records') }" @click="$emit('close-mobile-sidebar')">Records</a>
+        <a :href="getLink('/admin/dashboard')" class="mobile-nav-item" :class="{ active: isActive('/admin/dashboard') }" @click="$emit('close-mobile-sidebar')">
+          <span class="mr-2">🏠</span>
+          Dashboard
+        </a>
+        <a :href="getLink('/admin/participants')" class="mobile-nav-item" :class="{ active: isActive('/admin/participants') }" @click="$emit('close-mobile-sidebar')">
+          <span class="mr-2">👥</span>
+          Participants
+        </a>
+        <a :href="getLink('/admin/quizzes')" class="mobile-nav-item" :class="{ active: isActive('/admin/quizzes') }" @click="$emit('close-mobile-sidebar')">
+          <span class="mr-2">📝</span>
+          Manage Quizzes
+        </a>
+        <a :href="getLink('/admin/records')" class="mobile-nav-item" :class="{ active: isActive('/admin/records') }" @click="$emit('close-mobile-sidebar')">
+          <span class="mr-2">📊</span>
+          Records
+        </a>
         
         <!-- Mobile Admin Management Section -->
         <div class="mobile-section-divider">Admin Management</div>
-        <a :href="getLink('/admin/profile')" class="mobile-nav-item" :class="{ active: isActive('/admin/profile') }" @click="$emit('close-mobile-sidebar')">Profile</a>
-        <a :href="getLink('/admin/settings')" class="mobile-nav-item" :class="{ active: isActive('/admin/settings') }" @click="$emit('close-mobile-sidebar')">Settings</a>
-        <a :href="getLink('/admin/customize')" class="mobile-nav-item" :class="{ active: isActive('/admin/customize') }" @click="$emit('close-mobile-sidebar')">Customize</a>
+        <a :href="getLink('/admin/profile')" class="mobile-nav-item" :class="{ active: isActive('/admin/profile') }" @click="$emit('close-mobile-sidebar')">
+          <span class="mr-2">👤</span>
+          Profile
+        </a>
+        <a :href="getLink('/admin/settings')" class="mobile-nav-item" :class="{ active: isActive('/admin/settings') }" @click="$emit('close-mobile-sidebar')">
+          <span class="mr-2">⚙️</span>
+          Settings
+        </a>
+        <a :href="getLink('/admin/customize')" class="mobile-nav-item" :class="{ active: isActive('/admin/customize') }" @click="$emit('close-mobile-sidebar')">
+          <span class="mr-2">🎨</span>
+          Customize
+        </a>
       </nav>
     </aside>
   </div>
@@ -281,6 +302,7 @@ export default {
 .nav-icon {
   width: 1.25rem;
   flex-shrink: 0;
+  text-align: center;
 }
 
 .nav-text {
@@ -355,6 +377,7 @@ export default {
   width: 1rem;
   font-size: 0.875rem;
   flex-shrink: 0;
+  text-align: center;
 }
 
 /* Dropdown transition */
@@ -465,10 +488,10 @@ export default {
   align-items: center;
   margin-bottom: 1rem;
 }
-.mobile-sidebar-header i {
+.mobile-sidebar-header span:first-child {
   color: #2563eb;
 }
-.dark-theme .mobile-sidebar-header i {
+.dark-theme .mobile-sidebar-header span:first-child {
   color: #60a5fa;
 }
 .mobile-sidebar-header span {
@@ -492,7 +515,8 @@ export default {
 }
 
 .mobile-nav-item {
-  display: block;
+  display: flex;
+  align-items: center;
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   color: var(--text-secondary);

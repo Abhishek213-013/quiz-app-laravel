@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Illuminate\Support\Facades\Cache;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -34,8 +35,15 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'flash' => [
-                'message' => fn () => $request->session()->get('message')
+                'message' => fn () => $request->session()->get('message'),
+                'type' => fn () => $request->session()->get('type')
             ],
+            // FIXED: Share theme globally so all pages can access it
+            'customization' => [
+                'colorScheme' => Cache::get('theme_preview.color_scheme', Cache::get('customization.color_scheme', 'light')),
+                'primaryColor' => Cache::get('theme_preview.primary_color', Cache::get('customization.primary_color', 'blue')),
+                'layout' => Cache::get('customization.layout', 'sidebar'),
+            ]
         ]);
     }
 }

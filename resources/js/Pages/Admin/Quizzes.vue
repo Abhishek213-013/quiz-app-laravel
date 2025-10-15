@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen" :class="isDark ? 'dark-theme' : 'light-theme'">
+  <div 
+    class="min-h-screen" 
+    :class="themeClass"
+    :style="themeStyles"
+  >
     <AdminNavbar 
       title="Admin Dashboard"
       :is-dark="isDark"
@@ -23,7 +27,7 @@
         <main class="content">
           <!-- Loading State -->
           <div v-if="loading" class="loading-state">
-            <i class="fas fa-spinner fa-spin loading-icon"></i>
+            <span class="loading-icon">⏳</span>
             <p class="loading-text">Loading quizzes data...</p>
           </div>
 
@@ -33,26 +37,61 @@
             <div class="stats-section">
               <div class="flex justify-between items-center mb-8">
                 <h2 class="section-title">Quiz Management Overview</h2>
-                <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
-                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshing }"></i>
-                  {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
-                </button>
+                <div class="flex items-center gap-4">
+                  
+                  <button @click="refreshData" class="refresh-btn" :disabled="refreshing">
+                    <span :class="{ 'animate-spin': refreshing }">🔄</span>
+                    {{ refreshing ? 'Refreshing...' : 'Refresh Data' }}
+                  </button>
+                </div>
               </div>
               <div class="stats-grid">
-                <div class="stat-card blue">
-                  <div class="stat-number">{{ quizSets.length }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ quizSets.length }}
+                  </div>
                   <div class="stat-label">Total Quiz Sets</div>
                 </div>
-                <div class="stat-card green">
-                  <div class="stat-number">{{ totalQuestions }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ totalQuestions }}
+                  </div>
                   <div class="stat-label">Total Questions</div>
                 </div>
-                <div class="stat-card purple">
-                  <div class="stat-number">{{ multipleChoiceCount }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ multipleChoiceCount }}
+                  </div>
                   <div class="stat-label">Multiple Choice</div>
                 </div>
-                <div class="stat-card orange">
-                  <div class="stat-number">{{ briefAnswerCount }}</div>
+                <div 
+                  class="stat-card" 
+                  :style="{ 
+                    backgroundColor: getPrimaryColorLight(),
+                    borderLeft: `4px solid ${primaryColorValue}` 
+                  }"
+                >
+                  <div class="stat-number" :style="{ color: primaryColorValue }">
+                    {{ briefAnswerCount }}
+                  </div>
                   <div class="stat-label">Brief Answers</div>
                 </div>
               </div>
@@ -61,13 +100,13 @@
             <!-- Error Alert -->
             <div v-if="errorMessage" class="content-card mb-6">
               <div class="flex items-center p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <i class="fas fa-exclamation-circle text-red-600 dark:text-red-400 mr-3 text-lg"></i>
+                <span class="text-red-600 dark:text-red-400 mr-3 text-lg">❌</span>
                 <div class="flex-1">
                   <h3 class="text-sm font-semibold text-red-800 dark:text-red-300">Error</h3>
                   <p class="text-sm text-red-700 dark:text-red-400 mt-1">{{ errorMessage }}</p>
                 </div>
                 <button @click="errorMessage = ''" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
-                  <i class="fas fa-times"></i>
+                  <span>✕</span>
                 </button>
               </div>
             </div>
@@ -75,13 +114,13 @@
             <!-- Success Alert -->
             <div v-if="successMessage" class="content-card mb-6">
               <div class="flex items-center p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-3 text-lg"></i>
+                <span class="text-green-600 dark:text-green-400 mr-3 text-lg">✅</span>
                 <div class="flex-1">
                   <h3 class="text-sm font-semibold text-green-800 dark:text-green-300">Success</h3>
                   <p class="text-sm text-green-700 dark:text-green-400 mt-1">{{ successMessage }}</p>
                 </div>
                 <button @click="successMessage = ''" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300">
-                  <i class="fas fa-times"></i>
+                  <span>✕</span>
                 </button>
               </div>
             </div>
@@ -96,9 +135,12 @@
                 <button 
                   @click="showAddSetModal = true"
                   class="primary-button"
+                  :style="{ 
+                    background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+                  }"
                   :disabled="loading"
                 >
-                  <i class="fas fa-plus"></i>
+                  <span class="mr-2">➕</span>
                   Add New Set
                 </button>
               </div>
@@ -108,19 +150,30 @@
                   v-for="quizSet in quizSets" 
                   :key="quizSet.id"
                   class="quiz-set-card"
+                  :style="{ borderLeft: `3px solid ${primaryColorValue}` }"
                 >
                   <div class="flex items-center justify-between mb-4">
-                    <span class="category-badge">
+                    <span 
+                      class="category-badge"
+                      :style="{ 
+                        backgroundColor: getPrimaryColorLight(),
+                        color: primaryColorValue 
+                      }"
+                    >
                       {{ quizSet.category }}
                     </span>
                     <div class="flex space-x-2">
                       <button 
                         @click="editQuizSet(quizSet)"
-                        class="icon-button blue"
+                        class="icon-button"
+                        :style="{ 
+                          color: primaryColorValue,
+                          '&:hover': { backgroundColor: getPrimaryColorLight() }
+                        }"
                         title="Edit Quiz Set"
                         :disabled="loading"
                       >
-                        <i class="fas fa-edit"></i>
+                        <span>✏️</span>
                       </button>
                       <button 
                         @click="deleteQuizSet(quizSet.id)"
@@ -128,7 +181,7 @@
                         title="Delete Quiz Set"
                         :disabled="loading"
                       >
-                        <i class="fas fa-trash"></i>
+                        <span>🗑️</span>
                       </button>
                     </div>
                   </div>
@@ -137,11 +190,20 @@
                   <div class="flex items-center justify-between mt-4">
                     <div class="flex items-center gap-2">
                       <span class="question-count">{{ quizSet.question_count }} questions</span>
-                      <span class="time-badge">{{ quizSet.time_limit }}s</span>
+                      <span 
+                        class="time-badge"
+                        :style="{ 
+                          backgroundColor: getPrimaryColorLight(),
+                          color: primaryColorValue 
+                        }"
+                      >
+                        {{ quizSet.time_limit }}s
+                      </span>
                     </div>
                     <button 
                       @click="viewQuestions(quizSet)"
                       class="secondary-button"
+                      :style="{ backgroundColor: primaryColorValue }"
                       :disabled="loading"
                     >
                       Manage Questions
@@ -153,12 +215,15 @@
               <!-- Empty state for quiz sets -->
               <div v-if="quizSets.length === 0 && !loading" class="empty-state">
                 <div class="empty-content">
-                  <i class="fas fa-clipboard-list empty-icon"></i>
+                  <span class="empty-icon">📝</span>
                   <p class="empty-title">No quiz sets yet</p>
                   <p class="empty-subtitle">Get started by creating your first quiz set</p>
                   <button 
                     @click="showAddSetModal = true"
                     class="primary-button"
+                    :style="{ 
+                      background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+                    }"
                     :disabled="loading"
                   >
                     Create Your First Set
@@ -180,15 +245,18 @@
                     class="secondary-button gray"
                     :disabled="loading"
                   >
-                    <i class="fas fa-arrow-left mr-2"></i>
+                    <span class="mr-2">⬅️</span>
                     Back to Sets
                   </button>
                   <button 
                     @click="showAddQuestionModal = true"
                     class="primary-button"
+                    :style="{ 
+                      background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+                    }"
                     :disabled="loading"
                   >
-                    <i class="fas fa-plus mr-2"></i>
+                    <span class="mr-2">➕</span>
                     Add Question
                   </button>
                 </div>
@@ -199,17 +267,30 @@
                   v-for="(quiz, index) in quizzes" 
                   :key="quiz.id"
                   class="question-card"
+                  :style="{ borderLeft: `3px solid ${primaryColorValue}` }"
                 >
                   <div class="flex items-start justify-between mb-4">
                     <div class="flex-1">
                       <div class="flex items-center gap-3 mb-2">
-                        <span class="question-number">
+                        <span 
+                          class="question-number"
+                          :style="{ 
+                            backgroundColor: getPrimaryColorLight(),
+                            color: primaryColorValue 
+                          }"
+                        >
                           Q{{ index + 1 }}
                         </span>
                         <span class="type-badge">
                           {{ getQuestionTypeLabel(quiz.question_type) }}
                         </span>
-                        <span class="points-badge">
+                        <span 
+                          class="points-badge"
+                          :style="{ 
+                            backgroundColor: getPrimaryColorLight(),
+                            color: primaryColorValue 
+                          }"
+                        >
                           {{ quiz.points }} point{{ quiz.points !== 1 ? 's' : '' }}
                         </span>
                       </div>
@@ -218,11 +299,15 @@
                     <div class="flex space-x-2 ml-4">
                       <button 
                         @click="editQuestion(quiz)"
-                        class="icon-button blue"
+                        class="icon-button"
+                        :style="{ 
+                          color: primaryColorValue,
+                          '&:hover': { backgroundColor: getPrimaryColorLight() }
+                        }"
                         title="Edit Question"
                         :disabled="loading"
                       >
-                        <i class="fas fa-edit"></i>
+                        <span>✏️</span>
                       </button>
                       <button 
                         @click="deleteQuestion(quiz.id)"
@@ -230,7 +315,7 @@
                         title="Delete Question"
                         :disabled="loading"
                       >
-                        <i class="fas fa-trash"></i>
+                        <span>🗑️</span>
                       </button>
                     </div>
                   </div>
@@ -247,7 +332,7 @@
                         <span class="option-label">{{ String.fromCharCode(65 + optIndex) }}.</span>
                         <span class="option-text">{{ option }}</span>
                         <span v-if="option === quiz.correct_answer" class="correct-indicator">
-                          <i class="fas fa-check-circle"></i>
+                          <span>✅</span>
                         </span>
                       </div>
                     </div>
@@ -255,7 +340,7 @@
 
                   <div v-else-if="quiz.question_type === 'brief_answer'" class="answer-container">
                     <div class="answer-header">
-                      <i class="fas fa-key"></i>
+                      <span>🔑</span>
                       <span>Correct Answer:</span>
                     </div>
                     <p class="answer-text">{{ quiz.correct_answer }}</p>
@@ -269,7 +354,7 @@
                       <div class="flex items-center justify-between">
                         <span class="tf-label">True</span>
                         <span v-if="quiz.correct_answer === 'True'" class="correct-indicator">
-                          <i class="fas fa-check-circle"></i>
+                          <span>✅</span>
                         </span>
                       </div>
                     </div>
@@ -280,7 +365,7 @@
                       <div class="flex items-center justify-between">
                         <span class="tf-label">False</span>
                         <span v-if="quiz.correct_answer === 'False'" class="correct-indicator">
-                          <i class="fas fa-check-circle"></i>
+                          <span>✅</span>
                         </span>
                       </div>
                     </div>
@@ -291,12 +376,15 @@
               <!-- Empty state for questions -->
               <div v-if="quizzes.length === 0 && !loading" class="empty-state">
                 <div class="empty-content">
-                  <i class="fas fa-question-circle empty-icon"></i>
+                  <span class="empty-icon">❓</span>
                   <p class="empty-title">No questions yet</p>
                   <p class="empty-subtitle">Get started by adding your first question</p>
                   <button 
                     @click="showAddQuestionModal = true"
                     class="primary-button"
+                    :style="{ 
+                      background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+                    }"
                     :disabled="loading"
                   >
                     Add First Question
@@ -386,9 +474,12 @@
             <button 
               type="submit"
               class="primary-button"
+              :style="{ 
+                background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+              }"
               :disabled="loading"
             >
-              <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+              <span v-if="loading" class="animate-spin">⏳</span>
               {{ showEditSetModal ? 'Update' : 'Create' }} Set
             </button>
           </div>
@@ -413,11 +504,16 @@
                   @click="setQuestionType('multiple_choice')"
                   :class="[
                     'type-option',
-                    questionForm.question_type === 'multiple_choice' ? 'type-option-selected blue' : 'type-option-default'
+                    questionForm.question_type === 'multiple_choice' ? 'type-option-selected' : 'type-option-default'
                   ]"
+                  :style="questionForm.question_type === 'multiple_choice' ? { 
+                    borderColor: primaryColorValue,
+                    backgroundColor: getPrimaryColorLight(),
+                    color: primaryColorValue
+                  } : {}"
                   :disabled="loading"
                 >
-                  <i class="fas fa-list-ol type-icon"></i>
+                  <span class="type-icon">🔢</span>
                   <span class="type-label">Multiple Choice</span>
                 </button>
                 <button
@@ -425,11 +521,16 @@
                   @click="setQuestionType('brief_answer')"
                   :class="[
                     'type-option',
-                    questionForm.question_type === 'brief_answer' ? 'type-option-selected green' : 'type-option-default'
+                    questionForm.question_type === 'brief_answer' ? 'type-option-selected' : 'type-option-default'
                   ]"
+                  :style="questionForm.question_type === 'brief_answer' ? { 
+                    borderColor: primaryColorValue,
+                    backgroundColor: getPrimaryColorLight(),
+                    color: primaryColorValue
+                  } : {}"
                   :disabled="loading"
                 >
-                  <i class="fas fa-edit type-icon"></i>
+                  <span class="type-icon">📝</span>
                   <span class="type-label">Brief Answer</span>
                 </button>
                 <button
@@ -437,11 +538,16 @@
                   @click="setQuestionType('true_false')"
                   :class="[
                     'type-option',
-                    questionForm.question_type === 'true_false' ? 'type-option-selected purple' : 'type-option-default'
+                    questionForm.question_type === 'true_false' ? 'type-option-selected' : 'type-option-default'
                   ]"
+                  :style="questionForm.question_type === 'true_false' ? { 
+                    borderColor: primaryColorValue,
+                    backgroundColor: getPrimaryColorLight(),
+                    color: primaryColorValue
+                  } : {}"
                   :disabled="loading"
                 >
-                  <i class="fas fa-check-circle type-icon"></i>
+                  <span class="type-icon">✅</span>
                   <span class="type-label">True/False</span>
                 </button>
               </div>
@@ -520,11 +626,16 @@
                   @click="questionForm.correct_answer = 'True'"
                   :class="[
                     'tf-option-modal',
-                    questionForm.correct_answer === 'True' ? 'tf-option-selected green' : 'tf-option-default'
+                    questionForm.correct_answer === 'True' ? 'tf-option-selected' : 'tf-option-default'
                   ]"
+                  :style="questionForm.correct_answer === 'True' ? { 
+                    borderColor: primaryColorValue,
+                    backgroundColor: getPrimaryColorLight(),
+                    color: primaryColorValue
+                  } : {}"
                   :disabled="loading"
                 >
-                  <i class="fas fa-check tf-icon"></i>
+                  <span class="tf-icon">✅</span>
                   <span class="tf-label-modal">True</span>
                 </button>
                 <button
@@ -532,11 +643,16 @@
                   @click="questionForm.correct_answer = 'False'"
                   :class="[
                     'tf-option-modal',
-                    questionForm.correct_answer === 'False' ? 'tf-option-selected red' : 'tf-option-default'
+                    questionForm.correct_answer === 'False' ? 'tf-option-selected' : 'tf-option-default'
                   ]"
+                  :style="questionForm.correct_answer === 'False' ? { 
+                    borderColor: primaryColorValue,
+                    backgroundColor: getPrimaryColorLight(),
+                    color: primaryColorValue
+                  } : {}"
                   :disabled="loading"
                 >
-                  <i class="fas fa-times tf-icon"></i>
+                  <span class="tf-icon">❌</span>
                   <span class="tf-label-modal">False</span>
                 </button>
               </div>
@@ -567,9 +683,12 @@
             <button 
               type="submit"
               class="primary-button"
+              :style="{ 
+                background: `linear-gradient(135deg, ${primaryColorValue} 0%, ${getPrimaryColorDark()} 100%)` 
+              }"
               :disabled="loading"
             >
-              <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+              <span v-if="loading" class="animate-spin">⏳</span>
               {{ showEditQuestionModal ? 'Update' : 'Add' }} Question
             </button>
           </div>
@@ -598,6 +717,14 @@ export default {
         email: 'admin@quiz.com',
         avatar: null,
         role: 'admin'
+      })
+    },
+    theme: {
+      type: Object,
+      default: () => ({
+        colorScheme: 'light',
+        primaryColor: 'blue',
+        layout: 'sidebar'
       })
     }
   },
@@ -630,10 +757,40 @@ export default {
         options: ['', '', '', ''],
         correct_answer: '',
         points: 1
-      }
+      },
+      showDebug: process.env.NODE_ENV === 'development',
+      // Add initialization flag
+      isInitialized: false
     }
   },
   computed: {
+    themeClass() {
+      const colorScheme = this.theme?.colorScheme || (this.isDark ? 'dark' : 'light');
+      const primaryColor = this.theme?.primaryColor || 'blue';
+      const layout = this.theme?.layout || 'sidebar';
+      
+      return `${colorScheme}-theme primary-${primaryColor} layout-${layout}`;
+    },
+    
+    themeStyles() {
+      return {
+        '--primary-color': this.primaryColorValue,
+        '--primary-light': this.getPrimaryColorLight(),
+        '--primary-dark': this.getPrimaryColorDark()
+      };
+    },
+    
+    primaryColorValue() {
+      const colorMap = {
+        blue: '#3b82f6',
+        green: '#10b981', 
+        purple: '#8b5cf6',
+        red: '#ef4444',
+        orange: '#f59e0b'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+    
     totalQuestions() {
       return this.quizSets.reduce((total, set) => total + set.question_count, 0)
     },
@@ -644,9 +801,26 @@ export default {
       return this.quizzes.filter(q => q.question_type === 'brief_answer').length
     }
   },
+  watch: {
+    theme: {
+      handler(newTheme, oldTheme) {
+        // Only process theme changes after component is initialized
+        if (!this.isInitialized) return;
+        
+        // Only re-render if theme actually changed
+        if (JSON.stringify(newTheme) !== JSON.stringify(oldTheme)) {
+          console.log('Theme changed, re-rendering components...');
+          this.handleThemeChange();
+        }
+      },
+      deep: true,
+      immediate: false // Don't run immediately on component creation
+    }
+  },
   methods: {
     toggleTheme() {
       this.isDark = !this.isDark
+      this.handleThemeChange();
     },
     toggleMobileSidebar() {
       this.mobileSidebar = !this.mobileSidebar
@@ -654,7 +828,49 @@ export default {
     handleLogout() {
       this.$inertia.post('/admin/logout');
     },
-    // Added refreshData method
+    handleThemeChange() {
+      // Use nextTick to ensure DOM is ready
+      this.$nextTick(() => {
+        // Force update to ensure CSS variables are applied
+        this.$forceUpdate();
+      });
+    },
+    debugTheme() {
+      console.log('=== THEME DEBUG INFO ===');
+      console.log('Theme Props:', this.theme);
+      console.log('Computed Theme Class:', this.themeClass);
+      console.log('Primary Color Value:', this.primaryColorValue);
+      console.log('Is Dark Mode:', this.theme?.colorScheme === 'dark');
+      console.log('Current Layout:', this.theme?.layout);
+      console.log('Theme Styles:', this.themeStyles);
+      console.log('========================');
+      
+      alert(`Current Theme:
+Color Scheme: ${this.theme?.colorScheme}
+Primary Color: ${this.theme?.primaryColor}
+Layout: ${this.theme?.layout}
+Primary Color Value: ${this.primaryColorValue}`);
+    },
+    getPrimaryColorLight() {
+      const colorMap = {
+        blue: '#dbeafe',
+        green: '#dcfce7',
+        purple: '#f3e8ff',
+        red: '#fee2e2',
+        orange: '#fef3c7'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
+    getPrimaryColorDark() {
+      const colorMap = {
+        blue: '#1e40af',
+        green: '#047857',
+        purple: '#6d28d9',
+        red: '#b91c1c',
+        orange: '#d97706'
+      };
+      return colorMap[this.theme?.primaryColor] || colorMap.blue;
+    },
     async refreshData() {
       this.refreshing = true;
       
@@ -662,7 +878,6 @@ export default {
         this.clearMessages();
         await this.fetchQuizSets();
         
-        // If we're currently viewing questions for a set, refresh those too
         if (this.selectedSet) {
           await this.viewQuestions(this.selectedSet);
         }
@@ -917,40 +1132,15 @@ export default {
     }
   },
   mounted() {
-    this.fetchQuizSets()
+    // Mark component as initialized
+    this.isInitialized = true;
+    this.fetchQuizSets();
   }
 }
 </script>
 
 <style>
-/* All existing styles remain exactly the same */
-
-/* Only adding the refresh button styles */
-.refresh-btn {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.refresh-btn:hover:not(:disabled) {
-  background-color: var(--hover-bg);
-}
-.refresh-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* All other existing styles remain unchanged */
-/* Import Font Awesome */
-
-
-/* Light Theme */
+/* Theme Base Classes */
 .light-theme {
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
@@ -964,7 +1154,6 @@ export default {
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark Theme */
 .dark-theme {
   --bg-primary: #111827;
   --bg-secondary: #1f2937;
@@ -976,6 +1165,28 @@ export default {
   --hover-bg: #374151;
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+
+
+.layout-topbar .main-content {
+  margin-left: 0;
+}
+
+.layout-topbar .content {
+  padding-top: 5rem;
+}
+
+/* Theme transition for smooth changes */
+.min-h-screen,
+.content-card,
+.stat-card,
+.quiz-set-card,
+.question-card,
+.modal-container,
+.type-option,
+.tf-option-modal {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Base Styles */
@@ -1004,15 +1215,52 @@ export default {
 
 .loading-icon {
   font-size: 1.875rem;
-  color: #2563eb;
+  color: var(--primary-color, #2563eb);
   margin-bottom: 1rem;
-}
-.dark-theme .loading-icon {
-  color: #60a5fa;
 }
 
 .loading-text {
   color: var(--text-muted);
+}
+
+/* Debug Button */
+.debug-btn {
+  background-color: #6b7280;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.debug-btn:hover {
+  background-color: #4b5563;
+}
+
+/* Refresh Button */
+.refresh-btn {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Stats Section */
@@ -1041,76 +1289,51 @@ export default {
 }
 
 .stat-card {
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 1.5rem;
   text-align: center;
+  background-color: var(--bg-secondary);
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+  border-left: 4px solid;
 }
-.stat-card.blue {
-  background-color: #dbeafe;
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
-.dark-theme .stat-card.blue {
-  background-color: #1e3a8a;
-}
-.stat-card.green {
-  background-color: #dcfce7;
-}
-.dark-theme .stat-card.green {
-  background-color: #14532d;
-}
-.stat-card.purple {
-  background-color: #f3e8ff;
-}
-.dark-theme .stat-card.purple {
-  background-color: #581c87;
-}
-.stat-card.orange {
-  background-color: #fed7aa;
-}
-.dark-theme .stat-card.orange {
-  background-color: #7c2d12;
+
+.dark-theme .stat-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
 .stat-number {
-  font-size: 1.875rem;
+  font-size: 2.25rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-}
-.stat-card.blue .stat-number {
-  color: #2563eb;
-}
-.dark-theme .stat-card.blue .stat-number {
-  color: #60a5fa;
-}
-.stat-card.green .stat-number {
-  color: #16a34a;
-}
-.dark-theme .stat-card.green .stat-number {
-  color: #4ade80;
-}
-.stat-card.purple .stat-number {
-  color: #7c3aed;
-}
-.dark-theme .stat-card.purple .stat-number {
-  color: #a855f7;
-}
-.stat-card.orange .stat-number {
-  color: #ea580c;
-}
-.dark-theme .stat-card.orange .stat-number {
-  color: #fdba74;
 }
 
 .stat-label {
   color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 /* Content Cards */
 .content-card {
   background-color: var(--bg-secondary);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   box-shadow: var(--shadow-lg);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark-theme .content-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
 .card-title-large {
@@ -1129,7 +1352,6 @@ export default {
 /* Buttons */
 .primary-button {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border-radius: 0.5rem;
   font-weight: 600;
@@ -1137,10 +1359,12 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  border: none;
+  cursor: pointer;
 }
 .primary-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .primary-button:disabled {
   opacity: 0.6;
@@ -1149,7 +1373,6 @@ export default {
 
 .secondary-button {
   padding: 0.75rem 1.5rem;
-  background-color: #3b82f6;
   color: white;
   border-radius: 0.5rem;
   font-weight: 600;
@@ -1157,9 +1380,12 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  border: none;
+  cursor: pointer;
 }
 .secondary-button:hover:not(:disabled) {
-  background-color: #2563eb;
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 .secondary-button.gray {
   background-color: #6b7280;
@@ -1176,12 +1402,12 @@ export default {
   padding: 0.5rem;
   border-radius: 0.375rem;
   transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  background: transparent;
 }
-.icon-button.blue {
-  color: #3b82f6;
-}
-.icon-button.blue:hover:not(:disabled) {
-  background-color: #dbeafe;
+.icon-button:hover:not(:disabled) {
+  background-color: var(--hover-bg);
 }
 .icon-button.red {
   color: #ef4444;
@@ -1201,6 +1427,7 @@ export default {
   padding: 1.5rem;
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
+  border-left: 3px solid;
 }
 .quiz-set-card:hover {
   box-shadow: var(--shadow-lg);
@@ -1209,15 +1436,9 @@ export default {
 
 .category-badge {
   padding: 0.25rem 0.75rem;
-  background-color: #dbeafe;
-  color: #1e40af;
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 9999px;
-}
-.dark-theme .category-badge {
-  background-color: #1e3a8a;
-  color: #93c5fd;
 }
 
 .quiz-set-title {
@@ -1241,10 +1462,9 @@ export default {
 
 .time-badge {
   padding: 0.25rem 0.5rem;
-  background-color: var(--hover-bg);
-  color: var(--text-muted);
   font-size: 0.75rem;
   border-radius: 0.375rem;
+  font-weight: 500;
 }
 
 /* Question Cards */
@@ -1253,15 +1473,15 @@ export default {
   border-radius: 0.75rem;
   padding: 1.5rem;
   transition: all 0.2s ease;
+  border-left: 3px solid;
 }
 .question-card:hover {
-  border-color: #3b82f6;
+  border-color: var(--primary-color, #3b82f6);
+  transform: translateX(4px);
 }
 
 .question-number {
   padding: 0.25rem 0.75rem;
-  background-color: #dbeafe;
-  color: #1e40af;
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 9999px;
@@ -1278,15 +1498,9 @@ export default {
 
 .points-badge {
   padding: 0.25rem 0.5rem;
-  background-color: #dcfce7;
-  color: #166534;
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 0.375rem;
-}
-.dark-theme .points-badge {
-  background-color: #14532d;
-  color: #4ade80;
 }
 
 .question-text {
@@ -1435,6 +1649,7 @@ export default {
   max-width: 28rem;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: var(--shadow-lg);
 }
 .modal-container.large {
   max-width: 42rem;
@@ -1466,7 +1681,7 @@ export default {
 }
 .form-input:focus, .form-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--primary-color, #3b82f6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 .form-input:disabled, .form-textarea:disabled {
@@ -1498,6 +1713,8 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  cursor: pointer;
+  background: transparent;
 }
 .type-option-default {
   border-color: var(--border-color);
@@ -1506,32 +1723,12 @@ export default {
 .type-option-default:hover:not(:disabled) {
   border-color: var(--text-muted);
 }
-.type-option-selected.blue {
-  border-color: #3b82f6;
-  background-color: #dbeafe;
-  color: #1e40af;
+.type-option-selected {
+  font-weight: 600;
 }
-.dark-theme .type-option-selected.blue {
-  background-color: #1e3a8a;
-  color: #93c5fd;
-}
-.type-option-selected.green {
-  border-color: #10b981;
-  background-color: #dcfce7;
-  color: #047857;
-}
-.dark-theme .type-option-selected.green {
-  background-color: #14532d;
-  color: #4ade80;
-}
-.type-option-selected.purple {
-  border-color: #8b5cf6;
-  background-color: #f3e8ff;
-  color: #7c3aed;
-}
-.dark-theme .type-option-selected.purple {
-  background-color: #581c87;
-  color: #c4b5fd;
+.type-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .type-icon {
@@ -1579,6 +1776,8 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  cursor: pointer;
+  background: transparent;
 }
 .tf-option-default {
   border-color: var(--border-color);
@@ -1587,23 +1786,12 @@ export default {
 .tf-option-default:hover:not(:disabled) {
   border-color: var(--text-muted);
 }
-.tf-option-selected.green {
-  border-color: #10b981;
-  background-color: #dcfce7;
-  color: #047857;
+.tf-option-selected {
+  font-weight: 600;
 }
-.dark-theme .tf-option-selected.green {
-  background-color: #14532d;
-  color: #4ade80;
-}
-.tf-option-selected.red {
-  border-color: #ef4444;
-  background-color: #fef2f2;
-  color: #dc2626;
-}
-.dark-theme .tf-option-selected.red {
-  background-color: #7f1d1d;
-  color: #fca5a5;
+.tf-option-modal:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .tf-icon {
@@ -1615,6 +1803,20 @@ export default {
   font-size: 0.875rem;
 }
 
+/* Animation for loading spinner */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .content {
@@ -1622,7 +1824,7 @@ export default {
   }
   
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
   
   .options-grid {
@@ -1647,6 +1849,129 @@ export default {
   
   .modal-actions {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Flex Utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+/* Spacing */
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+/* Gap Utilities */
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+/* Grid Utilities */
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Text Colors */
+.text-white {
+  color: white;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+/* Hidden */
+.hidden {
+  display: none;
+}
+
+/* Responsive Design */
+@media (min-width: 640px) {
+  .sm\:flex-row {
+    flex-direction: row;
+  }
+  
+  .sm\:items-center {
+    align-items: center;
   }
 }
 </style>

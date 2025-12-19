@@ -17,11 +17,21 @@ class QuizResult extends Model
         'answers',
         'percentage',
         'time_taken',
-        'browser_id' // ← ADD THIS LINE
+        'browser_id',
+        'answered_count',
+        'skipped_count',
+        'correct_count'
     ];
 
     protected $casts = [
-        'answers' => 'array'
+        'answers' => 'array',
+        'score' => 'integer',
+        'total_questions' => 'integer',
+        'percentage' => 'decimal:2',
+        'time_taken' => 'integer',
+        'answered_count' => 'integer',
+        'skipped_count' => 'integer',
+        'correct_count' => 'integer'
     ];
 
     public function quizSet()

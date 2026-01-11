@@ -16,32 +16,7 @@
                 <h1 style="margin: 0; font-size: 20px; font-weight: bold;">MindSpark</h1>
             </div>
 
-            <!-- Desktop Actions (Theme Toggle) -->
-            <div class="desktop-actions">
-                <button 
-                    class="theme-toggle"
-                    @click="toggleTheme"
-                    :aria-label="theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'"
-                    title="Toggle theme"
-                >
-                    <span class="theme-icon">
-                        {{ theme === 'light' ? '🌙' : '☀️' }}
-                    </span>
-                </button>
-            </div>
-
-            <!-- Hamburger Menu (Mobile Only) -->
-            <button 
-                class="hamburger" 
-                @click.stop="toggleMobileMenu"
-                aria-label="Toggle navigation menu"
-                aria-expanded="mobileMenuOpen"
-            >
-                <span class="hamburger-icon" v-if="!mobileMenuOpen">☰</span>
-                <span class="hamburger-icon" v-else>✕</span>
-            </button>
-
-            <!-- Navigation Links -->
+            <!-- Navigation Links (Center) -->
             <div 
                 class="nav-links" 
                 :class="{ 'active': mobileMenuOpen }"
@@ -58,23 +33,52 @@
                     :aria-current="currentView === item.route ? 'page' : null"
                 >
                     <span class="nav-icon">{{ getIconForRoute(item.route) }}</span>
-                    {{ item.label }}
-                </button>
-
-                <!-- Mobile Theme Toggle -->
-                <button 
-                    class="theme-toggle mobile-theme-toggle"
-                    @click="toggleTheme"
-                    :aria-label="theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'"
-                >
-                    <span class="theme-icon">
-                        {{ theme === 'light' ? '🌙' : '☀️' }}
-                    </span>
-                    <span class="theme-label">
-                        {{ theme === 'light' ? 'Dark Mode' : 'Light Mode' }}
-                    </span>
+                    <span class="nav-text">{{ item.label }}</span>
                 </button>
             </div>
+
+            <!-- Right Side Actions -->
+            <div class="nav-right">
+                <!-- Desktop Theme Toggle -->
+                <div class="desktop-actions">
+                    <button 
+                        class="theme-toggle"
+                        @click="toggleTheme"
+                        :aria-label="theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'"
+                        title="Toggle theme"
+                    >
+                        <span class="theme-icon">
+                            {{ theme === 'light' ? '🌙' : '☀️' }}
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Hamburger Menu (Mobile Only) -->
+                <button 
+                    class="hamburger" 
+                    @click.stop="toggleMobileMenu"
+                    aria-label="Toggle navigation menu"
+                    aria-expanded="mobileMenuOpen"
+                >
+                    <span class="hamburger-icon" v-if="!mobileMenuOpen">☰</span>
+                    <span class="hamburger-icon" v-else>✕</span>
+                </button>
+            </div>
+
+            <!-- Mobile Theme Toggle (Hidden on Desktop) -->
+            <button 
+                v-if="mobileMenuOpen && windowWidth <= 768"
+                class="theme-toggle mobile-theme-toggle"
+                @click="toggleTheme"
+                :aria-label="theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'"
+            >
+                <span class="theme-icon">
+                    {{ theme === 'light' ? '🌙' : '☀️' }}
+                </span>
+                <span class="theme-label">
+                    {{ theme === 'light' ? 'Dark Mode' : 'Light Mode' }}
+                </span>
+            </button>
         </div>
     </nav>
 </template>
@@ -116,6 +120,13 @@ export default {
         toggleMobileMenu() {
             console.log('Hamburger clicked, current state:', this.mobileMenuOpen);
             this.mobileMenuOpen = !this.mobileMenuOpen;
+            
+            // Toggle body scroll lock
+            if (this.mobileMenuOpen) {
+                document.body.classList.add('mobile-menu-open');
+            } else {
+                document.body.classList.remove('mobile-menu-open');
+            }
         },
         toggleTheme() {
             // Toggle between light and dark themes
@@ -160,12 +171,14 @@ export default {
             // Close mobile menu when resizing to desktop
             if (window.innerWidth > 768) {
                 this.mobileMenuOpen = false;
+                document.body.classList.remove('mobile-menu-open');
             }
         },
         handleClickOutside(event) {
             // Close mobile menu when clicking outside
             if (this.mobileMenuOpen && !this.$el.contains(event.target)) {
                 this.mobileMenuOpen = false;
+                document.body.classList.remove('mobile-menu-open');
             }
         }
     },
@@ -192,12 +205,13 @@ export default {
         // Clean up event listeners
         window.removeEventListener('resize', this.handleResize);
         document.removeEventListener('click', this.handleClickOutside);
+        document.body.classList.remove('mobile-menu-open');
     }
 }
 </script>
 
 <style scoped>
-/* Container for navbar content */
+/* Container for navbar content - Updated for proper alignment */
 .nav-container {
     display: flex;
     justify-content: space-between;
@@ -205,14 +219,40 @@ export default {
     max-width: 1200px;
     margin: 0 auto;
     position: relative;
+    min-height: 50px;
 }
 
-/* Logo Section */
+/* Logo Section - Left aligned */
 .logo-section {
     display: flex;
     align-items: center;
     gap: 10px;
     z-index: 10000;
+    flex: 1;
+    min-width: 120px;
+}
+
+/* Navigation Links - Centered */
+.nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+}
+
+/* Right side container for theme toggle and hamburger */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+    justify-content: flex-end;
+    min-width: 120px;
 }
 
 /* Desktop Actions */
@@ -260,14 +300,6 @@ export default {
     display: none;
 }
 
-/* Navigation Links - Desktop */
-.nav-links {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    transition: all 0.3s ease;
-}
-
 /* Navigation Button */
 .nav-button {
     display: flex;
@@ -281,6 +313,10 @@ export default {
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s ease;
+    white-space: nowrap; /* Prevent text from wrapping */
+    text-align: center;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+    min-width: 0; /* Allow button to shrink if needed */
 }
 
 .nav-button:hover {
@@ -297,6 +333,14 @@ export default {
 .nav-icon {
     font-size: 16px;
     display: inline-block;
+    flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+/* Navigation Text */
+.nav-text {
+    white-space: nowrap; /* Ensure text doesn't wrap */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Hamburger Menu - Hidden on desktop by default */
@@ -337,26 +381,9 @@ export default {
         display: none;
     }
     
-    .mobile-theme-toggle {
-        display: flex !important;
-        width: 100%;
-        border-radius: 8px;
-        justify-content: flex-start;
-        padding: 15px 20px;
-        margin-top: 10px;
-        border-top: 1px solid var(--theme-border, #f0f0f0);
-    }
-    
-    .theme-label {
-        display: inline;
-        margin-left: 12px;
-        font-weight: 500;
-    }
-    
     .nav-links {
-        display: none; /* Hide by default on mobile */
-        position: absolute;
-        top: 100%;
+        position: fixed; /* Change to fixed for mobile overlay */
+        top: 70px; /* Below navbar */
         left: 0;
         width: 100%;
         background: var(--theme-bg, white);
@@ -367,12 +394,35 @@ export default {
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease, padding 0.3s ease;
+        transform: none;
+        z-index: 9998;
+        gap: 0;
     }
     
     .nav-links.active {
         display: flex; /* Show when active */
         max-height: 500px;
         padding: 10px 0;
+    }
+    
+    .mobile-theme-toggle {
+        display: flex !important;
+        width: calc(100% - 40px);
+        border-radius: 8px;
+        justify-content: flex-start;
+        padding: 15px 20px;
+        margin: 10px 20px 0;
+        border-top: 1px solid var(--theme-border, #f0f0f0);
+        position: relative;
+        z-index: 9999;
+        white-space: nowrap;
+    }
+    
+    .theme-label {
+        display: inline;
+        margin-left: 12px;
+        font-weight: 500;
+        white-space: nowrap;
     }
     
     .nav-button {
@@ -385,6 +435,7 @@ export default {
         border-bottom: 1px solid var(--theme-border, #f0f0f0);
         justify-content: flex-start;
         margin-bottom: 5px;
+        white-space: nowrap; /* Keep text on one line */
     }
     
     .nav-button:last-child {
@@ -402,6 +453,65 @@ export default {
     }
 }
 
+/* Medium screens adjustment */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .nav-links {
+        gap: 8px; /* Reduce gap on medium screens */
+    }
+    
+    .nav-button {
+        padding: 8px 12px;
+        font-size: 14px;
+        white-space: nowrap; /* Ensure text doesn't wrap */
+    }
+    
+    .logo-section h1 {
+        font-size: 18px;
+    }
+}
+
+/* Small desktop screens (769px - 900px) */
+@media (min-width: 769px) and (max-width: 900px) {
+    .nav-links {
+        gap: 6px;
+    }
+    
+    .nav-button {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    .nav-icon {
+        font-size: 14px;
+        margin-right: 4px;
+    }
+    
+    .logo-section h1 {
+        font-size: 16px;
+    }
+}
+
+/* Very small desktop screens */
+@media (min-width: 769px) and (max-width: 820px) {
+    .nav-links {
+        gap: 4px;
+    }
+    
+    .nav-button {
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+    
+    .nav-icon {
+        font-size: 12px;
+        margin-right: 3px;
+    }
+    
+    .logo-section h1 {
+        font-size: 15px;
+    }
+}
+
 /* Small Mobile Optimization */
 @media (max-width: 480px) {
     nav {
@@ -410,6 +520,7 @@ export default {
     
     .logo-section h1 {
         font-size: 18px;
+        white-space: nowrap;
     }
     
     .nav-button {
@@ -417,6 +528,7 @@ export default {
         margin: 0 15px;
         padding: 14px 16px;
         font-size: 14px;
+        white-space: nowrap; /* Keep text on one line */
     }
     
     .hamburger {
@@ -432,6 +544,11 @@ export default {
     .theme-toggle {
         width: 36px;
         height: 36px;
+    }
+    
+    .mobile-theme-toggle {
+        width: calc(100% - 30px);
+        margin: 10px 15px 0;
     }
 }
 
@@ -460,6 +577,11 @@ export default {
     opacity: 0.8;
     transition: opacity 0.2s ease;
 }
+
+/* Ensure all buttons maintain single line text */
+button {
+    white-space: nowrap;
+}
 </style>
 
 <style>
@@ -482,10 +604,59 @@ body {
     background-color: var(--theme-bg);
     color: var(--theme-text);
     transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
 }
 
 /* Prevent body scroll when mobile menu is open */
 body.mobile-menu-open {
     overflow: hidden;
+}
+
+/* Global link styles */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Global button reset */
+button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+    background-color: rgba(52, 152, 219, 0.3);
+    color: inherit;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--theme-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--theme-border);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* Prevent text wrapping in navigation */
+.nav-text {
+    white-space: nowrap;
 }
 </style>

@@ -211,7 +211,7 @@ export default {
 </script>
 
 <style scoped>
-/* Container for navbar content - Updated for proper alignment */
+/* Container for navbar content */
 .nav-container {
     display: flex;
     justify-content: space-between;
@@ -220,6 +220,7 @@ export default {
     margin: 0 auto;
     position: relative;
     min-height: 50px;
+    width: 100%;
 }
 
 /* Logo Section - Left aligned */
@@ -228,21 +229,21 @@ export default {
     align-items: center;
     gap: 10px;
     z-index: 10000;
-    flex: 1;
-    min-width: 120px;
+    flex: 0 0 auto; /* Don't grow or shrink */
 }
 
-/* Navigation Links - Centered */
+/* Navigation Links - Centered using flex */
 .nav-links {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 15px;
     transition: all 0.3s ease;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: auto;
+    flex: 1; /* Take up available space */
+    margin: 0 20px;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 /* Right side container for theme toggle and hamburger */
@@ -250,9 +251,8 @@ export default {
     display: flex;
     align-items: center;
     gap: 15px;
-    flex: 1;
+    flex: 0 0 auto; /* Don't grow or shrink */
     justify-content: flex-end;
-    min-width: 120px;
 }
 
 /* Desktop Actions */
@@ -313,10 +313,11 @@ export default {
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s ease;
-    white-space: nowrap; /* Prevent text from wrapping */
+    white-space: nowrap;
     text-align: center;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
-    min-width: 0; /* Allow button to shrink if needed */
+    flex-shrink: 0;
+    min-width: 0;
+    pointer-events: auto;
 }
 
 .nav-button:hover {
@@ -333,19 +334,19 @@ export default {
 .nav-icon {
     font-size: 16px;
     display: inline-block;
-    flex-shrink: 0; /* Prevent icon from shrinking */
+    flex-shrink: 0;
 }
 
 /* Navigation Text */
 .nav-text {
-    white-space: nowrap; /* Ensure text doesn't wrap */
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 /* Hamburger Menu - Hidden on desktop by default */
 .hamburger {
-    display: none; /* Hidden on desktop */
+    display: none;
     background: none;
     border: none;
     font-size: 24px;
@@ -374,7 +375,7 @@ export default {
 /* Mobile Styles */
 @media (max-width: 768px) {
     .hamburger {
-        display: flex !important; /* Force show on mobile */
+        display: flex !important;
     }
     
     .desktop-actions {
@@ -382,8 +383,8 @@ export default {
     }
     
     .nav-links {
-        position: fixed; /* Change to fixed for mobile overlay */
-        top: 70px; /* Below navbar */
+        position: fixed;
+        top: 70px;
         left: 0;
         width: 100%;
         background: var(--theme-bg, white);
@@ -397,10 +398,12 @@ export default {
         transform: none;
         z-index: 9998;
         gap: 0;
+        margin: 0;
+        flex: none;
     }
     
     .nav-links.active {
-        display: flex; /* Show when active */
+        display: flex;
         max-height: 500px;
         padding: 10px 0;
     }
@@ -435,7 +438,7 @@ export default {
         border-bottom: 1px solid var(--theme-border, #f0f0f0);
         justify-content: flex-start;
         margin-bottom: 5px;
-        white-space: nowrap; /* Keep text on one line */
+        white-space: nowrap;
     }
     
     .nav-button:last-child {
@@ -451,18 +454,24 @@ export default {
         min-width: 24px;
         text-align: center;
     }
+    
+    /* Reset flex properties for mobile */
+    .logo-section,
+    .nav-right {
+        flex: 0 0 auto;
+    }
 }
 
 /* Medium screens adjustment */
 @media (min-width: 769px) and (max-width: 1024px) {
     .nav-links {
-        gap: 8px; /* Reduce gap on medium screens */
+        gap: 8px;
     }
     
     .nav-button {
         padding: 8px 12px;
         font-size: 14px;
-        white-space: nowrap; /* Ensure text doesn't wrap */
+        white-space: nowrap;
     }
     
     .logo-section h1 {
@@ -528,7 +537,7 @@ export default {
         margin: 0 15px;
         padding: 14px 16px;
         font-size: 14px;
-        white-space: nowrap; /* Keep text on one line */
+        white-space: nowrap;
     }
     
     .hamburger {

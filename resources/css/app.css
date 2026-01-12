@@ -6,8 +6,8 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Your theme styles */
-.light-theme {
+/* Theme Variables with Enhanced Colors */
+:root {
     --bg-primary: #f9fafb;
     --bg-secondary: #ffffff;
     --bg-sidebar: #ffffff;
@@ -18,6 +18,20 @@
     --hover-bg: #f3f4f6;
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    /* Animation Colors */
+    --glow-blue: rgba(59, 130, 246, 0.5);
+    --glow-green: rgba(34, 197, 94, 0.5);
+    --glow-purple: rgba(168, 85, 247, 0.5);
+    --glow-red: rgba(239, 68, 68, 0.5);
+    --glow-yellow: rgba(245, 158, 11, 0.5);
+    
+    /* Cyber Colors */
+    --cyber-cyan: #00ffff;
+    --cyber-pink: #ff00ff;
+    --cyber-green: #00ff00;
+    --cyber-blue: #0066ff;
+    --cyber-purple: #9900ff;
 }
 
 .dark-theme {
@@ -31,6 +45,11 @@
     --hover-bg: #374151;
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    
+    /* Dark theme animation colors */
+    --glow-blue: rgba(59, 130, 246, 0.7);
+    --glow-green: rgba(34, 197, 94, 0.7);
+    --glow-purple: rgba(168, 85, 247, 0.7);
 }
 
 /* Base styles */
@@ -40,16 +59,69 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     transition: all 0.3s ease;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Custom Cursor for Nerdy Mode */
+body.nerd-mode-active {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath fill='%2300ff00' d='M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14S23.7 2 16 2zm0 26C9.4 28 4 22.6 4 16S9.4 4 16 4s12 5.4 12 12-5.4 12-12 12z'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%2300ff00'/%3E%3C/svg%3E") 16 16, auto;
 }
 
 .min-h-screen {
     min-height: 100vh;
     background-color: var(--bg-primary);
+    position: relative;
+}
+
+/* Background Particles */
+.bg-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.1;
+}
+
+/* Circuit Board Pattern */
+.circuit-board-bg {
+    background-image: 
+        linear-gradient(to right, var(--glow-blue) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--glow-blue) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.05;
+}
+
+/* Binary Matrix Rain (Easter Egg) */
+.matrix-rain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.5s;
+    font-family: 'Courier New', monospace;
+    color: var(--cyber-green);
+    font-size: 14px;
+}
+
+.matrix-rain.active {
+    opacity: 0.1;
 }
 
 /* Ensure Inertia routes are hidden */
@@ -73,4 +145,1381 @@ body {
 
 .fa-ml {
     margin-left: 0.5rem;
+}
+
+/* ==================== */
+/* ANIMATION KEYFRAMES  */
+/* ==================== */
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 20px var(--glow-blue);
+    }
+    50% {
+        box-shadow: 0 0 30px var(--glow-purple);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+@keyframes status-pulse {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 5px #10b981;
+    }
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 10px #10b981;
+    }
+}
+
+@keyframes firework-explode {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(20);
+        opacity: 0;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-right {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-slow {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes bounce-slow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes ping-slow {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+@keyframes tada {
+    0% {
+        transform: scale(1);
+    }
+    10%, 20% {
+        transform: scale(0.9) rotate(-3deg);
+    }
+    30%, 50%, 70%, 90% {
+        transform: scale(1.1) rotate(3deg);
+    }
+    40%, 60%, 80% {
+        transform: scale(1.1) rotate(-3deg);
+    }
+    100% {
+        transform: scale(1) rotate(0);
+    }
+}
+
+@keyframes hologram-move {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 50px 50px;
+    }
+}
+
+@keyframes dots {
+    0%, 20% {
+        content: '.';
+    }
+    40% {
+        content: '..';
+    }
+    60% {
+        content: '...';
+    }
+    80%, 100% {
+        content: '';
+    }
+}
+
+@keyframes data-stream {
+    0% {
+        top: -100%;
+    }
+    100% {
+        top: 100%;
+    }
+}
+
+@keyframes glitch-anim-1 {
+    0% {
+        transform: translate(0);
+    }
+    20% {
+        transform: translate(-2px, 2px);
+    }
+    40% {
+        transform: translate(-2px, -2px);
+    }
+    60% {
+        transform: translate(2px, 2px);
+    }
+    80% {
+        transform: translate(2px, -2px);
+    }
+    100% {
+        transform: translate(0);
+    }
+}
+
+@keyframes glitch-anim-2 {
+    0% {
+        transform: translate(0);
+    }
+    20% {
+        transform: translate(2px, -2px);
+    }
+    40% {
+        transform: translate(2px, 2px);
+    }
+    60% {
+        transform: translate(-2px, -2px);
+    }
+    80% {
+        transform: translate(-2px, 2px);
+    }
+    100% {
+        transform: translate(0);
+    }
+}
+
+@keyframes particle-burst {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes node-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 var(--glow-blue);
+    }
+    50% {
+        transform: scale(1.2);
+        box-shadow: 0 0 0 10px transparent;
+    }
+}
+
+@keyframes bubble-rise {
+    0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) scale(1);
+        opacity: 0;
+    }
+}
+
+@keyframes progress-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes terminal-flicker {
+    0%, 100% {
+        opacity: 1;
+    }
+    1% {
+        opacity: 0.8;
+    }
+    2% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.9;
+    }
+    51% {
+        opacity: 1;
+    }
+}
+
+@keyframes matrix-fall {
+    0% {
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(100vh);
+    }
+}
+
+@keyframes cyber-scan {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes gradient-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* ==================== */
+/* UTILITY CLASSES      */
+/* ==================== */
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.6s ease-out forwards;
+}
+
+.animate-slide-right {
+    animation: slide-right 0.5s ease-out forwards;
+}
+
+.animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+}
+
+.animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-bounce-slow {
+    animation: bounce-slow 2s ease-in-out infinite;
+}
+
+.animate-ping-slow {
+    animation: ping-slow 2s ease-out infinite;
+}
+
+.animate-tada {
+    animation: tada 1s ease-out;
+}
+
+.animate-spin-slow {
+    animation: spin 3s linear infinite;
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.animate-gradient-shift {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+}
+
+/* Cyberpunk Glow Effects */
+.cyber-glow {
+    text-shadow: 
+        0 0 10px currentColor,
+        0 0 20px currentColor,
+        0 0 40px currentColor;
+}
+
+.cyber-glow-blue {
+    box-shadow: 0 0 20px var(--glow-blue), 0 0 40px var(--glow-blue);
+}
+
+.cyber-glow-green {
+    box-shadow: 0 0 20px var(--glow-green), 0 0 40px var(--glow-green);
+}
+
+.cyber-glow-purple {
+    box-shadow: 0 0 20px var(--glow-purple), 0 0 40px var(--glow-purple);
+}
+
+/* Holographic Effect */
+.holographic {
+    background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.1) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.1) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 50px 50px;
+    animation: hologram-move 20s linear infinite;
+}
+
+/* Loading Dots Animation */
+.loading-dots::after {
+    content: '.';
+    animation: dots 1.5s steps(5, end) infinite;
+}
+
+/* Circuit Board Background */
+.circuit-board {
+    background-image: 
+        linear-gradient(to right, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Data Stream Animation */
+.data-stream {
+    position: relative;
+    overflow: hidden;
+}
+
+.data-stream::after {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--cyber-cyan), transparent);
+    animation: data-stream 3s linear infinite;
+}
+
+/* Retro CRT Scanlines */
+.crt-scanlines {
+    position: relative;
+}
+
+.crt-scanlines::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Glitch Effect */
+.glitch {
+    position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.glitch:hover::before {
+    animation: glitch-anim-1 0.5s infinite linear alternate-reverse;
+    clip-path: polygon(0 0, 100% 0, 100% 35%, 0 65%);
+    color: var(--cyber-pink);
+}
+
+.glitch:hover::after {
+    animation: glitch-anim-2 0.5s infinite linear alternate-reverse;
+    clip-path: polygon(0 65%, 100% 35%, 100% 100%, 0 100%);
+    color: var(--cyber-cyan);
+}
+
+/* Neural Network Lines */
+.neural-network {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.neural-node {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--cyber-blue);
+    border-radius: 50%;
+    animation: node-pulse 2s infinite;
+}
+
+/* Quiz-specific Easter Eggs */
+.quiz-easter-egg {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 12px;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+    font-family: monospace;
+    z-index: 100;
+}
+
+.quiz-easter-egg:hover {
+    opacity: 1;
+}
+
+/* Science-themed decorations */
+.beaker-bubble {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 50%;
+    animation: bubble-rise 4s infinite ease-in;
+}
+
+/* Progress Bar Animation */
+.progress-bar {
+    background: linear-gradient(90deg, 
+        var(--cyber-blue) 0%, 
+        var(--cyber-purple) 25%, 
+        var(--cyber-green) 50%, 
+        var(--glow-yellow) 75%, 
+        var(--glow-red) 100%
+    );
+    background-size: 200% 100%;
+    animation: progress-shimmer 2s linear infinite;
+}
+
+/* Retro Computer Terminal Effect */
+.terminal-flicker {
+    animation: terminal-flicker 5s infinite;
+}
+
+/* Cyber Scan Line */
+.cyber-scan {
+    position: relative;
+    overflow: hidden;
+}
+
+.cyber-scan::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        var(--cyber-green),
+        transparent
+    );
+    animation: cyber-scan 2s linear infinite;
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: linear-gradient(45deg, 
+        var(--cyber-blue), 
+        var(--cyber-purple), 
+        var(--cyber-cyan)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease infinite;
+}
+
+/* Particle Container */
+.particle-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Floating Icons */
+.floating-icon {
+    animation: float 6s ease-in-out infinite;
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.2));
+}
+
+/* Quiz Score Animation */
+.score-burst {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 30%, var(--glow-green) 70%);
+    animation: tada 0.5s ease-out;
+}
+
+/* Achievement Badge Animation */
+.badge-pop {
+    animation: tada 1s ease-out;
+}
+
+/* Easter Egg Reveal */
+.easter-reveal {
+    animation: slide-up 0.6s ease-out, tada 1s ease-out 0.6s;
+}
+
+/* Nerd Mode Effects */
+.nerd-mode-active .nerd-mode-only {
+    display: block !important;
+}
+
+.nerd-mode-active .quiz-tile {
+    border-color: var(--cyber-green);
+    box-shadow: 0 0 20px var(--cyber-green);
+}
+
+/* Konami Code Effect */
+.konami-unlocked {
+    animation: tada 1s, gradient-shift 2s infinite;
+}
+
+/* Interactive Elements */
+.interactive-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.interactive-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.7s ease;
+}
+
+.interactive-card:hover::before {
+    left: 100%;
+}
+
+.interactive-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Quiz Answer Effects */
+.correct-answer {
+    animation: tada 0.5s;
+    background: linear-gradient(45deg, var(--glow-green), transparent) !important;
+}
+
+.incorrect-answer {
+    animation: shake 0.5s;
+    background: linear-gradient(45deg, var(--glow-red), transparent) !important;
+}
+
+/* Selection Glow */
+.selection-glow {
+    position: relative;
+}
+
+.selection-glow::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: inherit;
+    background: linear-gradient(45deg, 
+        var(--cyber-cyan), 
+        var(--cyber-pink), 
+        var(--cyber-green)
+    );
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.selection-glow:hover::after {
+    opacity: 0.5;
+}
+
+/* Leaderboard Animation */
+.leaderboard-entry {
+    animation: slide-right 0.5s ease-out;
+}
+
+/* Countdown Timer Effects */
+.countdown-pulse {
+    animation: pulse-slow 1s infinite;
+}
+
+.countdown-warning {
+    animation: pulse-slow 0.5s infinite, shake 0.5s infinite;
+}
+
+/* Achievement Popup */
+.achievement-popup {
+    animation: slide-up 0.5s ease-out, tada 1s ease-out 0.5s;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Neural Thinking Animation */
+.thinking-dots::after {
+    content: '⠋';
+    animation: dots 1.5s steps(6, end) infinite;
+    font-family: monospace;
+}
+
+/* Science Lab Effects */
+.lab-beaker {
+    animation: float 4s ease-in-out infinite;
+}
+
+.lab-bubbles {
+    position: relative;
+}
+
+.lab-bubbles::before,
+.lab-bubbles::after {
+    content: '';
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background: var(--cyber-cyan);
+    border-radius: 50%;
+    animation: bubble-rise 3s infinite ease-in;
+}
+
+.lab-bubbles::before {
+    left: 20%;
+    animation-delay: 0s;
+}
+
+.lab-bubbles::after {
+    left: 70%;
+    animation-delay: 1.5s;
+}
+
+/* Math Equation Effects */
+.equation-glow {
+    font-family: 'Cambria Math', serif;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    animation: pulse-slow 2s infinite;
+}
+
+/* Historical Timeline Effects */
+.timeline-connector {
+    position: relative;
+}
+
+.timeline-connector::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, var(--cyber-blue), transparent);
+    transform: translateX(-50%);
+}
+
+/* Geography Globe Effect */
+.globe-spin {
+    animation: spin-slow 20s linear infinite;
+}
+
+/* Physics Particle Simulator */
+.particle-sim {
+    position: relative;
+    overflow: hidden;
+}
+
+.particle-sim::before {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--cyber-cyan);
+    border-radius: 50%;
+    animation: particle-burst 2s infinite;
+}
+
+/* Chemistry Reaction Effects */
+.reaction-glow {
+    background: radial-gradient(circle at center, var(--glow-yellow) 0%, transparent 70%);
+    animation: pulse-slow 2s infinite;
+}
+
+/* Biology Cell Animation */
+.cell-pulse {
+    position: relative;
+}
+
+.cell-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border: 2px solid var(--glow-green);
+    border-radius: 50%;
+    animation: ping-slow 3s infinite;
+}
+
+/* Astronomy Star Effects */
+.star-twinkle {
+    animation: sparkle 2s infinite;
+}
+
+.star-field {
+    background-image: 
+        radial-gradient(circle at 20% 30%, var(--glow-blue) 1px, transparent 1px),
+        radial-gradient(circle at 60% 70%, var(--glow-yellow) 1px, transparent 1px),
+        radial-gradient(circle at 40% 90%, var(--glow-purple) 1px, transparent 1px);
+    background-size: 100px 100px;
+}
+
+/* Literature Book Animation */
+.book-flip {
+    animation: float 5s ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+/* Art Palette Effects */
+.palette-swirl {
+    background: conic-gradient(
+        var(--glow-red),
+        var(--glow-yellow),
+        var(--glow-green),
+        var(--cyber-blue),
+        var(--glow-purple),
+        var(--glow-red)
+    );
+    animation: spin-slow 5s linear infinite;
+    border-radius: 50%;
+}
+
+/* Music Note Animation */
+.note-bounce {
+    animation: bounce-slow 1s ease-in-out infinite;
+}
+
+/* Sports Trophy Animation */
+.trophy-sparkle {
+    position: relative;
+}
+
+.trophy-sparkle::after {
+    content: '✨';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    animation: sparkle 2s infinite;
+}
+
+/* Technology Chip Animation */
+.chip-glow {
+    background: var(--cyber-green);
+    box-shadow: 0 0 20px var(--cyber-green);
+    animation: pulse-slow 2s infinite;
+}
+
+/* Innovation Idea Bulb */
+.idea-bulb {
+    animation: pulse-slow 2s infinite, float 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px var(--glow-yellow));
+}
+
+/* Learning Progress Animation */
+.progress-rings {
+    position: relative;
+}
+
+.progress-rings::before,
+.progress-rings::after {
+    content: '';
+    position: absolute;
+    border: 2px solid;
+    border-radius: 50%;
+    animation: spin-slow 4s linear infinite reverse;
+}
+
+.progress-rings::before {
+    inset: -10px;
+    border-color: var(--cyber-cyan);
+}
+
+.progress-rings::after {
+    inset: -20px;
+    border-color: var(--cyber-pink);
+    animation-delay: 0.5s;
+}
+
+/* Knowledge Graph Animation */
+.graph-node {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--cyber-purple);
+    border-radius: 50%;
+    animation: node-pulse 3s infinite;
+}
+
+.graph-connection {
+    position: absolute;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyber-blue), transparent);
+    transform-origin: left center;
+    animation: data-stream 4s linear infinite;
+}
+
+/* Smart Quiz AI Animation */
+.ai-thinking {
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(59, 130, 246, 0.1),
+        transparent
+    );
+    background-size: 200% 100%;
+    animation: progress-shimmer 3s linear infinite;
+}
+
+/* Achievement Unlocked Effect */
+.achievement-unlocked {
+    animation: tada 1s, gradient-shift 3s infinite;
+    background: linear-gradient(45deg, 
+        var(--glow-yellow),
+        var(--glow-red),
+        var(--glow-purple)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Level Up Animation */
+.level-up {
+    animation: slide-up 0.5s, tada 1s 0.5s;
+    position: relative;
+}
+
+.level-up::after {
+    content: '↑';
+    position: absolute;
+    top: -20px;
+    right: -10px;
+    color: var(--glow-green);
+    animation: float 2s infinite;
+}
+
+/* Streak Fire Animation */
+.streak-fire {
+    background: linear-gradient(to bottom, 
+        var(--glow-yellow),
+        var(--glow-red)
+    );
+    animation: pulse-slow 1s infinite;
+}
+
+/* Daily Challenge Effect */
+.daily-challenge {
+    border-image: linear-gradient(45deg, 
+        var(--cyber-cyan),
+        var(--cyber-pink),
+        var(--cyber-green)
+    ) 1;
+    animation: gradient-shift 3s infinite;
+}
+
+/* Leaderboard Crown */
+.leaderboard-crown {
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 5px 15px rgba(245, 158, 11, 0.5));
+}
+
+/* Study Timer Pomodoro */
+.pomodoro-pulse {
+    animation: pulse-slow 1s infinite;
+}
+
+/* Focus Mode Effects */
+.focus-mode-active {
+    filter: grayscale(0.5) blur(1px);
+    transition: filter 0.3s ease;
+}
+
+.focus-mode-active:focus {
+    filter: none;
+    box-shadow: 0 0 0 3px var(--cyber-cyan);
+}
+
+/* Dark Mode Toggle Animation */
+.theme-toggle {
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.theme-toggle:hover {
+    transform: rotate(180deg) scale(1.1);
+}
+
+/* Notification Animation */
+.notification-slide {
+    animation: slide-right 0.3s ease-out;
+}
+
+.notification-pulse {
+    position: relative;
+}
+
+.notification-pulse::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: currentColor;
+    animation: ping-slow 2s infinite;
+}
+
+/* Score Celebration */
+.score-celebration {
+    position: relative;
+    overflow: hidden;
+}
+
+.score-celebration::before {
+    content: '🎉';
+    position: absolute;
+    font-size: 2em;
+    animation: float 1s ease-in-out infinite;
+}
+
+/* Perfect Score Effect */
+.perfect-score {
+    background: linear-gradient(45deg, 
+        var(--glow-yellow),
+        var(--glow-red),
+        var(--glow-purple),
+        var(--cyber-cyan)
+    );
+    animation: gradient-shift 3s infinite, tada 2s infinite;
+}
+
+/* Quick Stats Animation */
+.quick-stats-glow {
+    animation: pulse-glow 2s infinite;
+}
+
+/* Recent Activity Pulse */
+.activity-pulse {
+    position: relative;
+}
+
+.activity-pulse::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -10px;
+    width: 8px;
+    height: 8px;
+    background: var(--glow-green);
+    border-radius: 50%;
+    transform: translateY(-50%);
+    animation: ping-slow 2s infinite;
+}
+
+/* Dashboard Welcome Animation */
+.welcome-animation {
+    animation: slide-up 0.8s ease-out, fade-in 1s ease-out;
+}
+
+/* Performance Chart Animation */
+.chart-grow {
+    animation: slide-up 1s ease-out;
+    transform-origin: bottom;
+}
+
+/* User Rank Animation */
+.rank-badge {
+    animation: tada 1s ease-out, float 3s ease-in-out infinite 1s;
+}
+
+/* Learning Path Progress */
+.path-progress {
+    position: relative;
+}
+
+.path-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: data-stream 3s linear infinite;
+}
+
+/* Quiz Category Icons */
+.category-icon {
+    transition: all 0.3s ease;
+}
+
+.category-icon:hover {
+    transform: scale(1.2) rotate(10deg);
+    filter: drop-shadow(0 5px 15px currentColor);
+}
+
+/* Time Attack Mode */
+.time-attack {
+    animation: pulse-slow 0.5s infinite, shake 0.5s infinite;
+    background: linear-gradient(45deg, 
+        var(--glow-red),
+        var(--glow-yellow)
+    );
+}
+
+/* Marathon Mode */
+.marathon-mode {
+    background: linear-gradient(45deg, 
+        var(--cyber-green),
+        var(--cyber-blue),
+        var(--cyber-purple)
+    );
+    animation: gradient-shift 5s infinite;
+}
+
+/* Survival Mode */
+.survival-mode {
+    animation: pulse-slow 1s infinite;
+    border: 2px solid var(--glow-red);
+}
+
+/* Multiplayer Duel */
+.duel-mode {
+    animation: pulse-slow 0.3s infinite;
+    background: linear-gradient(90deg, 
+        var(--glow-blue) 50%, 
+        var(--glow-red) 50%
+    );
+}
+
+/* Learning Streak */
+.streak-active {
+    background: linear-gradient(45deg, 
+        var(--glow-yellow),
+        var(--glow-orange),
+        var(--glow-red)
+    );
+    animation: gradient-shift 2s infinite;
+}
+
+/* Knowledge Mastery */
+.mastery-badge {
+    animation: spin-slow 10s linear infinite, sparkle 3s infinite;
+}
+
+/* Quick Review Mode */
+.review-mode {
+    border: 2px dashed var(--cyber-cyan);
+    animation: pulse-slow 2s infinite;
+}
+
+/* Flashcard Flip */
+.flashcard-flip {
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+}
+
+.flashcard-flip.flipped {
+    transform: rotateY(180deg);
+}
+
+/* Practice Test Mode */
+.practice-mode {
+    background: linear-gradient(45deg, 
+        rgba(34, 197, 94, 0.1),
+        rgba(59, 130, 246, 0.1)
+    );
+    animation: gradient-shift 4s infinite;
+}
+
+/* Expert Challenge */
+.expert-challenge {
+    border: 3px solid;
+    border-image: linear-gradient(45deg, 
+        var(--glow-purple),
+        var(--cyber-cyan),
+        var(--glow-green)
+    ) 1;
+    animation: gradient-shift 3s infinite;
+}
+
+/* Learning Reminder */
+.reminder-pulse {
+    animation: pulse-slow 2s infinite;
+    border-left: 4px solid var(--cyber-cyan);
+}
+
+/* Progress Milestone */
+.milestone-celebration {
+    animation: tada 1s, sparkle 2s infinite 1s;
+    position: relative;
+}
+
+.milestone-celebration::after {
+    content: '⭐';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    animation: float 2s infinite;
+}
+
+/* Knowledge Share */
+.share-glow {
+    animation: pulse-glow 2s infinite;
+    background: linear-gradient(45deg, 
+        var(--glow-green),
+        var(--cyber-blue)
+    );
+}
+
+/* Learning Community */
+.community-pulse {
+    position: relative;
+}
+
+.community-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border: 2px solid var(--cyber-green);
+    border-radius: 50%;
+    animation: ping-slow 3s infinite;
+}
+
+/* Accessibility Features */
+.high-contrast {
+    filter: contrast(1.5);
+}
+
+.reduced-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .mobile-optimized {
+        animation-duration: 0.6s !important;
+    }
+    
+    .mobile-hide-animations * {
+        animation: none !important;
+    }
+}
+
+/* Performance Optimizations */
+.will-change-transform {
+    will-change: transform;
+}
+
+.will-change-opacity {
+    will-change: opacity;
+}
+
+/* Smooth State Transitions */
+.page-transition-enter-active,
+.page-transition-leave-active {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.page-transition-enter,
+.page-transition-leave-to {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* Focus States for Accessibility */
+.focus-visible {
+    outline: 2px solid var(--cyber-cyan);
+    outline-offset: 2px;
+}
+
+/* Loading Skeletons */
+.skeleton-loading {
+    background: linear-gradient(90deg, 
+        var(--border-color) 25%, 
+        var(--hover-bg) 50%, 
+        var(--border-color) 75%
+    );
+    background-size: 200% 100%;
+    animation: progress-shimmer 1.5s infinite;
+}
+
+/* Error State Animation */
+.error-state {
+    animation: shake 0.5s;
+    border-color: var(--glow-red) !important;
+}
+
+/* Success State Animation */
+.success-state {
+    animation: tada 0.5s;
+    border-color: var(--glow-green) !important;
+}
+
+/* Warning State Animation */
+.warning-state {
+    animation: pulse-slow 1s infinite;
+    border-color: var(--glow-yellow) !important;
+}
+
+/* Info State Animation */
+.info-state {
+    animation: pulse-slow 2s infinite;
+    border-color: var(--cyber-blue) !important;
+}
+
+/* Achievement Progress Animation */
+.achievement-progress {
+    position: relative;
+    overflow: hidden;
+}
+
+.achievement-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent
+    );
+    animation: data-stream 2s linear infinite;
 }

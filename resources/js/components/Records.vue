@@ -27,7 +27,7 @@
             <!-- Animated Header -->
             <div class="text-center mb-12 animate-slide-up">
                 <h1 class="records-title inline-block">
-                    <span class="text-gradient animate-gradient-shift text-4xl font-bold">📊 My Previous Records</span>
+                    <span class="text-gradient animate-gradient-shift text-4xl font-bold">📊 My Quiz Records</span>
                     <span class="sparkle">✨</span>
                 </h1>
                 <p class="records-subtitle mt-2 text-lg opacity-75">
@@ -164,15 +164,39 @@
                         >
                         <span class="toggle-slider"></span>
                         <span class="toggle-text">
-                            <span class="toggle-icon">🔒</span>
-                            Show only my browser's attempts
-                            <span class="toggle-count" v-if="resultsWithBrowserId.length > 0">
-                                ({{ resultsWithBrowserId.length }} found)
+                            <span class="toggle-icon">{{ useBrowserFilter ? '🔒' : '🌐' }}</span>
+                            {{ useBrowserFilter ? 'Only my browser' : 'All browsers' }}
+                            <span class="toggle-count">
+                                ({{ useBrowserFilter ? resultsWithBrowserId.length : results.length }})
                             </span>
                         </span>
                     </label>
                     <div class="toggle-neural-node"></div>
                 </div>
+
+                <!-- Warning when showing all browsers -->
+                <transition name="fade">
+                    <div v-if="!useBrowserFilter && resultsWithBrowserId.length > 0" 
+                         class="all-browsers-warning mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 rounded-r">
+                        <div class="flex items-start">
+                            <span class="warning-icon mr-3 text-xl">⚠️</span>
+                            <div>
+                                <h4 class="warning-title font-medium text-yellow-800 dark:text-yellow-300">
+                                    Viewing ALL attempts from ALL browsers
+                                </h4>
+                                <p class="warning-text text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                                    You are currently seeing everyone's quiz results. To view only your attempts, 
+                                    enable the browser filter above.
+                                </p>
+                                <button @click="useBrowserFilter = true" 
+                                        class="mt-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center">
+                                    <span class="mr-2">🔒</span>
+                                    Show only my attempts
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
             </div>
 
             <!-- Results Summary with Counting Animation -->
@@ -180,9 +204,26 @@
                 <div v-if="!error && filteredResults.length > 0" 
                      class="summary-card rounded-lg shadow-md p-6 mb-6 animate-slide-up interactive-card"
                      :class="themeClass" :style="{ animationDelay: '0.2s' }">
+                    
+                    <!-- Summary Status Indicator -->
+                    <div class="summary-status mb-4 flex items-center justify-center">
+                        <div class="status-badge inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                             :class="useBrowserFilter 
+                                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700'
+                                    : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-700'">
+                            <span class="mr-2">
+                                {{ useBrowserFilter ? '🔒' : '👥' }}
+                            </span>
+                            {{ useBrowserFilter ? 'Your attempts only' : 'All attempts' }}
+                            <span class="ml-2 text-xs opacity-75">
+                                ({{ useBrowserFilter ? resultsWithBrowserId.length : results.length }} total)
+                            </span>
+                        </div>
+                    </div>
+
                     <h3 class="summary-title mb-6 animate-slide-right">
                         <span class="summary-icon">📈</span>
-                        My Performance Summary
+                        Performance Summary
                         <span class="summary-sparkle"></span>
                     </h3>
                     
@@ -191,7 +232,7 @@
                             <div class="summary-number text-blue-600 cyber-glow-blue">
                                 {{ animatedAttempts }}
                             </div>
-                            <div class="summary-label">📈 My Attempts</div>
+                            <div class="summary-label">📈 Total Attempts</div>
                             <div class="summary-glow"></div>
                         </div>
                         <div class="summary-item animate-count-up" :style="{ animationDelay: '0.2s' }">
@@ -263,10 +304,17 @@
                                                     {{ result.participant_name || 'Anonymous' }}
                                                 </div>
                                                 <div class="browser-info text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                    <span class="browser-icon">🌐</span>
-                                                    {{ useBrowserFilter ? 'This browser' : 'All browsers' }}
-                                                    <span v-if="result.browser_id" class="browser-id">
-                                                        (ID: {{ result.browser_id.slice(0, 8) }}...)
+                                                    <span class="browser-icon">
+                                                        {{ useBrowserFilter ? '🔒' : (result.browser_id === browserId ? '🔒' : '🌐') }}
+                                                    </span>
+                                                    {{ getBrowserLabel(result) }}
+                                                    <span v-if="result.browser_id && !useBrowserFilter" 
+                                                          class="browser-id inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 ml-1">
+                                                        ID: {{ result.browser_id.slice(0, 8) }}...
+                                                    </span>
+                                                    <span v-if="result.browser_id === browserId && !useBrowserFilter" 
+                                                          class="your-attempt-badge inline-flex items-center px-2 py-0.5 rounded text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 ml-1">
+                                                        ✓ Your attempt
                                                     </span>
                                                 </div>
                                             </div>
@@ -357,12 +405,14 @@
                     <transition name="fade">
                         <div v-if="filteredResults.length === 0 && !loading && !error" 
                              class="empty-state text-center py-12 animate-fade-in">
-                            <div class="empty-icon text-4xl mb-4 animate-float">📭</div>
+                            <div class="empty-icon text-4xl mb-4 animate-float">
+                                {{ getEmptyStateIcon() }}
+                            </div>
                             <h3 class="empty-title mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">
-                                {{ useBrowserFilter ? 'No attempts found from this browser' : 'No quiz attempts found' }}
+                                {{ getEmptyStateTitle() }}
                             </h3>
                             <p class="empty-subtitle mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                {{ useBrowserFilter ? 'Take a quiz first to see your attempts here.' : 'Take a quiz first to see attempts here.' }}
+                                {{ getEmptyStateSubtitle() }}
                             </p>
                             <div class="empty-actions mt-6 flex justify-center gap-3">
                                 <button 
@@ -374,13 +424,13 @@
                                     Refresh
                                 </button>
                                 <button 
-                                    v-if="useBrowserFilter && results.length > 0"
+                                    v-if="useBrowserFilter && results.length > resultsWithBrowserId.length"
                                     @click="toggleBrowserFilter"
                                     class="empty-btn px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center"
                                     @mouseenter="playHoverSound('expand')"
                                 >
                                     <span class="mr-2">👥</span>
-                                    Show All
+                                    Show All Attempts
                                 </button>
                             </div>
                         </div>
@@ -909,7 +959,7 @@ export default {
             selectedResult: null,
             quizDetails: {},
             browserId: null,
-            useBrowserFilter: false,
+            useBrowserFilter: true, // Changed to true by default
             
             // Animation states
             particles: [],
@@ -950,6 +1000,7 @@ export default {
         filteredResults() {
             let filtered = this.results;
             
+            // Always filter by browser ID by default
             if (this.useBrowserFilter && this.browserId) {
                 filtered = filtered.filter(result => result.browser_id === this.browserId);
             }
@@ -1046,6 +1097,12 @@ export default {
             await this.initializeBrowserId();
             await this.fetchQuizSets();
             await this.fetchResults();
+            
+            // Auto-enable browser filter if we have results from this browser
+            if (this.resultsWithBrowserId.length > 0) {
+                this.useBrowserFilter = true;
+            }
+            
             this.initParticles();
             this.initAnalyticsCode();
         } catch (error) {
@@ -1070,17 +1127,43 @@ export default {
         },
 
         toggleBrowserFilter() {
-            if (this.resultsWithBrowserId.length === 0) {
-                console.log('❌ Cannot enable browser filter: no results have browser_id');
-                alert('No quiz results have browser tracking enabled. Please make sure your quiz submissions include browser_id.');
-                return;
+            // If user tries to turn OFF browser filter, confirm first
+            if (this.useBrowserFilter) {
+                const confirmTurnOff = confirm(
+                    'You are about to view ALL attempts from ALL browsers. ' +
+                    'Are you sure you want to see other people\'s results?'
+                );
+                
+                if (!confirmTurnOff) {
+                    return;
+                }
+                
+                this.useBrowserFilter = false;
+                this.showNotification('Showing ALL attempts from ALL browsers', 'info');
+            } else {
+                // Trying to turn ON browser filter
+                if (this.resultsWithBrowserId.length === 0) {
+                    console.log('No browser-specific results found');
+                    alert('No quiz attempts found from this browser. Take a quiz first to see your attempts here.');
+                    return;
+                }
+                
+                this.useBrowserFilter = true;
+                this.showNotification('Now showing only your browser\'s attempts', 'success');
             }
             
-            this.useBrowserFilter = !this.useBrowserFilter;
             console.log('🔄 Browser filter:', this.useBrowserFilter ? 'ON' : 'OFF');
             
             if (this.useBrowserFilter) {
                 this.createFilterEffect();
+            }
+        },
+
+        getBrowserLabel(result) {
+            if (this.useBrowserFilter) {
+                return 'Your browser';
+            } else {
+                return result.browser_id === this.browserId ? 'Your browser' : 'Other browser';
             }
         },
 
@@ -1104,6 +1187,38 @@ export default {
             const timestamp = Date.now().toString(36);
             const random = Math.random().toString(36).substr(2, 9);
             return `browser_${timestamp}_${random}`;
+        },
+
+        getEmptyStateIcon() {
+            if (this.useBrowserFilter) {
+                return '🔒';
+            } else {
+                return '👥';
+            }
+        },
+
+        getEmptyStateTitle() {
+            if (this.useBrowserFilter) {
+                if (this.resultsWithBrowserId.length === 0) {
+                    return 'No attempts from this browser';
+                } else {
+                    return 'No matching attempts found';
+                }
+            } else {
+                return 'No quiz attempts found';
+            }
+        },
+
+        getEmptyStateSubtitle() {
+            if (this.useBrowserFilter) {
+                if (this.resultsWithBrowserId.length === 0) {
+                    return 'Take a quiz first to see your attempts here.';
+                } else {
+                    return 'Try adjusting your filters to see more results.';
+                }
+            } else {
+                return 'No results match your current filters.';
+            }
         },
 
         closeModal() {
@@ -2367,6 +2482,26 @@ export default {
     animation: node-pulse 3s infinite;
 }
 
+/* All Browsers Warning */
+.all-browsers-warning {
+    animation: slide-right 0.3s ease-out;
+}
+
+.warning-icon {
+    animation: pulse-slow 2s infinite;
+}
+
+.warning-title {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.warning-text {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+}
+
 /* Summary Card */
 .summary-card {
     background: var(--summary-card-bg);
@@ -2377,6 +2512,30 @@ export default {
 
 .summary-card:hover {
     border-color: rgba(59, 130, 246, 0.2);
+}
+
+.summary-status {
+    animation: fade-in 0.5s ease-out;
+}
+
+.status-badge {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    animation: badge-pulse 3s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
 }
 
 .summary-icon {
@@ -2466,6 +2625,35 @@ export default {
 /* Table Row Hover Effect */
 .table-row:hover {
     background: var(--table-row-hover);
+}
+
+/* Browser info styling */
+.browser-info {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.browser-icon {
+    margin-right: 0.25rem;
+}
+
+.browser-id {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+}
+
+.your-attempt-badge {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    animation: badge-pulse 3s ease-in-out infinite;
 }
 
 /* Empty State */

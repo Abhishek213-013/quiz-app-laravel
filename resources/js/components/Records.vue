@@ -525,7 +525,7 @@
         <!-- Enhanced Results Details Modal -->
         <transition name="modal">
             <div v-if="selectedResult" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="closeModal">
-                <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" :class="themeClass">
+                <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" :class="themeClass" ref="modalContent">
                     <div class="modal-header p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
                         <div class="flex items-center justify-between">
                             <div>
@@ -670,11 +670,6 @@
                                     </span>
                                 </h4>
                                 <div class="flex items-center space-x-2">
-                                    <button @click="exportResult" 
-                                            class="export-btn px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center">
-                                        <span class="mr-2">💾</span>
-                                        Export
-                                    </button>
                                     <div class="legend flex items-center space-x-4 text-xs">
                                         <div class="legend-item flex items-center">
                                             <div class="w-3 h-3 bg-green-500 rounded mr-1"></div>
@@ -906,11 +901,42 @@
                                         class="modal-close-btn px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
                                     Close
                                 </button>
-                                <button @click="exportResult" 
+                                
+                                <!-- Export Dropdown -->
+                                <div class="relative group">
+                                    <button 
                                         class="modal-export-btn px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-medium flex items-center shadow-md hover:shadow-lg">
-                                    <span class="mr-2">📥</span>
-                                    Export Results
-                                </button>
+                                        <span class="mr-2">📥</span>
+                                        Export Results
+                                        <span class="ml-2">▼</span>
+                                    </button>
+                                    
+                                    <div class="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                                        <button @click="exportResultAsPDF" 
+                                                class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <span class="mr-3 text-red-500">📄</span>
+                                                <div>
+                                                    <div class="font-medium">Export as PDF</div>
+                                                    <div class="text-xs text-gray-500">Download printable report</div>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs text-gray-400">PDF</span>
+                                        </button>
+                                        <button @click="exportResultAsJSON" 
+                                                class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
+                                            <div class="flex items-center">
+                                                <span class="mr-3 text-blue-500">📊</span>
+                                                <div>
+                                                    <div class="font-medium">Export as JSON</div>
+                                                    <div class="text-xs text-gray-500">Download raw data</div>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs text-gray-400">JSON</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
                                 <button v-if="hasPreviousAttempt()" @click="navigateToPreviousAttempt"
                                         class="nav-btn px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-medium flex items-center">
                                     <span class="mr-2">←</span>
@@ -937,6 +963,11 @@
 </template>
 
 <script>
+// Install required packages:
+// npm install jspdf html2canvas
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 export default {
     name: 'Records',
     props: {
@@ -1913,7 +1944,229 @@ export default {
             }, 3000);
         },
 
-        exportResult() {
+        async exportResultAsPDF() {
+            if (!this.selectedResult) return;
+            
+            try {
+                this.showNotification('Generating PDF...', 'info');
+                
+                // Create a temporary container for PDF generation
+                const pdfContainer = document.createElement('div');
+                pdfContainer.style.cssText = `
+                    position: absolute;
+                    left: -9999px;
+                    top: -9999px;
+                    width: 800px;
+                    padding: 40px;
+                    background: white;
+                    color: black;
+                    font-family: Arial, sans-serif;
+                `;
+                
+                // Generate PDF content
+                const participantName = this.selectedResult.participant_name || 'Anonymous';
+                const quizSetName = this.getResultQuizSetName(this.selectedResult);
+                const date = this.formatDate(this.selectedResult.created_at);
+                const score = `${this.selectedResult.score || 0}/${this.selectedResult.total_questions || 0}`;
+                const percentage = this.formatPercentage(this.getSafePercentage(this.selectedResult));
+                const timeTaken = this.formatTime(this.selectedResult.time_taken || 0);
+                const correctCount = this.getCorrectCount();
+                const wrongCount = this.getWrongCount();
+                const skippedCount = this.getSkippedCount();
+                const totalQuestions = this.getTotalQuestions();
+                
+                let questionsHTML = '';
+                const allQuestions = this.getAllQuestions();
+                
+                Object.keys(allQuestions).forEach((index, i) => {
+                    const questionNum = parseInt(index) + 1;
+                    const questionText = this.getQuestionText(index);
+                    const userAnswer = allQuestions[index] || 'Skipped';
+                    const correctAnswer = this.getCorrectAnswer(index);
+                    const status = this.getQuestionStatus(index);
+                    const explanation = this.getQuestionExplanation(index);
+                    const options = this.getQuestionOptions(index);
+                    
+                    questionsHTML += `
+                        <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                            <div style="background: ${status === 'Correct' ? '#d1fae5' : status === 'Wrong' ? '#fee2e2' : '#dbeafe'}; 
+                                        padding: 15px; border-radius: 8px; border-left: 5px solid ${status === 'Correct' ? '#10b981' : status === 'Wrong' ? '#ef4444' : '#3b82f6'};">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h4 style="margin: 0; font-size: 18px; color: #1f2937;">Question ${questionNum}</h4>
+                                    <span style="background: ${status === 'Correct' ? '#10b981' : status === 'Wrong' ? '#ef4444' : '#3b82f6'}; 
+                                                color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                                        ${status}
+                                    </span>
+                                </div>
+                                <p style="margin: 0 0 15px 0; font-size: 14px; color: #4b5563;">${questionText}</p>
+                                
+                                <div style="margin-bottom: 15px;">
+                                    ${options.map((option, optIndex) => {
+                                        const isCorrect = option === correctAnswer;
+                                        const isUserAnswer = option === userAnswer;
+                                        let optionStyle = 'padding: 8px 12px; margin: 4px 0; border-radius: 6px; ';
+                                        
+                                        if (isCorrect && isUserAnswer) {
+                                            optionStyle += 'background: #d1fae5; border: 2px solid #10b981;';
+                                        } else if (isCorrect) {
+                                            optionStyle += 'background: #f0fdf4; border: 1px solid #bbf7d0;';
+                                        } else if (isUserAnswer && !isCorrect) {
+                                            optionStyle += 'background: #fee2e2; border: 2px solid #ef4444;';
+                                        } else {
+                                            optionStyle += 'background: #f9fafb; border: 1px solid #e5e7eb;';
+                                        }
+                                        
+                                        return `
+                                            <div style="${optionStyle}">
+                                                <strong>${String.fromCharCode(65 + optIndex)}.</strong> ${option}
+                                                ${isCorrect ? '<span style="color: #10b981; margin-left: 10px;">✓ Correct</span>' : ''}
+                                                ${isUserAnswer && !isCorrect ? '<span style="color: #ef4444; margin-left: 10px;">✗ Your Answer</span>' : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                                
+                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 12px;">
+                                    <strong>Your Answer:</strong> ${userAnswer}<br>
+                                    <strong>Correct Answer:</strong> ${correctAnswer}
+                                    ${explanation ? `<br><strong>Explanation:</strong> ${explanation}` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                pdfContainer.innerHTML = `
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <!-- Header -->
+                        <div style="text-align: center; margin-bottom: 40px; border-bottom: 3px solid #3b82f6; padding-bottom: 20px;">
+                            <h1 style="color: #1e40af; font-size: 32px; margin: 0 0 10px 0;">Quiz Results Report</h1>
+                            <div style="display: flex; justify-content: center; gap: 30px; font-size: 14px; color: #6b7280;">
+                                <div><strong>Participant:</strong> ${participantName}</div>
+                                <div><strong>Quiz Set:</strong> ${quizSetName}</div>
+                                <div><strong>Date:</strong> ${date}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Performance Summary -->
+                        <div style="margin-bottom: 40px;">
+                            <h2 style="color: #1e40af; font-size: 24px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                                Performance Summary
+                            </h2>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px;">
+                                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                                    <div style="font-size: 28px; color: #1e40af; font-weight: bold; margin-bottom: 5px;">${score}</div>
+                                    <div style="font-size: 14px; color: #6b7280;">Score</div>
+                                </div>
+                                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                                    <div style="font-size: 28px; color: #10b981; font-weight: bold; margin-bottom: 5px;">${percentage}</div>
+                                    <div style="font-size: 14px; color: #6b7280;">Percentage</div>
+                                </div>
+                                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                                    <div style="font-size: 28px; color: #8b5cf6; font-weight: bold; margin-bottom: 5px;">${timeTaken}</div>
+                                    <div style="font-size: 14px; color: #6b7280;">Time Taken</div>
+                                </div>
+                                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                                    <div style="font-size: 28px; color: #f59e0b; font-weight: bold; margin-bottom: 5px;">${this.getPerformanceRating(this.getSafePercentage(this.selectedResult))}</div>
+                                    <div style="font-size: 14px; color: #6b7280;">Performance Rating</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Detailed Statistics -->
+                            <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border: 1px solid #bae6fd;">
+                                <h3 style="color: #0369a1; font-size: 18px; margin-top: 0;">Detailed Statistics</h3>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+                                    <div>
+                                        <div style="font-size: 24px; color: #10b981; font-weight: bold;">${correctCount}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">Correct Answers</div>
+                                        <div style="font-size: 10px; color: #10b981;">${((correctCount/totalQuestions)*100).toFixed(1)}%</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 24px; color: #ef4444; font-weight: bold;">${wrongCount}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">Wrong Answers</div>
+                                        <div style="font-size: 10px; color: #ef4444;">${((wrongCount/totalQuestions)*100).toFixed(1)}%</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 24px; color: #3b82f6; font-weight: bold;">${skippedCount}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">Skipped Questions</div>
+                                        <div style="font-size: 10px; color: #3b82f6;">${((skippedCount/totalQuestions)*100).toFixed(1)}%</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 24px; color: #8b5cf6; font-weight: bold;">${totalQuestions}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">Total Questions</div>
+                                        <div style="font-size: 10px; color: #8b5cf6;">100%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Questions Analysis -->
+                        <div>
+                            <h2 style="color: #1e40af; font-size: 24px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                                Questions Analysis (${totalQuestions} Questions)
+                            </h2>
+                            ${questionsHTML}
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af;">
+                            <p>Report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+                            <p>Quiz Application - Performance Analysis Report</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(pdfContainer);
+                
+                // Generate PDF
+                const canvas = await html2canvas(pdfContainer, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                // Add additional pages if content is too long
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // Clean up
+                document.body.removeChild(pdfContainer);
+                
+                // Save PDF with proper filename
+                const fileName = `${participantName.replace(/[^a-z0-9]/gi, '_')}_${quizSetName.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+                pdf.save(fileName);
+                
+                this.showNotification('PDF exported successfully!', 'success');
+                
+            } catch (error) {
+                console.error('PDF export error:', error);
+                this.showNotification('Failed to generate PDF. Please try again.', 'error');
+            }
+        },
+
+        exportResultAsJSON() {
             if (!this.selectedResult) return;
             
             const data = {
@@ -1943,7 +2196,7 @@ export default {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            this.showNotification('Result exported successfully!', 'success');
+            this.showNotification('Result exported as JSON!', 'success');
         },
 
         highlightRow(index) {
@@ -4502,5 +4755,20 @@ h1, h2, h3, h4, h5, h6 {
         --font-heading: 'Inter var', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         --font-body: 'Inter var', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
+}
+
+/* Export dropdown styles */
+.relative.group:hover .absolute {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.absolute {
+    transform: translateY(10px);
+}
+
+.group:hover .absolute {
+    transform: translateY(0);
 }
 </style>

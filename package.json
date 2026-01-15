@@ -22,6 +22,9 @@
     "dependencies": {
         "@inertiajs/vue3": "^2.2.7",
         "@vitejs/plugin-vue": "^6.0.1",
+        "html2canvas": "^1.4.1",
+        "html2pdf.js": "^0.14.0",
+        "jspdf": "^4.0.0",
         "laravel-echo": "^2.2.4",
         "pusher-js": "^8.4.0"
     }

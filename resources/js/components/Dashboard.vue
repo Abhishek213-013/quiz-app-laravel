@@ -1,5 +1,5 @@
 <template>
-    <div class="flex-1 overflow-hidden relative" :class="themeClass">
+    <div class="flex-1 overflow-hidden relative">
         <!-- Animated Background Elements -->
         <div class="animated-bg-elements">
             <div class="floating-particle" v-for="(particle, index) in particles" :key="index"
@@ -7,7 +7,7 @@
             <div class="circuit-board-bg"></div>
         </div>
 
-        <!-- Easter Egg Trigger -->
+        <!-- Easter Egg Trigger - Moved below navbar -->
         <div class="easter-egg-trigger" @click="toggleNerdMode"
              @mouseenter="showEasterTooltip = true"
              @mouseleave="showEasterTooltip = false"
@@ -18,202 +18,145 @@
             </div>
         </div>
 
-        <div class="container mx-auto px-4 py-6 sm:py-8 relative z-10">
+        <div class="container mx-auto px-4 py-8 relative z-10">
             <!-- Konami Code Progress -->
             <div v-if="konamiProgress > 0" class="konami-hint">
                 Konami Code: {{ konamiSequence.slice(0, konamiProgress).join(' ') }}
             </div>
 
-            <!-- Header -->
-            <div class="text-center mb-8 sm:mb-12 animate-fade-in">
-                <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 animate-slide-up">
-                    <span class="text-gradient animate-gradient-shift">GK Blog</span>
+            <!-- Animated Title - Fixed centering -->
+            <div class="text-center mb-12">
+                <h1 class="dashboard-title animate-slide-up inline-block">
+                    <span class="text-gradient animate-gradient-shift text-4xl font-bold">MindSpark</span>
                     <span class="sparkle">✨</span>
+                    <div class="dashboard-title-sub text-2xl mt-2">Dashboard</div>
                 </h1>
-                <p class="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4 blog-description animate-slide-up" 
-                   :style="{ animationDelay: '0.1s' }">
-                    Enhance your knowledge with our collection of General Knowledge articles, 
-                    facts, and interesting information to boost your quiz performance.
-                </p>
+            </div>
+        
+            <!-- Enhanced Tiles with Staggered Animations -->
+            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto">
+                <!-- Take Quiz Tile -->
+                <div 
+                    class="dashboard-tile quiz-tile cursor-pointer transform transition-all duration-300 hover:scale-105 animate-slide-up interactive-card"
+                    @click="navigateWithEffect('quiz-sets')"
+                    @mouseenter="playHoverSound('click')"
+                    :style="{ animationDelay: '0.1s' }"
+                >
+                    <div class="icon-container bg-blue-500 mb-3 sm:mb-4 animate-pulse-slow">
+                        <span class="text-xl sm:text-2xl text-white floating-icon">📝</span>
+                    </div>
+                    <h3 class="tile-title mb-2">Take Quiz</h3>
+                    <p class="tile-description">Start a new quiz and test your knowledge</p>
+                    <div class="mt-2 text-xs text-gray-400 sm:hidden theme-hint">(Mobile Layout)</div>
+                    <div class="tile-glow"></div>
+                    <div class="beaker-bubble"></div>
+                </div>
+
+                <!-- GK Blog Tile -->
+                <div 
+                    class="dashboard-tile blog-tile cursor-pointer transform transition-all duration-300 hover:scale-105 animate-slide-up interactive-card"
+                    @click="navigateWithEffect('gk-blog')"
+                    @mouseenter="playHoverSound('page')"
+                    :style="{ animationDelay: '0.2s' }"
+                >
+                    <div class="icon-container bg-green-500 mb-3 sm:mb-4 animate-pulse-slow">
+                        <span class="text-xl sm:text-2xl text-white floating-icon">📚</span>
+                    </div>
+                    <h3 class="tile-title mb-2">GK Blog</h3>
+                    <p class="tile-description">Enhance your knowledge with educational articles</p>
+                    <div class="mt-2 text-xs text-gray-400 sm:hidden theme-hint">(Mobile Layout)</div>
+                    <div class="tile-glow"></div>
+                    <div class="beaker-bubble"></div>
+                </div>
+
+                <!-- Previous Records Tile -->
+                <div 
+                    class="dashboard-tile records-tile cursor-pointer transform transition-all duration-300 hover:scale-105 animate-slide-up interactive-card"
+                    @click="navigateWithEffect('records')"
+                    @mouseenter="playHoverSound('data')"
+                    :style="{ animationDelay: '0.3s' }"
+                >
+                    <div class="icon-container bg-purple-500 mb-3 sm:mb-4 animate-pulse-slow">
+                        <span class="text-xl sm:text-2xl text-white floating-icon">📊</span>
+                    </div>
+                    <h3 class="tile-title mb-2">Previous Records</h3>
+                    <p class="tile-description">View and filter previous quiz results</p>
+                    <div class="mt-2 text-xs text-gray-400 sm:hidden theme-hint">(Mobile Layout)</div>
+                    <div class="tile-glow"></div>
+                    <div class="beaker-bubble"></div>
+                </div>
             </div>
 
-            <!-- Featured Articles -->
-            <div class="max-w-6xl mx-auto mb-8 sm:mb-12 animate-slide-up" :style="{ animationDelay: '0.2s' }">
-                <h2 class="text-xl sm:text-2xl font-bold text-center mb-4 sm:mb-6 md:mb-8 section-title">
-                    Featured Articles
-                </h2>
-                
-                <div class="featured-articles-container">
-                    <div 
-                        class="featured-article-card interactive-card cursor-pointer transform transition-all duration-300 hover:scale-105"
-                        @click="navigateToArticle('world-geography')"
-                        @mouseenter="playHoverSound('click')"
-                    >
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-pulse-slow">
-                            <span class="text-white text-lg sm:text-xl md:text-2xl floating-icon">🌎</span>
-                        </div>
-                        <h3 class="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 tile-title">World Geography Facts</h3>
-                        <p class="mb-3 sm:mb-4 text-xs sm:text-sm md:text-base leading-relaxed tile-description">
-                            Discover fascinating facts about countries, capitals, and geographical wonders from around the world.
-                        </p>
-                        <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center justify-center mx-auto text-xs sm:text-sm md:text-base interactive-button">
-                            Read More
-                            <span class="ml-1 sm:ml-2">→</span>
-                        </button>
-                        <div class="tile-glow"></div>
+            <!-- Responsive Breakpoint Indicator -->
+            <div class="mt-8 max-w-4xl mx-auto text-center">
+                <div class="breakpoint-indicator animate-fade-in">
+                    <div class="text-sm">
+                        Current layout: 
+                        <span class="font-semibold text-blue-600 sm:hidden animate-pulse-slow">MOBILE (vertical)</span>
+                        <span class="font-semibold text-green-600 hidden sm:inline md:hidden animate-pulse-slow">SMALL (horizontal)</span>
+                        <span class="font-semibold text-purple-600 hidden md:inline animate-pulse-slow">DESKTOP (horizontal)</span>
                     </div>
-
-                    <div 
-                        class="featured-article-card interactive-card cursor-pointer transform transition-all duration-300 hover:scale-105"
-                        @click="navigateToArticle('science-tech')"
-                        @mouseenter="playHoverSound('click')"
-                    >
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-pulse-slow">
-                            <span class="text-white text-lg sm:text-xl md:text-2xl floating-icon">🧪</span>
-                        </div>
-                        <h3 class="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 tile-title">Science & Technology</h3>
-                        <p class="mb-3 sm:mb-4 text-xs sm:text-sm md:text-base leading-relaxed tile-description">
-                            Latest scientific discoveries and technological advancements that are shaping our world.
-                        </p>
-                        <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center justify-center mx-auto text-xs sm:text-sm md:text-base interactive-button">
-                            Read More
-                            <span class="ml-1 sm:ml-2">→</span>
-                        </button>
-                        <div class="tile-glow"></div>
-                    </div>
-
-                    <div 
-                        class="featured-article-card interactive-card cursor-pointer transform transition-all duration-300 hover:scale-105"
-                        @click="navigateToArticle('historical-events')"
-                        @mouseenter="playHoverSound('click')"
-                    >
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-r from-red-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-pulse-slow">
-                            <span class="text-white text-lg sm:text-xl md:text-2xl floating-icon">📜</span>
-                        </div>
-                        <h3 class="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 tile-title">Historical Events</h3>
-                        <p class="mb-3 sm:mb-4 text-xs sm:text-sm md:text-base leading-relaxed tile-description">
-                            Important historical events, dates, and figures that every quiz enthusiast should know.
-                        </p>
-                        <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center justify-center mx-auto text-xs sm:text-sm md:text-base interactive-button">
-                            Read More
-                            <span class="ml-1 sm:ml-2">→</span>
-                        </button>
-                        <div class="tile-glow"></div>
+                    <div class="mt-2 text-xs opacity-75 flex items-center justify-center gap-2">
+                        System Status: 
+                        <span class="status-dot"></span>
+                        <span class="animate-gradient-shift">All Systems Operational</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Blog Categories -->
-            <div class="mt-12 sm:mt-16 max-w-6xl mx-auto animate-slide-up" :style="{ animationDelay: '0.3s' }">
-                <h2 class="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8 section-title">Blog Categories</h2>
-                
-                <div class="categories-container">
-                    <div 
-                        v-for="category in categories" 
-                        :key="category.id"
-                        class="category-card interactive-card cursor-pointer transform transition-all duration-300 hover:scale-105"
-                        @click="filterByCategory(category.id)"
-                        @mouseenter="playHoverSound('notification')"
-                    >
-                        <div :class="['category-icon', category.bgColor, 'animate-bounce-slow']">
-                            <span class="text-white text-sm sm:text-base">{{ category.icon }}</span>
+            <!-- Quick Stats Section with Counting Animation -->
+            <div class="mt-16 max-w-4xl mx-auto">
+                <h2 class="section-title mb-8 animate-fade-in text-center">Quick Overview</h2>
+                <div class="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                    <div class="stat-card blue-card animate-slide-up" :style="{ animationDelay: '0.1s' }">
+                        <div class="stat-number text-blue-600 mb-2 cyber-glow-blue animate-count-up">
+                            {{ animatedQuizzes }}
                         </div>
-                        <h3 class="category-name">{{ category.name }}</h3>
-                        <p class="category-count">{{ category.count }} articles</p>
-                        <div class="category-glow"></div>
+                        <div class="stat-label">Available Quizzes</div>
+                        <div class="stat-sparkle"></div>
+                        <div class="data-stream"></div>
+                    </div>
+                    <div class="stat-card green-card animate-slide-up" :style="{ animationDelay: '0.2s' }">
+                        <div class="stat-number text-green-600 mb-2 cyber-glow-green animate-count-up">
+                            {{ animatedArticles }}
+                        </div>
+                        <div class="stat-label">GK Articles</div>
+                        <div class="stat-sparkle"></div>
+                        <div class="data-stream"></div>
+                    </div>
+                    <div class="stat-card purple-card animate-slide-up" :style="{ animationDelay: '0.3s' }">
+                        <div class="stat-number text-purple-600 mb-2 cyber-glow-purple animate-count-up">
+                            {{ animatedAttempts }}
+                        </div>
+                        <div class="stat-label">Quiz Attempts</div>
+                        <div class="stat-sparkle"></div>
+                        <div class="data-stream"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Latest Articles -->
-            <div class="mt-12 sm:mt-16 max-w-6xl mx-auto animate-slide-up" :style="{ animationDelay: '0.4s' }">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-3 sm:gap-0">
-                    <h2 class="text-xl sm:text-2xl font-bold section-title">Latest Articles</h2>
-                    <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center text-sm sm:text-base interactive-button">
-                        View All Articles
-                        <span class="ml-1 sm:ml-2">→</span>
-                    </button>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 activity-container">
-                    <div class="space-y-4 sm:space-y-6">
-                        <article 
-                            v-for="(article, index) in latestArticles" 
-                            :key="article.id"
-                            class="border-b border-gray-200 dark:border-gray-700 pb-4 sm:pb-6 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-750 rounded-lg p-3 sm:p-4 transition-colors interactive-card cursor-pointer"
-                            @click="readArticle(article.id)"
-                            @mouseenter="playHoverSound('page')"
+            <!-- Recent Activity with Enhanced Effects -->
+            <!-- <div class="mt-16 max-w-4xl mx-auto">
+                <h2 class="section-title mb-8 animate-fade-in text-center">Recent Activity</h2>
+                <div class="activity-container crt-scanlines">
+                    <div class="space-y-4">
+                        <div 
+                            v-for="(activity, index) in recentActivities" 
+                            :key="activity.id" 
+                            class="activity-item animate-slide-right interactive-card"
                             :style="{ animationDelay: `${index * 0.1}s` }"
+                            @mouseenter="playHoverSound('notification')"
                         >
-                            <div class="flex items-start space-x-3 sm:space-x-4">
-                                <div :class="['w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0', article.bgColor, 'animate-pulse-slow']">
-                                    <span class="text-white text-xs sm:text-sm">{{ article.icon }}</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2 tile-title">{{ article.title }}</h3>
-                                    <p class="mb-2 sm:mb-3 text-sm sm:text-base line-clamp-2 tile-description">{{ article.excerpt }}</p>
-                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-                                        <div class="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                            <span class="flex items-center">
-                                                <span class="mr-1">📅</span>
-                                                {{ article.date }}
-                                            </span>
-                                            <span class="flex items-center">
-                                                <span class="mr-1">⏱️</span>
-                                                {{ article.readTime }}
-                                            </span>
-                                        </div>
-                                        <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs sm:text-sm font-medium self-start sm:self-auto interactive-button">
-                                            Read Full Article
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="activity-indicator animate-ping-slow"></div>
+                            <div :class="['activity-icon', activity.bgColor, 'animate-bounce-slow']">
+                                <span class="text-white text-xs sm:text-sm">{{ activity.icon }}</span>
                             </div>
-                        </article>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Blog Overview -->
-            <div class="mt-12 sm:mt-16 max-w-6xl mx-auto animate-slide-up" :style="{ animationDelay: '0.5s' }">
-                <h2 class="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8 section-title">Blog Overview</h2>
-                <div class="stats-container">
-                    <div class="stat-card stat-card-blue interactive-card transform transition-all duration-300 hover:scale-105">
-                        <div class="stat-number cyber-glow-blue animate-count-up">{{ animatedTotalArticles }}</div>
-                        <div class="stat-label">Total Articles</div>
-                        <div class="stat-sparkle"></div>
-                    </div>
-                    <div class="stat-card stat-card-green interactive-card transform transition-all duration-300 hover:scale-105">
-                        <div class="stat-number cyber-glow-green animate-count-up">{{ totalCategories }}</div>
-                        <div class="stat-label">Categories</div>
-                        <div class="stat-sparkle"></div>
-                    </div>
-                    <div class="stat-card stat-card-purple interactive-card transform transition-all duration-300 hover:scale-105">
-                        <div class="stat-number cyber-glow-purple animate-count-up">{{ animatedMonthlyReaders }}</div>
-                        <div class="stat-label">Monthly Readers</div>
-                        <div class="stat-sparkle"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Newsletter Subscription -->
-            <!-- <div class="mt-12 sm:mt-16 max-w-4xl mx-auto animate-slide-up" :style="{ animationDelay: '0.6s' }">
-                <div class="bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg shadow-lg p-6 sm:p-8 text-center text-white newsletter-container">
-                    <h2 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Stay Updated with GK Facts</h2>
-                    <p class="mb-4 sm:mb-6 max-w-2xl mx-auto text-sm sm:text-base px-2">
-                        Subscribe to our newsletter and receive daily general knowledge facts, 
-                        quiz tips, and educational content directly in your inbox.
-                    </p>
-                    <div class="max-w-md mx-auto flex flex-col sm:flex-row gap-2 sm:gap-0">
-                        <input 
-                            type="email" 
-                            placeholder="Enter your email address"
-                            class="flex-1 px-4 py-3 rounded-lg sm:rounded-l-lg sm:rounded-r-none text-gray-900 focus:outline-none text-sm sm:text-base"
-                        >
-                        <button class="bg-orange-500 hover:bg-orange-600 px-4 sm:px-6 py-3 rounded-lg sm:rounded-r-lg sm:rounded-l-none font-semibold transition-colors text-sm sm:text-base flex items-center justify-center gap-2 interactive-button">
-                            <span>📧</span> Subscribe
-                        </button>
+                            <div class="flex-1">
+                                <p class="activity-message">{{ activity.message }}</p>
+                                <p class="activity-time">{{ activity.time }}</p>
+                            </div>
+                            <div class="activity-indicator animate-ping-slow"></div>
+                            <div class="neural-node" :style="getNodeStyle(index)"></div>
+                        </div>
                     </div>
                 </div>
             </div> -->
@@ -241,27 +184,30 @@
                             <span class="dot yellow"></span>
                             <span class="dot green"></span>
                         </div>
-                        <span class="terminal-title">gk_blog@nerd_mode:~</span>
+                        <span class="terminal-title">mindspark@nerd_mode:~</span>
                         <button @click="toggleNerdMode" class="terminal-close hover:text-white">×</button>
                     </div>
                     <div class="terminal-body">
                         <div class="terminal-line">
-                            <span class="prompt">$</span> Welcome to <span class="text-cyan-400">GK Blog Nerd Mode</span> <span class="blink">_</span>
+                            <span class="prompt">$</span> Welcome to <span class="text-cyan-400">Nerd Mode</span> <span class="blink">_</span>
                         </div>
                         <div class="terminal-line">
                             <span class="prompt">$</span> System initialized at {{ new Date().toLocaleTimeString() }}
                         </div>
                         <div class="terminal-line">
-                            <span class="prompt">></span> Total Articles: <span class="text-green-400">{{ totalArticles }}</span>
+                            <span class="prompt">></span> Active Users: <span class="text-green-400">{{ totalAttempts }}</span>
                         </div>
                         <div class="terminal-line">
-                            <span class="prompt">></span> Categories Active: <span class="text-blue-400">{{ totalCategories }}</span>
+                            <span class="prompt">></span> Knowledge Base: <span class="text-blue-400">{{ totalQuizzes }} quizzes</span>
                         </div>
                         <div class="terminal-line">
-                            <span class="prompt">></span> Monthly Readers: <span class="text-purple-400">{{ monthlyReaders }}</span>
+                            <span class="prompt">></span> Articles Loaded: <span class="text-purple-400">{{ totalArticles }}</span>
                         </div>
                         <div class="terminal-line">
-                            <span class="prompt">$</span> Latest Article: "{{ latestArticles[0].title }}"
+                            <span class="prompt">$</span> Type <span class="text-yellow-400">'help'</span> for commands
+                        </div>
+                        <div class="terminal-line">
+                            <span class="prompt">#</span> <span class="text-pink-400">mindspark_ai</span> is ready for challenges!
                         </div>
                     </div>
                 </div>
@@ -278,7 +224,7 @@
 
 <script>
 export default {
-    name: 'GkBlog',
+    name: 'Dashboard',
     props: {
         theme: {
             type: String,
@@ -287,11 +233,12 @@ export default {
     },
     data() {
         return {
-            totalArticles: 156,
-            totalCategories: 8,
-            monthlyReaders: '2.4K',
-            animatedTotalArticles: 0,
-            animatedMonthlyReaders: 0,
+            totalQuizzes: 5,
+            totalArticles: 24,
+            totalAttempts: 36,
+            animatedQuizzes: 0,
+            animatedArticles: 0,
+            animatedAttempts: 0,
             nerdMode: false,
             showEasterTooltip: false,
             showHiddenMessage: false,
@@ -299,91 +246,34 @@ export default {
             konamiSequence: ['↑', '↑', '↓', '↓', '←', '→', '←', '→', 'B', 'A'],
             randomFact: '',
             particles: [],
-            categories: [
-                { 
-                    id: 1, 
-                    name: 'Geography', 
-                    icon: '🌎', 
-                    count: 24,
-                    bgColor: 'bg-blue-500'
-                },
-                { 
-                    id: 2, 
-                    name: 'Science', 
-                    icon: '🧪', 
-                    count: 18,
-                    bgColor: 'bg-green-500'
-                },
-                { 
-                    id: 3, 
-                    name: 'History', 
-                    icon: '📜', 
-                    count: 32,
-                    bgColor: 'bg-purple-500'
-                },
-                { 
-                    id: 4, 
-                    name: 'Sports', 
-                    icon: '⚽', 
-                    count: 15,
-                    bgColor: 'bg-red-500'
-                },
-                { 
-                    id: 5, 
-                    name: 'Arts', 
-                    icon: '🎨', 
-                    count: 12,
-                    bgColor: 'bg-pink-500'
-                },
-                { 
-                    id: 6, 
-                    name: 'Technology', 
-                    icon: '💻', 
-                    count: 21,
-                    bgColor: 'bg-indigo-500'
-                },
-                { 
-                    id: 7, 
-                    name: 'Politics', 
-                    icon: '🏛️', 
-                    count: 16,
-                    bgColor: 'bg-yellow-500'
-                },
-                { 
-                    id: 8, 
-                    name: 'Culture', 
-                    icon: '🗿', 
-                    count: 14,
-                    bgColor: 'bg-orange-500'
-                }
-            ],
-            latestArticles: [
+            recentActivities: [
                 {
                     id: 1,
-                    title: 'The Seven Wonders of the Modern World',
-                    excerpt: 'Explore the architectural marvels that have been designated as the New Seven Wonders of the World, from the Great Wall of China to Chichen Itza.',
-                    date: 'Oct 15, 2024',
-                    readTime: '5 min read',
-                    icon: '🗿',
-                    bgColor: 'bg-blue-500'
+                    message: "New Geography quiz set added",
+                    time: "2 hours ago",
+                    icon: '🌎',
+                    bgColor: "bg-blue-500"
                 },
                 {
                     id: 2,
-                    title: 'Understanding Climate Change: Facts and Impacts',
-                    excerpt: 'Learn about the science behind climate change, its global impacts, and what we can do to mitigate its effects.',
-                    date: 'Oct 12, 2024',
-                    readTime: '7 min read',
-                    icon: '🌡️',
-                    bgColor: 'bg-green-500'
+                    message: "Science & Technology article published",
+                    time: "5 hours ago",
+                    icon: '🧪',
+                    bgColor: "bg-green-500"
                 },
                 {
                     id: 3,
-                    title: 'Famous Inventors and Their Revolutionary Creations',
-                    excerpt: 'Discover the stories behind famous inventors and the groundbreaking inventions that changed the course of history.',
-                    date: 'Oct 8, 2024',
-                    readTime: '6 min read',
-                    icon: '💡',
-                    bgColor: 'bg-purple-500'
+                    message: "History quiz completed by 15 participants",
+                    time: "1 day ago",
+                    icon: '📜',
+                    bgColor: "bg-purple-500"
+                },
+                {
+                    id: 4,
+                    message: "New World Facts article available",
+                    time: "2 days ago",
+                    icon: '📖',
+                    bgColor: "bg-orange-500"
                 }
             ],
             funFacts: [
@@ -404,6 +294,7 @@ export default {
         }
     },
     async mounted() {
+        await this.fetchDashboardStats();
         this.animateNumbers();
         this.initParticles();
         this.initKonamiCode();
@@ -418,22 +309,41 @@ export default {
         document.body.classList.remove('nerd-mode-active');
     },
     methods: {
+        async fetchDashboardStats() {
+            try {
+                const quizSetsResponse = await axios.get('/api/quiz-sets');
+                this.totalQuizzes = quizSetsResponse.data.length;
+
+                const recordsResponse = await axios.get('/api/quiz-results');
+                this.totalAttempts = recordsResponse.data.length;
+
+                this.totalArticles = 24;
+
+            } catch (error) {
+                console.error('Error fetching dashboard stats:', error);
+                this.totalQuizzes = 5;
+                this.totalArticles = 24;
+                this.totalAttempts = 36;
+            }
+        },
+        
         animateNumbers() {
             const duration = 1500;
             const steps = 60;
             
-            const animate = (target, currentValue, isString = false) => {
+            const animate = (target, currentValue) => {
                 const increment = target / steps;
+                let current = currentValue;
                 let step = 0;
                 
                 const timer = setInterval(() => {
                     step++;
-                    if (isString) {
-                        const numValue = parseFloat(target);
-                        const current = Math.min(Math.floor(increment * step), numValue);
-                        this[currentValue] = current.toFixed(1) + (target.includes('K') ? 'K' : '');
-                    } else {
-                        this[currentValue] = Math.min(Math.floor(increment * step), target);
+                    if (currentValue === 'animatedQuizzes') {
+                        this.animatedQuizzes = Math.min(Math.floor(increment * step), this.totalQuizzes);
+                    } else if (currentValue === 'animatedArticles') {
+                        this.animatedArticles = Math.min(Math.floor(increment * step), this.totalArticles);
+                    } else if (currentValue === 'animatedAttempts') {
+                        this.animatedAttempts = Math.min(Math.floor(increment * step), this.totalAttempts);
                     }
                     
                     if (step >= steps) {
@@ -442,8 +352,9 @@ export default {
                 }, duration / steps);
             };
             
-            animate(this.totalArticles, 'animatedTotalArticles');
-            animate(this.monthlyReaders, 'animatedMonthlyReaders', true);
+            animate(this.totalQuizzes, 'animatedQuizzes');
+            animate(this.totalArticles, 'animatedArticles');
+            animate(this.totalAttempts, 'animatedAttempts');
         },
         
         toggleNerdMode() {
@@ -457,27 +368,15 @@ export default {
             }
         },
         
-        navigateToArticle(articleSlug) {
+        navigateWithEffect(route) {
             this.createClickEffect();
             setTimeout(() => {
-                console.log(`Navigating to article: ${articleSlug}`);
-                // In real app: this.$router.push(`/article/${articleSlug}`)
+                this.$emit('navigate', route);
             }, 300);
         },
         
-        filterByCategory(categoryId) {
-            this.createClickEffect();
-            const category = this.categories.find(c => c.id === categoryId);
-            this.showNotification(`Filtering by ${category.name}`, "info");
-        },
-        
-        readArticle(articleId) {
-            this.createClickEffect();
-            const article = this.latestArticles.find(a => a.id === articleId);
-            this.showNotification(`Opening: ${article.title}`, "info");
-        },
-        
         playHoverSound(type) {
+            // In a real app, you would play actual sounds
             console.log(`Playing ${type} sound`);
         },
         
@@ -532,8 +431,9 @@ export default {
             this.createFireworks();
             
             // Boost stats for fun
-            this.totalArticles += 10;
-            this.monthlyReaders = '3.2K';
+            this.totalQuizzes += 10;
+            this.totalArticles += 8;
+            this.totalAttempts += 25;
             this.animateNumbers();
             
             this.showNotification("Konami Code Unlocked!", "achievement");
@@ -618,6 +518,16 @@ export default {
             }, 45000);
         },
         
+        getNodeStyle(index) {
+            const left = 10 + (index * 25);
+            const top = 50;
+            return {
+                left: `${left}%`,
+                top: `${top}%`,
+                animationDelay: `${index * 0.5}s`
+            };
+        },
+        
         showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `notification-slide notification-${type}`;
@@ -638,59 +548,52 @@ export default {
 <style scoped>
 /* Base theme variables with enhanced colors */
 :root {
-    --blog-bg: #ffffff;
-    --blog-title-color: #1f2937;
-    --blog-description-color: #4b5563;
+    --dashboard-bg: #ffffff;
+    --dashboard-title-color: #1f2937;
     --tile-bg: #ffffff;
     --tile-border: transparent;
     --tile-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --tile-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
     --tile-title-color: #1f2937;
     --tile-description-color: #4b5563;
     --tile-hover-border: rgba(59, 130, 246, 0.2);
-    --category-bg: #ffffff;
-    --category-hover-bg: #f9fafb;
-    --category-name-color: #1f2937;
-    --category-count-color: #6b7280;
+    --stat-card-bg: #f9fafb;
     --activity-container-bg: #ffffff;
     --activity-item-hover: #f9fafb;
-    --stat-card-bg: #f9fafb;
-    --stat-label-color: #6b7280;
-    --newsletter-bg: linear-gradient(to right, #8b5cf6, #3b82f6);
+    --activity-message-color: #1f2937;
+    --activity-time-color: #6b7280;
+    --breakpoint-indicator-bg: #f3f4f6;
+    --theme-hint-color: #9ca3af;
     
     /* Animation Colors */
     --glow-blue: rgba(59, 130, 246, 0.5);
     --glow-green: rgba(34, 197, 94, 0.5);
     --glow-purple: rgba(168, 85, 247, 0.5);
     --cyber-cyan: #00ffff;
+    --cyber-pink: #ff00ff;
     --cyber-green: #00ff00;
 }
 
 .dark-theme {
-    --blog-bg: #111827;
-    --blog-title-color: #f3f4f6;
-    --blog-description-color: #d1d5db;
+    --dashboard-bg: #111827;
+    --dashboard-title-color: #f3f4f6;
     --tile-bg: #1f2937;
     --tile-border: #374151;
     --tile-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    --tile-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     --tile-title-color: #f3f4f6;
     --tile-description-color: #d1d5db;
     --tile-hover-border: rgba(96, 165, 250, 0.3);
-    --category-bg: #1f2937;
-    --category-hover-bg: #374151;
-    --category-name-color: #f3f4f6;
-    --category-count-color: #9ca3af;
+    --stat-card-bg: #1f2937;
     --activity-container-bg: #1f2937;
     --activity-item-hover: #374151;
-    --stat-card-bg: #1f2937;
-    --stat-label-color: #9ca3af;
-    --newsletter-bg: linear-gradient(to right, #7c3aed, #2563eb);
+    --activity-message-color: #f3f4f6;
+    --activity-time-color: #9ca3af;
+    --breakpoint-indicator-bg: #374151;
+    --theme-hint-color: #6b7280;
 }
 
 /* Base styles */
 .flex-1 {
-    background-color: var(--blog-bg);
+    background-color: var(--dashboard-bg);
     transition: background-color 0.3s ease;
     min-height: 100vh;
     position: relative;
@@ -734,10 +637,10 @@ export default {
     opacity: 0.05;
 }
 
-/* Easter Egg Trigger */
+/* Easter Egg Trigger - Fixed position to avoid navbar overlap */
 .easter-egg-trigger {
     position: fixed;
-    top: 80px;
+    top: 80px; /* Positioned below typical navbar height */
     right: 20px;
     width: 50px;
     height: 50px;
@@ -804,7 +707,13 @@ export default {
     backdrop-filter: blur(10px);
 }
 
-/* Header Styling */
+/* Title Styling - Fixed centering */
+.dashboard-title {
+    position: relative;
+    display: inline-block;
+    color: var(--dashboard-title-color);
+}
+
 .text-gradient {
     background: linear-gradient(45deg, var(--glow-blue), var(--glow-green), var(--glow-purple));
     -webkit-background-clip: text;
@@ -814,40 +723,62 @@ export default {
 }
 
 .sparkle {
-    display: inline-block;
+    position: absolute;
+    top: -10px;
+    right: -30px;
     animation: sparkle 2s infinite;
-    margin-left: 10px;
+    font-size: 1.5rem;
 }
 
-.blog-description {
-    color: var(--blog-description-color);
+.dashboard-title-sub {
+    display: block;
+    opacity: 0.8;
+    color: var(--dashboard-title-color);
 }
 
-.section-title {
-    color: var(--blog-title-color);
-}
-
-/* Featured Articles */
-.featured-articles-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.featured-article-card {
+/* Enhanced Tile Styles */
+.dashboard-tile {
     background: var(--tile-bg);
+    border: 2px solid var(--tile-border);
     border-radius: 0.75rem;
+    padding: 1rem;
     box-shadow: var(--tile-shadow);
-    padding: 1.25rem;
-    text-align: center;
-    border: 1px solid var(--tile-border);
+    flex: 1;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
-.featured-article-card:hover {
-    box-shadow: var(--tile-hover-shadow);
+.dashboard-tile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.7s ease;
+}
+
+.dashboard-tile:hover::before {
+    left: 100%;
+}
+
+.dashboard-tile:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
     border-color: var(--tile-hover-border);
+}
+
+.quiz-tile:hover {
+    --tile-hover-border: var(--glow-blue);
+}
+
+.blog-tile:hover {
+    --tile-hover-border: var(--glow-green);
+}
+
+.records-tile:hover {
+    --tile-hover-border: var(--glow-purple);
 }
 
 .tile-glow {
@@ -862,186 +793,168 @@ export default {
     transition: opacity 0.3s ease;
 }
 
-.featured-article-card:hover .tile-glow {
+.quiz-tile:hover .tile-glow {
     background: radial-gradient(circle at center, var(--glow-blue), transparent 70%);
     opacity: 0.3;
 }
 
-.featured-article-card:nth-child(2):hover .tile-glow {
+.blog-tile:hover .tile-glow {
     background: radial-gradient(circle at center, var(--glow-green), transparent 70%);
+    opacity: 0.3;
 }
 
-.featured-article-card:nth-child(3):hover .tile-glow {
+.records-tile:hover .tile-glow {
     background: radial-gradient(circle at center, var(--glow-purple), transparent 70%);
+    opacity: 0.3;
 }
 
-.floating-icon {
-    animation: float-icon 3s ease-in-out infinite;
-}
-
-.tile-title {
-    color: var(--tile-title-color);
-}
-
-.tile-description {
-    color: var(--tile-description-color);
-}
-
-.interactive-button {
-    transition: all 0.3s ease;
-}
-
-.interactive-button:hover {
-    transform: translateX(3px);
-}
-
-/* Blog Categories */
-.categories-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-}
-
-.category-card {
-    background: var(--category-bg);
-    border-radius: 0.75rem;
-    box-shadow: var(--tile-shadow);
-    padding: 1rem;
-    text-align: center;
-    border: 1px solid var(--tile-border);
+.icon-container {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
     position: relative;
     overflow: hidden;
 }
 
-.category-card:hover {
-    background: var(--category-hover-bg);
-    box-shadow: var(--tile-hover-shadow);
-}
-
-.category-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 0.5rem auto;
-}
-
-.category-name {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--category-name-color);
-    margin-bottom: 0.25rem;
-}
-
-.category-count {
-    color: var(--category-count-color);
-    font-size: 0.75rem;
-}
-
-.category-glow {
+.icon-container::after {
+    content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: rotate(45deg);
+    transition: transform 0.5s ease;
+}
+
+.icon-container:hover::after {
+    transform: rotate(45deg) translate(50%, 50%);
+}
+
+@media (min-width: 640px) {
+    .icon-container {
+        width: 4rem;
+        height: 4rem;
+    }
+}
+
+.tile-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--tile-title-color);
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+@media (min-width: 640px) {
+    .tile-title {
+        font-size: 1.25rem;
+    }
+}
+
+.tile-description {
+    font-size: 0.875rem;
+    color: var(--tile-description-color);
+    transition: color 0.3s ease;
+}
+
+@media (min-width: 640px) {
+    .tile-description {
+        font-size: 1rem;
+    }
+}
+
+.theme-hint {
+    color: var(--theme-hint-color);
+}
+
+/* Breakpoint indicator */
+.breakpoint-indicator {
+    display: inline-block;
+    background: var(--breakpoint-indicator-bg);
     border-radius: 0.75rem;
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.category-card:hover .category-glow {
-    background: radial-gradient(circle at center, var(--glow-blue), transparent 70%);
-    opacity: 0.2;
-}
-
-/* Latest Articles */
-.activity-container {
-    background: var(--activity-container-bg);
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
     border: 1px solid var(--tile-border);
 }
 
-.activity-indicator {
+.status-dot {
+    display: inline-block;
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--cyber-green);
-    margin-left: 10px;
+    animation: status-pulse 2s infinite;
+    margin-right: 5px;
 }
 
-/* Blog Overview Stats */
-.stats-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
+/* Stat cards */
 .stat-card {
+    background: var(--stat-card-bg);
     border-radius: 0.75rem;
-    padding: 1.25rem;
-    text-align: center;
+    padding: 1rem;
+    flex: 1;
+    border-left-width: 4px;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    background: var(--stat-card-bg);
-    border-left-width: 4px;
 }
 
 .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: var(--tile-hover-shadow);
+    box-shadow: var(--tile-shadow);
 }
 
-.stat-card-blue {
+@media (min-width: 640px) {
+    .stat-card {
+        padding: 1.5rem;
+    }
+}
+
+.blue-card {
     border-left-color: var(--glow-blue);
 }
 
-.stat-card-green {
+.green-card {
     border-left-color: var(--glow-green);
 }
 
-.stat-card-purple {
+.purple-card {
     border-left-color: var(--glow-purple);
 }
 
 .stat-number {
     font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 0.25rem;
+    font-weight: 700;
     position: relative;
     z-index: 1;
 }
 
-.stat-card-blue .stat-number {
-    color: #1d4ed8;
-}
-
-.dark-theme .stat-card-blue .stat-number {
-    color: #60a5fa;
-}
-
-.stat-card-green .stat-number {
-    color: #15803d;
-}
-
-.dark-theme .stat-card-green .stat-number {
-    color: #4ade80;
-}
-
-.stat-card-purple .stat-number {
-    color: #7e22ce;
-}
-
-.dark-theme .stat-card-purple .stat-number {
-    color: #a78bfa;
+@media (min-width: 640px) {
+    .stat-number {
+        font-size: 1.875rem;
+    }
 }
 
 .stat-label {
-    color: var(--stat-label-color);
+    color: var(--tile-description-color);
     font-size: 0.875rem;
+    transition: color 0.3s ease;
     position: relative;
     z-index: 1;
+}
+
+@media (min-width: 640px) {
+    .stat-label {
+        font-size: 1rem;
+    }
 }
 
 .stat-sparkle {
@@ -1059,22 +972,94 @@ export default {
     opacity: 1;
 }
 
-.cyber-glow-blue {
-    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+/* Activity section */
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dashboard-title-color);
+    transition: color 0.3s ease;
+    position: relative;
 }
 
-.cyber-glow-green {
-    text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+.activity-container {
+    background: var(--activity-container-bg);
+    border-radius: 0.75rem;
+    box-shadow: var(--tile-shadow);
+    padding: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-.cyber-glow-purple {
-    text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+@media (min-width: 640px) {
+    .activity-container {
+        padding: 1.5rem;
+    }
 }
 
-/* Newsletter */
-.newsletter-container {
-    background: var(--newsletter-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.activity-item:hover {
+    background: var(--activity-item-hover);
+    transform: translateX(5px);
+}
+
+.activity-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+@media (min-width: 640px) {
+    .activity-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+}
+
+.activity-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cyber-green);
+    margin-left: 10px;
+}
+
+.activity-message {
+    color: var(--activity-message-color);
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: color 0.3s ease;
+}
+
+@media (min-width: 640px) {
+    .activity-message {
+        font-size: 1rem;
+    }
+}
+
+.activity-time {
+    color: var(--activity-time-color);
+    font-size: 0.75rem;
+    transition: color 0.3s ease;
+}
+
+@media (min-width: 640px) {
+    .activity-time {
+        font-size: 0.875rem;
+    }
 }
 
 /* Hidden Message */
@@ -1218,12 +1203,50 @@ export default {
     z-index: 1;
 }
 
-/* Text truncation utility */
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* Fireworks */
+.firework {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--firework-color);
+    border-radius: 50%;
+    animation: firework-explode 1s ease-out forwards;
+    pointer-events: none;
+}
+
+/* Click Particles */
+.click-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--click-color);
+    border-radius: 50%;
+    animation: particle-burst 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+/* Neural Node */
+.neural-node {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--cyber-blue);
+    border-radius: 50%;
+    animation: node-pulse 2s infinite;
+    z-index: 0;
+}
+
+/* Beaker Bubble */
+.beaker-bubble {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 50%;
+    animation: bubble-rise 4s infinite ease-in;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* Animations */
@@ -1233,15 +1256,6 @@ export default {
     }
     50% {
         transform: translateY(-20px) rotate(180deg);
-    }
-}
-
-@keyframes float-icon {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-5px);
     }
 }
 
@@ -1274,6 +1288,17 @@ export default {
     }
 }
 
+@keyframes status-pulse {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 5px var(--cyber-green);
+    }
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 10px var(--cyber-green);
+    }
+}
+
 @keyframes slide-up {
     from {
         opacity: 0;
@@ -1282,6 +1307,17 @@ export default {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes slide-right {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
@@ -1344,18 +1380,13 @@ export default {
     }
 }
 
-@keyframes blink {
-    0%, 50% {
-        opacity: 1;
-    }
-    51%, 100% {
-        opacity: 0;
-    }
-}
-
 /* Animation Classes */
 .animate-slide-up {
     animation: slide-up 0.6s ease-out forwards;
+}
+
+.animate-slide-right {
+    animation: slide-right 0.5s ease-out forwards;
 }
 
 .animate-fade-in {
@@ -1410,6 +1441,40 @@ export default {
     transform: translateX(-30px) scale(0.9);
 }
 
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .nerd-terminal {
+        width: calc(100% - 40px);
+        left: 20px;
+        bottom: 20px;
+    }
+    
+    .hidden-message {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+    
+    .easter-egg-trigger {
+        width: 40px;
+        height: 40px;
+        top: 70px; /* Adjusted for mobile */
+        right: 10px;
+    }
+    
+    .konami-hint {
+        font-size: 10px;
+        padding: 6px 12px;
+        bottom: 10px;
+    }
+}
+
+/* Ensure proper stacking */
+.container {
+    position: relative;
+    z-index: 10;
+}
+
 /* Interactive Card Base */
 .interactive-card {
     transition: all 0.3s ease;
@@ -1432,153 +1497,7 @@ export default {
     left: 100%;
 }
 
-/* Tablet Styles */
-@media (min-width: 640px) {
-    .featured-articles-container {
-        gap: 1.25rem;
-    }
-    
-    .featured-article-card {
-        padding: 1.5rem;
-    }
-    
-    .categories-container {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-    }
-    
-    .category-card {
-        padding: 1.25rem;
-    }
-    
-    .category-icon {
-        width: 3rem;
-        height: 3rem;
-        margin-bottom: 0.75rem;
-    }
-    
-    .category-name {
-        font-size: 1rem;
-    }
-    
-    .category-count {
-        font-size: 0.875rem;
-    }
-    
-    .stats-container {
-        flex-direction: row;
-        gap: 1.25rem;
-    }
-    
-    .stat-card {
-        padding: 1.5rem;
-    }
-    
-    .stat-number {
-        font-size: 1.875rem;
-    }
-    
-    .stat-label {
-        font-size: 1rem;
-    }
-}
-
-/* Desktop Styles */
-@media (min-width: 768px) {
-    .featured-articles-container {
-        flex-direction: row;
-        gap: 1.5rem;
-    }
-    
-    .featured-article-card {
-        flex: 1;
-        padding: 1.75rem;
-    }
-    
-    .categories-container {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.5rem;
-    }
-    
-    .category-card {
-        padding: 1.5rem;
-    }
-    
-    .category-icon {
-        width: 3.5rem;
-        height: 3.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .category-name {
-        font-size: 1.125rem;
-    }
-    
-    .stat-number {
-        font-size: 2.25rem;
-    }
-}
-
-/* Large Desktop Styles */
-@media (min-width: 1024px) {
-    .categories-container {
-        grid-template-columns: repeat(4, 1fr);
-    }
-    
-    .stat-number {
-        font-size: 2.5rem;
-    }
-}
-
-/* Small Mobile Optimization */
-@media (max-width: 380px) {
-    .categories-container {
-        grid-template-columns: 1fr;
-    }
-    
-    .featured-article-card {
-        padding: 1rem;
-    }
-    
-    .category-card {
-        padding: 0.875rem;
-    }
-}
-
-@media (max-width: 640px) {
-    .nerd-terminal {
-        width: calc(100% - 40px);
-        left: 20px;
-        bottom: 20px;
-    }
-    
-    .hidden-message {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-    }
-    
-    .easter-egg-trigger {
-        width: 40px;
-        height: 40px;
-        top: 70px;
-        right: 10px;
-    }
-    
-    .konami-hint {
-        font-size: 10px;
-        padding: 6px 12px;
-        bottom: 10px;
-    }
-}
-
-/* Ensure proper stacking */
-.container {
-    position: relative;
-    z-index: 10;
-}
-
-/* Transform effects */
+/* Transform effects */Recent Activity
 .transform {
     transition: all 0.3s ease;
 }
